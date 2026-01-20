@@ -26,36 +26,42 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') {
     return;
   }
-
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request).catch(() => {
-          // For HTML requests, return offline page
-          if (event.request.headers.get('accept').includes('text/html')) {
-            return caches.match('/offline.html');
+  
+  // Don't cache certain types of requests
+  const url = new URL(event.request.url);
+  if (url.pathname.startsWith('/api/')) {
+    // For API requests, don't use cache
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Network error - please check your connection',
+            offline: true 
+          }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
           }
-          
-          // For API requests, return a basic response
-          if (event.request.url.includes('/api/')) {
-            return new Response(
-              JSON.stringify({ 
-                error: 'Network error - please check your connection',
-                offline: true 
-              }),
-              {
-                status: 503,
-                headers: { 'Content-Type': 'application/json' }
-              }
-            );
-          }
-          
-          // For other requests, return a basic response
-          return new Response('Offline', { status: 503 });
-        });
+        );
       })
-  );
+    );
+  } else {
+    // For static assets, try cache first
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          return response || fetch(event.request).catch(() => {
+            // For HTML requests, return offline page
+            if (event.request.destination === 'document') {
+              return caches.match('/offline.html');
+            }
+            
+            // For other requests, return a basic response
+            return new Response('Offline', { status: 503 });
+          });
+        })
+    );
+  }
 });
 
 // Activate event - clean up old caches

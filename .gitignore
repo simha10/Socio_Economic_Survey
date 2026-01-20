@@ -21,6 +21,11 @@ pm2.log*
 # Frontend specific
 .next/
 .nuxt/
+public/*
+!important files in public folder
+public/favicon.ico
+public/robots.txt
+public/sitemap.xml
 
 # IDE and editor files
 .vscode/
