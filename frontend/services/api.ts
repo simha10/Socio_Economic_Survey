@@ -3,7 +3,7 @@
 import { API_BASE_URL } from '@/utils/constants';
 
 interface ApiResponse<T = any> {
-  user: { _id: string; username: string; name: string; role: string; } | undefined;
+  user?: { _id: string; username: string; name: string; role: string; } | undefined;
   success: boolean;
   message?: string;
   data?: T;
@@ -56,6 +56,7 @@ class ApiService {
       
       return {
         success: false,
+        user: undefined,
         error: errorData.message || errorData.error || `HTTP error! status: ${response.status}`,
       };
     }
@@ -115,6 +116,7 @@ class ApiService {
       
       return {
         success: false,
+        user: undefined,
         error: error?.message || (typeof error === 'string' ? error : 'Network error occurred'),
       };
     }
@@ -132,6 +134,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -148,6 +151,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -169,6 +173,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -188,6 +193,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -205,6 +211,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -221,6 +228,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -237,6 +245,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -253,6 +262,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -270,6 +280,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -291,6 +302,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -307,6 +319,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -323,6 +336,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -341,6 +355,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -357,6 +372,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -374,6 +390,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -390,6 +407,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -423,6 +441,7 @@ class ApiService {
       console.error('assignSlumToSurveyor Network Error:', error);
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -443,6 +462,7 @@ class ApiService {
       console.error('getAssignedSlums error:', error);
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -459,6 +479,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -475,6 +496,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -494,6 +516,7 @@ class ApiService {
       console.error('getAllAssignments error:', error);
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -513,6 +536,7 @@ class ApiService {
       console.error('getAssignment error:', error);
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -565,6 +589,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -583,6 +608,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -601,6 +627,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -622,6 +649,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -638,6 +666,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -655,6 +684,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -672,6 +702,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
@@ -689,6 +720,7 @@ class ApiService {
     } catch (error: any) {
       return {
         success: false,
+        user: undefined,
         error: error.message || 'Network error occurred',
       };
     }
