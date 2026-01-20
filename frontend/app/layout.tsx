@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0ea5e9",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="apple-mobile-web-app-title" content="SES Survey" />
 
         <link rel="manifest" href="/manifest.json" />
+
       </head>
       <body className="bg-[#0B1F33] text-[#E5E7EB]" suppressHydrationWarning={true}>
         <PWAProvider>

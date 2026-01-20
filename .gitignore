@@ -21,9 +21,6 @@ pm2.log*
 # Frontend specific
 .next/
 .nuxt/
-public/
-coverage/
-*.tsbuildinfo
 
 # IDE and editor files
 .vscode/
