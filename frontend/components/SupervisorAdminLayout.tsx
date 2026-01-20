@@ -40,7 +40,7 @@ const LayoutContent = ({
          <header className="h-16 border-b border-slate-800 flex items-center justify-between px-6 md:px-8 bg-slate-950/80 backdrop-blur-md sticky top-0 z-20">
              <div className="ml-10 md:ml-0 flex flex-col justify-center">
                <h1 className="text-lg font-bold text-white tracking-tight leading-tight">
-                 {role === "ADMIN" ? "Admin Dashboard" : "Supervisor Dashboard"}
+                 {role === "ADMIN" ? "Admin Dashboard" : "Supervisor Panel"}
                </h1>
              </div>
              <div className="hidden md:flex items-center gap-2 text-sm text-slate-400 font-medium">

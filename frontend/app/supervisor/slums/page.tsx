@@ -11,16 +11,17 @@ import Button from "@/components/Button";
 import SlumForm from "@/components/SlumForm";
 import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
 
+interface LocationReference {
+  _id: string;
+  name: string;
+}
+
 interface Slum {
   _id: string;
   name: string;
   location: string;
-  district: {
-    name: string;
-  };
-  state: {
-    name: string;
-  };
+  district: string | LocationReference;
+  state: string | LocationReference;
   slumType: string;
   totalHouseholds: number;
   city?: string;
@@ -173,12 +174,12 @@ export default function SupervisorSlumsPage() {
             },
             {
               header: "State",
-              accessorKey: (row: Slum) => row.state?.name || "N/A",
+              accessorKey: (row: Slum) => typeof row.state === 'string' ? row.state : row.state?.name || "N/A",
               sortable: true,
             },
             {
               header: "District",
-              accessorKey: (row: Slum) => row.district?.name || "N/A",
+              accessorKey: (row: Slum) => typeof row.district === 'string' ? row.district : row.district?.name || "N/A",
             },
             {
               header: "Type",

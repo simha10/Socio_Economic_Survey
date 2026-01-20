@@ -10,16 +10,17 @@ import Button from "@/components/Button";
 import SlumForm from "@/components/SlumForm";
 import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
 
+interface LocationReference {
+  _id: string;
+  name: string;
+}
+
 interface Slum {
   _id: string;
   name: string;
   location: string;
-  district: {
-    name: string;
-  };
-  state: {
-    name: string;
-  };
+  district: string | LocationReference;
+  state: string | LocationReference;
   slumType: string;
   totalHouseholds: number;
   city?: string;
@@ -237,10 +238,10 @@ export default function AdminSlumsPage() {
                         {slum.location}
                       </td>
                       <td className="py-4 px-4 text-slate-400">
-                        {slum.state?.name || slum.state}
+                        {typeof slum.state === 'string' ? slum.state : slum.state?.name || ''}
                       </td>
                       <td className="py-4 px-4 text-slate-400">
-                        {slum.district?.name || slum.district}
+                        {typeof slum.district === 'string' ? slum.district : slum.district?.name || ''}
                       </td>
                       <td className="py-4 px-4">
                         <span
