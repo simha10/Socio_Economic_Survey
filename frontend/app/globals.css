@@ -83,6 +83,8 @@
 /* Custom Base Styles for SaaS Appeal */
 body {
   @apply bg-slate-950 text-slate-200 antialiased font-sans;
+  background-color: #0B1F33 !important;
+  color: #E5E7EB !important;
 }
 
 h1,
