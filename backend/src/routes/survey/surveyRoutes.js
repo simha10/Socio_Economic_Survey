@@ -13,7 +13,9 @@ const {
   getAssignmentById,
   getMyAssignments,
   getAssignmentsForSurveyor,
-  updateAssignmentStatus
+  updateAssignmentStatus,
+  updateAssignment,
+  deleteAssignment
 } = require('../../controllers/survey/assignmentController');
 const {
   createOrGetHouseholdSurvey,
@@ -90,7 +92,11 @@ router.get('/assignments/my-assigned-slums', auth, getMyAssignments);
 router.get('/assignments/surveyor/:userId', auth, authorize('SUPERVISOR', 'ADMIN'), getAssignmentsForSurveyor);
 // Get specific assignment by ID - MUST be last
 router.get('/assignments/:id', auth, getAssignmentById);
-// Update assignment status
-router.put('/assignments/:id', auth, authorize('SUPERVISOR', 'ADMIN'), updateAssignmentStatus);
+// Update assignment status (legacy route for backward compatibility)
+router.put('/assignments/:id/status', auth, authorize('SUPERVISOR', 'ADMIN'), updateAssignmentStatus);
+// Update assignment (full update)
+router.put('/assignments/:id', auth, authorize('SUPERVISOR', 'ADMIN'), updateAssignment);
+// Delete assignment
+router.delete('/assignments/:id', auth, authorize('SUPERVISOR', 'ADMIN'), deleteAssignment);
 
 module.exports = router;

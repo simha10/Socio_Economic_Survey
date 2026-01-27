@@ -27,6 +27,15 @@ interface Slum {
   ward?: string;
 }
 
+interface User {
+  _id: string;
+  username: string;
+  name: string;
+  role: "ADMIN" | "SUPERVISOR" | "SURVEYOR";
+  isActive: boolean;
+  createdAt: string;
+}
+
 export default function AdminSlumsPage() {
   const router = useRouter();
   const [slums, setSlums] = useState<Slum[]>([]);
@@ -37,6 +46,7 @@ export default function AdminSlumsPage() {
   const [slumToDelete, setSlumToDelete] = useState<Slum | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [user, setUser] = useState<User | null>(null); // Added user state
 
   const fetchSlums = async () => {
     try {
@@ -55,8 +65,22 @@ export default function AdminSlumsPage() {
   };
 
   useEffect(() => {
+    // Verify user is admin
+    const userStr = localStorage.getItem("user");
+    if (!userStr) {
+      router.push("/login");
+      return;
+    }
+
+    const userData = JSON.parse(userStr);
+    if (userData?.role !== "ADMIN") {
+      router.push(`/${userData?.role?.toLowerCase()}/dashboard`);
+      return;
+    }
+
+    setUser(userData); // Set user data
     fetchSlums();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (successMessage) {
@@ -102,10 +126,6 @@ export default function AdminSlumsPage() {
     }
   };
 
-  const handleViewSlum = (id: string) => {
-    router.push(`/admin/slums/${id}`);
-  };
-
   const handleFormClose = () => {
     setIsFormOpen(false);
     setSelectedSlum(null);
@@ -119,7 +139,7 @@ export default function AdminSlumsPage() {
 
   if (loading) {
     return (
-      <SupervisorAdminLayout role="ADMIN">
+      <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
         <div className="flex items-center justify-center min-h-96">
           <div className="text-2xl font-semibold text-slate-400">
             Loading slums...
@@ -130,7 +150,7 @@ export default function AdminSlumsPage() {
   }
 
   return (
-    <SupervisorAdminLayout role="ADMIN">
+    <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
       <div className="space-y-6">
         {/* Header Section */}
         <div className="flex justify-between items-center">
@@ -201,7 +221,7 @@ export default function AdminSlumsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-700/50">
+                  <tr className="bg-slate-800 border-b border-slate-700">
                     <th className="text-left py-4 px-4 text-slate-300 font-semibold">
                       Name
                     </th>
@@ -229,7 +249,7 @@ export default function AdminSlumsPage() {
                   {slums.map((slum) => (
                     <tr
                       key={slum._id}
-                      className="border-b border-slate-800 hover:bg-slate-800/30 transition-colors last:border-b-0"
+                      className="border-b border-slate-700 hover:bg-slate-800/50"
                     >
                       <td className="py-4 px-4 font-medium text-white">
                         {slum.name}
@@ -246,9 +266,11 @@ export default function AdminSlumsPage() {
                       <td className="py-4 px-4">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            slum.slumType === "NOTIFIED"
-                              ? "bg-green-500/20 text-green-400"
-                              : "bg-yellow-500/20 text-yellow-400"
+                            slum.slumType === 'NOTIFIED'
+                              ? 'bg-blue-500/20 text-blue-400'
+                              : slum.slumType === 'DECLARED'
+                              ? 'bg-purple-500/20 text-purple-400'
+                              : 'bg-slate-500/20 text-slate-400'
                           }`}
                         >
                           {slum.slumType}
@@ -260,28 +282,22 @@ export default function AdminSlumsPage() {
                       <td className="py-4 px-4">
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handleViewSlum(slum._id)}
-                            className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
-                            title="View"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
                             onClick={() => handleEditSlum(slum)}
-                            className="p-2 text-cyan-400 hover:bg-cyan-500/20 rounded-lg transition-colors"
+                            className="text-cyan-400 hover:text-cyan-300 transition-colors"
                             title="Edit"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(slum)}
-                            className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                            className="text-red-400 hover:text-red-300 transition-colors"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
+
                     </tr>
                   ))}
                 </tbody>

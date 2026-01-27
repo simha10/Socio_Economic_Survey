@@ -7,12 +7,102 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { FileText, Download, BarChart3, PieChart, Calendar, Filter } from "lucide-react";
 import apiService from "@/services/api";
 
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  role: string;
+}
+
+interface Assignment {
+  _id: string;
+  surveyor: {
+    _id: string;
+    username: string;
+    name: string;
+  };
+  slum: {
+    _id: string;
+    name: string;
+    location: string;
+  };
+  assignmentType: string;
+  status: string;
+  createdAt: string;
+  householdSurveyCount?: number;
+  slumSurveyStatus?: string;
+}
+
+interface ReportData {
+  totalAssignments: number;
+  completedAssignments: number;
+  inProgressAssignments: number;
+  pendingAssignments: number;
+  completionRate: number;
+  progressRate: number;
+  totalHouseholdSurveys: number;
+  totalSlumSurveys: number;
+  totalSlums: number;
+  totalSurveyors: number;
+  assignments: Assignment[];
+}
+
 export default function SupervisorReportsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [reportData, setReportData] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+
+  const loadReportData = async () => {
+    try {
+      // Fetch comprehensive report data from API
+      const assignmentsResponse = await apiService.getAllAssignments();
+      const slumsResponse = await apiService.getAllSlums();
+      const usersResponse = await apiService.getUsers();
+      
+      if (assignmentsResponse.success && assignmentsResponse.data) {
+        const assignments: Assignment[] = assignmentsResponse.data;
+        const totalAssignments = assignments.length;
+        const completedAssignments = assignments.filter((a: Assignment) => a.status === 'COMPLETED').length;
+        const inProgressAssignments = assignments.filter((a: Assignment) => a.status === 'IN_PROGRESS').length;
+        const pendingAssignments = assignments.filter((a: Assignment) => a.status === 'PENDING' || a.status === 'ASSIGNED').length;
+        
+        // Calculate additional metrics
+        let totalHouseholdSurveys = 0;
+        let totalSlumSurveys = 0;
+        
+        for (const assignment of assignments) {
+          if (assignment.householdSurveyCount) {
+            totalHouseholdSurveys += assignment.householdSurveyCount;
+          }
+          if (assignment.slumSurveyStatus) {
+            totalSlumSurveys++;
+          }
+        }
+        
+        // Calculate completion rates
+        const completionRate = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
+        const progressRate = totalAssignments > 0 ? Math.round(((completedAssignments + inProgressAssignments) / totalAssignments) * 100) : 0;
+        
+        setReportData({
+          totalAssignments,
+          completedAssignments,
+          inProgressAssignments,
+          pendingAssignments,
+          completionRate,
+          progressRate,
+          totalHouseholdSurveys,
+          totalSlumSurveys,
+          totalSlums: slumsResponse.success ? slumsResponse.data?.length || 0 : 0,
+          totalSurveyors: usersResponse.success ? usersResponse.data?.filter((u: User) => u.role === 'SURVEYOR').length || 0 : 0,
+          assignments
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load report data:', error);
+    }
+  };
 
   useEffect(() => {
     // Verify user is supervisor
@@ -30,34 +120,16 @@ export default function SupervisorReportsPage() {
 
     setUser(userData);
     setLoading(false);
-    loadReportData();
   }, [router]);
 
-  const loadReportData = async () => {
-    try {
-      // Fetch report data from API
-      const assignmentsResponse = await apiService.getAllAssignments();
-      const slumsResponse = await apiService.getAllSlums();
-      
-      if (assignmentsResponse.success) {
-        const assignments = assignmentsResponse.data;
-        const totalAssignments = assignments.length;
-        const completedAssignments = assignments.filter((a: any) => a.status === 'COMPLETED').length;
-        const inProgressAssignments = assignments.filter((a: any) => a.status === 'IN_PROGRESS').length;
-        
-        setReportData({
-          totalAssignments,
-          completedAssignments,
-          inProgressAssignments,
-          completionRate: totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0,
-          totalSlums: slumsResponse.success ? slumsResponse.data?.length || 0 : 0,
-          assignments
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load report data:', error);
+  useEffect(() => {
+    if (!loading && user) {
+      const timer = setTimeout(() => {
+        loadReportData();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [loading, user]);
 
   const exportReport = async (format: 'csv' | 'pdf') => {
     try {
@@ -207,7 +279,7 @@ export default function SupervisorReportsPage() {
             <h3 className="text-lg font-semibold text-white">Report Preview</h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
               <p className="text-slate-400 text-sm">Total Assignments</p>
               <p className="text-2xl font-bold text-white">{reportData.totalAssignments}</p>
@@ -223,6 +295,22 @@ export default function SupervisorReportsPage() {
             <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
               <p className="text-slate-400 text-sm">Completion Rate</p>
               <p className="text-2xl font-bold text-blue-500">{reportData.completionRate}%</p>
+            </div>
+            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+              <p className="text-slate-400 text-sm">Total Surveyors</p>
+              <p className="text-2xl font-bold text-cyan-500">{reportData.totalSurveyors}</p>
+            </div>
+            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+              <p className="text-slate-400 text-sm">Total Slums</p>
+              <p className="text-2xl font-bold text-purple-500">{reportData.totalSlums}</p>
+            </div>
+            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+              <p className="text-slate-400 text-sm">Household Surveys</p>
+              <p className="text-2xl font-bold text-rose-500">{reportData.totalHouseholdSurveys}</p>
+            </div>
+            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+              <p className="text-slate-400 text-sm">Progress Rate</p>
+              <p className="text-2xl font-bold text-emerald-500">{reportData.progressRate}%</p>
             </div>
           </div>
           

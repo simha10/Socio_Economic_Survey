@@ -348,6 +348,90 @@ const getAssignmentsForSurveyor = async (req, res) => {
   }
 };
 
+const updateAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, assignmentType, surveyor, slum } = req.body;
+
+    const assignment = await Assignment.findById(id);
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Assignment not found.'
+      });
+    }
+
+    // Update fields if provided
+    if (status) {
+      assignment.status = status;
+      if (status === 'COMPLETED') {
+        assignment.completedAt = new Date();
+      } else if (status === 'PENDING') {
+        assignment.completedAt = null;
+      }
+    }
+
+    if (assignmentType) {
+      assignment.assignmentType = assignmentType;
+    }
+
+    if (surveyor) {
+      assignment.surveyor = surveyor;
+    }
+
+    if (slum) {
+      assignment.slum = slum;
+    }
+
+    await assignment.save();
+
+    // Populate the updated assignment with user and slum data
+    const populatedAssignment = await Assignment.findById(assignment._id)
+      .populate('surveyor', 'name username role')
+      .populate('slum', 'name location city ward')
+      .populate('assignedBy', 'name username role');
+
+    res.json({
+      success: true,
+      message: 'Assignment updated successfully.',
+      data: populatedAssignment
+    });
+  } catch (error) {
+    console.error('Update assignment error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error updating assignment.'
+    });
+  }
+};
+
+const deleteAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const assignment = await Assignment.findById(id);
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Assignment not found.'
+      });
+    }
+
+    await Assignment.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: 'Assignment deleted successfully.'
+    });
+  } catch (error) {
+    console.error('Delete assignment error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error deleting assignment.'
+    });
+  }
+};
+
 // Update assignment status
 const updateAssignmentStatus = async (req, res) => {
   try {
@@ -397,9 +481,10 @@ module.exports = {
   getAllAssignments,
   getAssignmentById,
   getMyAssignments,
-  getMyAssignmentsFormatted,
   getAssignmentsForSurveyor,
-  updateAssignmentStatus,
+  getMyAssignmentsFormatted,
   updateSlumSurveyStatus,
-  updateHouseholdProgress
+  updateAssignmentStatus,
+  updateAssignment,
+  deleteAssignment
 };

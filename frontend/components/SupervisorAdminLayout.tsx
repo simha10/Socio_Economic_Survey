@@ -43,10 +43,6 @@ const LayoutContent = ({
                  {role === "ADMIN" ? "Admin Dashboard" : "Supervisor Panel"}
                </h1>
              </div>
-             <div className="hidden md:flex items-center gap-2 text-sm text-slate-400 font-medium">
-                <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] block"></span>
-                System Operational
-             </div>
         </header>
 
         {/* Scrollable Content Canvas */}

@@ -17,6 +17,7 @@ const supervisorItems = [
   { href: "/supervisor/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/supervisor/slums", label: "Slums", icon: Map },
   { href: "/supervisor/assignments", label: "Assignments", icon: ClipboardList },
+  { href: "/supervisor/reports", label: "Reports", icon: TrendingUp },
   { href: "/supervisor/progress", label: "Progress", icon: TrendingUp },
 ];
 

@@ -179,7 +179,139 @@ class ApiService {
     }
   }
 
+  public async getUsersByRole(role: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/users?role=${role}`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
 
+  public async getCurrentUser(): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/me`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
+
+  // User management endpoints (admin only)
+  public async createUser(userData: { username: string; name: string; password: string; role: string }): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/admin/users`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(userData),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
+
+  public async listUsers(role?: string): Promise<ApiResponse> {
+    try {
+      let url = `${this.baseUrl}/admin/users`;
+      if (role) {
+        url += `?role=${encodeURIComponent(role)}`;
+      }
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
+
+  public async listUsersWithPasswords(secretKey: string): Promise<ApiResponse> {
+    console.warn('Password display functionality has been removed for security reasons');
+    return {
+      success: false,
+      user: undefined,
+      error: 'Password display functionality has been removed for security reasons',
+    };
+  }
+
+  public async getUserById(userId: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/admin/users/${userId}`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
+
+  public async updateUser(userId: string, userData: { name?: string; username?: string; password?: string; role?: string; isActive?: boolean }): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: this.getHeaders(),
+        body: JSON.stringify(userData),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
+
+  public async deleteUser(userId: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: this.getHeaders(),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
 
   public async createSlum(data: any): Promise<ApiResponse> {
     console.log('ApiService: Sending create slum request', { data, url: `${this.baseUrl}/surveys/slums` });
@@ -585,6 +717,39 @@ class ApiService {
       return await this.handleResponse(response);
     } catch (error: any) {
       console.error('getAssignment error:', error);
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
+
+  public async updateAssignment(assignmentId: string, assignmentData: { status?: string; assignmentType?: string; surveyor?: string; slum?: string }): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/admin/assignments/${assignmentId}`, {
+        method: 'PUT',
+        headers: this.getHeaders(),
+        body: JSON.stringify(assignmentData),
+      });
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
+
+  public async deleteAssignment(assignmentId: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/admin/assignments/${assignmentId}`, {
+        method: 'DELETE',
+        headers: this.getHeaders(),
+      });
+      return await this.handleResponse(response);
+    } catch (error: any) {
       return {
         success: false,
         user: undefined,

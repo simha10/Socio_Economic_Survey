@@ -271,7 +271,7 @@ export default function SlumForm({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
-                label="Slum Name *"
+                label="Slum Name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
@@ -279,7 +279,7 @@ export default function SlumForm({
                 required
               />
               <Input
-                label="Location *"
+                label="Location"
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
@@ -288,17 +288,9 @@ export default function SlumForm({
               />
             </div>
 
-            {/* Auto-fill hint */}
-            {!slum && (
-              <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-3 rounded-lg text-sm flex items-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2" />
-                <span>Fields may be auto-filled based on your previous selections</span>
-              </div>
-            )}
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Select
-                label="State *"
+                label="State"
                 name="state"
                 value={formData.state}
                 onChange={handleChange}
@@ -312,7 +304,7 @@ export default function SlumForm({
                 required
               />
               <Select
-                label="District *"
+                label="District"
                 name="district"
                 value={formData.district}
                 onChange={handleChange}
@@ -334,6 +326,7 @@ export default function SlumForm({
                 value={formData.city}
                 onChange={handleChange}
                 placeholder="Enter city name"
+                required
               />
               <Input
                 label="Ward Number"
@@ -341,6 +334,7 @@ export default function SlumForm({
                 value={formData.ward}
                 onChange={handleChange}
                 placeholder="Enter ward number"
+                required
               />
             </div>
 
@@ -354,6 +348,7 @@ export default function SlumForm({
                   { value: "NOTIFIED", label: "Notified" },
                   { value: "NON_NOTIFIED", label: "Non-Notified" },
                 ]}
+                required
               />
               <Input
                 label="Land Ownership Status"
@@ -361,6 +356,7 @@ export default function SlumForm({
                 value={formData.landOwnership}
                 onChange={handleChange}
                 placeholder="e.g. Private / Government"
+                required
               />
             </div>
 
@@ -373,6 +369,7 @@ export default function SlumForm({
                   onChange={handleChange}
                   placeholder="0"
                   min="0"
+                  required
                 />
              </div>
              

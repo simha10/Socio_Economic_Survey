@@ -113,6 +113,15 @@ const login = async (req, res) => {
 // Get current user
 const getCurrentUser = async (req, res) => {
   try {
+    // Defensive check to ensure req.user exists
+    if (!req.user) {
+      console.error('[GET_CURRENT_USER] No user found in request');
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
     res.json({
       success: true,
       user: {

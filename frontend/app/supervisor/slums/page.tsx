@@ -16,6 +16,13 @@ interface LocationReference {
   name: string;
 }
 
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  role: string;
+}
+
 interface Slum {
   _id: string;
   name: string;
@@ -32,6 +39,7 @@ export default function SupervisorSlumsPage() {
   const router = useRouter();
   const [slums, setSlums] = useState<Slum[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedSlum, setSelectedSlum] = useState<Slum | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -60,8 +68,22 @@ export default function SupervisorSlumsPage() {
   };
 
   useEffect(() => {
+    // Verify user is supervisor
+    const userStr = localStorage.getItem("user");
+    if (!userStr) {
+      router.push("/login");
+      return;
+    }
+
+    const userData = JSON.parse(userStr);
+    if (userData?.role !== "SUPERVISOR") {
+      router.push(`/${userData?.role?.toLowerCase()}/dashboard`);
+      return;
+    }
+
+    setUser(userData);
     fetchSlums();
-  }, []); // Only run once on mount
+  }, [router]); // Include router in dependency array
 
   useEffect(() => {
     if (successMessage) {
@@ -136,7 +158,7 @@ export default function SupervisorSlumsPage() {
 
   if (loading) {
     return (
-      <SupervisorAdminLayout role="SUPERVISOR">
+      <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
         <div className="flex items-center justify-center min-h-[60vh]">
           <LoadingSpinner size="lg" text="Loading slums data..." />
         </div>
@@ -145,7 +167,7 @@ export default function SupervisorSlumsPage() {
   }
 
   return (
-    <SupervisorAdminLayout role="SUPERVISOR">
+    <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
       <div className="space-y-6">
         {/* Header Section */}
         <div className="flex justify-between items-center">

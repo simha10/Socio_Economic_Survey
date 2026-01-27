@@ -25,12 +25,35 @@ interface ProgressData {
   lastUpdated: string;
 }
 
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  role: string;
+}
+
 export default function SupervisorProgressPage() {
   const router = useRouter();
   const [progressData, setProgressData] = useState<ProgressData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    // Verify user is supervisor
+    const userStr = localStorage.getItem("user");
+    if (!userStr) {
+      router.push("/login");
+      return;
+    }
+
+    const userData = JSON.parse(userStr);
+    if (userData?.role !== "SUPERVISOR") {
+      router.push(`/${userData?.role?.toLowerCase()}/dashboard`);
+      return;
+    }
+
+    setUser(userData);
+    
     const fetchProgressData = async () => {
       try {
         // For now, we'll simulate progress data since we don't have a specific endpoint
@@ -102,7 +125,7 @@ export default function SupervisorProgressPage() {
 
   if (loading) {
     return (
-      <SupervisorAdminLayout role="SUPERVISOR">
+      <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
         <div className="flex items-center justify-center min-h-96">
           <div className="text-2xl font-semibold">Loading progress data...</div>
         </div>
@@ -111,7 +134,7 @@ export default function SupervisorProgressPage() {
   }
 
   return (
-    <SupervisorAdminLayout role="SUPERVISOR">
+    <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">Progress Tracking</h1>
