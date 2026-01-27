@@ -40,11 +40,14 @@ export default function SupervisorSlumsPage() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const fetchSlums = async () => {
+    console.log('SupervisorSlumsPage: Starting fetchSlums');
     try {
       setLoading(true);
       const response = await apiService.getAllSlums();
+      console.log('SupervisorSlumsPage: Fetched slums response', response);
       if (response.success) {
         setSlums(response.data || []);
+        console.log('SupervisorSlumsPage: Set slums state with', response.data?.length, 'items');
       } else {
         console.error("Failed to fetch slums:", response.error);
       }
@@ -52,12 +55,13 @@ export default function SupervisorSlumsPage() {
       console.error("Error fetching slums:", error);
     } finally {
       setLoading(false);
+      console.log('SupervisorSlumsPage: Loading state set to false');
     }
   };
 
   useEffect(() => {
     fetchSlums();
-  }, []);
+  }, []); // Only run once on mount
 
   useEffect(() => {
     if (successMessage) {
@@ -72,6 +76,7 @@ export default function SupervisorSlumsPage() {
   };
 
   const handleEditSlum = (slum: Slum) => {
+    console.log('SupervisorSlumsPage: Opening edit form for slum', slum);
     setSelectedSlum(slum);
     setIsFormOpen(true);
   };
@@ -82,17 +87,23 @@ export default function SupervisorSlumsPage() {
   };
 
   const handleConfirmDelete = async () => {
+    console.log('SupervisorSlumsPage: Confirming delete for slum', slumToDelete);
     if (!slumToDelete) return;
 
     setDeleteLoading(true);
     try {
       const response = await apiService.deleteSlum(slumToDelete._id);
+      console.log('SupervisorSlumsPage: Delete response received', response);
       if (response.success) {
         setSuccessMessage("Slum deleted successfully");
         setIsDeleteDialogOpen(false);
         setSlumToDelete(null);
-        await fetchSlums();
+        setTimeout(() => {
+          console.log('SupervisorSlumsPage: Fetching slums after deletion');
+          fetchSlums();
+        }, 300); // Delay to prevent race conditions
       } else {
+        console.log('SupervisorSlumsPage: Delete failed', response.message);
         alert("Failed to delete slum: " + response.message);
       }
     } catch (error) {
@@ -100,6 +111,7 @@ export default function SupervisorSlumsPage() {
       alert("Error deleting slum");
     } finally {
       setDeleteLoading(false);
+      console.log('SupervisorSlumsPage: Delete loading state set to false');
     }
   };
 
@@ -113,9 +125,13 @@ export default function SupervisorSlumsPage() {
   };
 
   const handleFormSuccess = () => {
+    console.log('SupervisorSlumsPage: Form success callback called', { selectedSlum });
     const action = selectedSlum ? "updated" : "created";
     setSuccessMessage(`Slum ${action} successfully`);
-    fetchSlums();
+    setTimeout(() => {
+      console.log('SupervisorSlumsPage: Fetching slums after', action);
+      fetchSlums();
+    }, 300); // Small delay to prevent race conditions
   };
 
   if (loading) {

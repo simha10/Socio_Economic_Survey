@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import SurveyorLayout from '@/components/SurveyorLayout';
 import Card from '@/components/Card';
@@ -167,12 +167,28 @@ export default function HouseholdSurveyPage() {
   const [householdsLoading, setHouseholdsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['basic'])
+    new Set(['general', 'household'])
   );
 
   const [formData, setFormData] = useState<HouseholdSurveyForm>({
     householdId: '',
   });
+
+  const loadHouseholdsForSlum = async (slumId: string) => {
+    try {
+      setHouseholdsLoading(true);
+      // TODO: Add API method to fetch households for a slum
+      // const response = await apiService.getHouseholdsForSlum(slumId);
+      // if (response.success) {
+      //   setHouseholds(response.data);
+      // }
+    } catch (error) {
+      console.error('Error loading households:', error);
+      showToast('Failed to load households', 'error');
+    } finally {
+      setHouseholdsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -187,7 +203,16 @@ export default function HouseholdSurveyPage() {
           // Fetch slum details
           const slumResponse = await apiService.getSlum(slumId);
           if (slumResponse.success) {
-            setSlum(slumResponse.data);
+            const slumData = slumResponse.data;
+            setSlum(slumData);
+            
+            // Auto-fill slum details
+            setFormData((prev) => ({
+              ...prev,
+              slumName: slumData.name || "",
+              locationWard: slumData.ward || "",
+            }));
+            
             // Load households for this slum
             await loadHouseholdsForSlum(slumId);
           }
@@ -206,57 +231,53 @@ export default function HouseholdSurveyPage() {
     };
 
     loadData();
-  }, [assignmentId, router, showToast]);
+  }, [assignmentId, router, showToast, loadHouseholdsForSlum]);
 
-  const loadHouseholdsForSlum = async (slumId: string) => {
-    try {
-      setHouseholdsLoading(true);
-      // TODO: Add API method to fetch households for a slum
-      // const response = await apiService.getHouseholdsForSlum(slumId);
-      // if (response.success) {
-      //   setHouseholds(response.data);
-      // }
-    } catch (error) {
-      console.error('Error loading households:', error);
-      showToast('Failed to load households', 'error');
-    } finally {
-      setHouseholdsLoading(false);
-    }
-  };
+  const toggleSection = useCallback((sectionId: string) => {
+    setExpandedSections(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(sectionId)) {
+        newExpanded.delete(sectionId);
+      } else {
+        newExpanded.add(sectionId);
+      }
+      return newExpanded;
+    });
+  }, []);
 
-  const toggleSection = (sectionId: string) => {
-    const newExpanded = new Set(expandedSections);
-    if (newExpanded.has(sectionId)) {
-      newExpanded.delete(sectionId);
-    } else {
-      newExpanded.add(sectionId);
-    }
-    setExpandedSections(newExpanded);
-  };
+  const handleInputChange = useCallback((field: string, value: any) => {
+    setFormData((prev) => {
+      // Only update if the value actually changed to prevent unnecessary re-renders
+      if (prev[field as keyof HouseholdSurveyForm] === value) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
+  }, []);
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleCheckboxChange = (field: string, value: string) => {
+  const handleCheckboxChange = useCallback((field: string, value: string) => {
     setFormData((prev) => {
       const current = prev[field as keyof HouseholdSurveyForm] as string[];
-      if (current?.includes(value)) {
+      const currentArray = current || [];
+      
+      if (currentArray.includes(value)) {
+        const newArray = currentArray.filter((v) => v !== value);
         return {
           ...prev,
-          [field]: current.filter((v) => v !== value),
+          [field]: newArray,
         };
       } else {
+        const newArray = [...currentArray, value];
         return {
           ...prev,
-          [field]: [...(current || []), value],
+          [field]: newArray,
         };
       }
     });
-  };
+  }, []);
 
   const handleSubmit = async () => {
     try {
@@ -324,7 +345,7 @@ export default function HouseholdSurveyPage() {
         <div className="space-y-4 mb-6">
           {SECTIONS.map((section) => (
             <Card
-              key={section.id}
+              key={`section-${section.id}`}
               className="overflow-hidden cursor-pointer transition-colors"
               onClick={() => toggleSection(section.id)}
               padding="none"
@@ -354,17 +375,15 @@ export default function HouseholdSurveyPage() {
                       label="Slum Name"
                       placeholder="Enter slum name"
                       value={formData.slumName || ''}
-                      onChange={(e) =>
-                        handleInputChange('slumName', e.target.value)
-                      }
+                      readOnly
+                      className="bg-slate-800/50 cursor-not-allowed opacity-75"
                     />
                     <Input
                       label="Location - Ward No/Name"
                       placeholder="Enter ward"
                       value={formData.locationWard || ''}
-                      onChange={(e) =>
-                        handleInputChange('locationWard', e.target.value)
-                      }
+                      readOnly
+                      className="bg-slate-800/50 cursor-not-allowed opacity-75"
                     />
                     <Input
                       label="House/Flat/Door No."

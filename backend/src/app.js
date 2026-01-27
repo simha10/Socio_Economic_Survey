@@ -8,6 +8,27 @@ dotenv.config();
 
 const app = express();
 
+// Logging middleware
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  console.log('[REQUEST]', new Date().toISOString(), req.method, req.path);
+  
+  // Log request body for certain routes
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+    console.log('[REQUEST-BODY]', req.body);
+  }
+  
+  // Continue with the request
+  const originalSend = res.send;
+  res.send = function(data) {
+    const duration = Date.now() - startTime;
+    console.log('[RESPONSE]', new Date().toISOString(), req.method, req.path, res.statusCode, `${duration}ms`);
+    return originalSend.call(this, data);
+  };
+  
+  next();
+});
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',

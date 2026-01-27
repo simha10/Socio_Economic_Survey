@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
@@ -36,6 +36,52 @@ export default function SlumForm({
   const [districts, setDistricts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [userDetails, setUserDetails] = useState<any>(null); // To store user details for auto-fill
+
+  // Auto-fill state and district based on user preference
+  const autoFillLocation = useCallback(() => {
+    if (userDetails && states.length > 0) {
+      // Example: auto-fill based on user's assigned region or last used values
+      // You can customize this logic based on your specific requirements
+      const lastUsedState = localStorage.getItem('lastSelectedState');
+      const lastUsedDistrict = localStorage.getItem('lastSelectedDistrict');
+      
+      if (lastUsedState) {
+        const stateExists = states.some((state: any) => state._id === lastUsedState);
+        if (stateExists) {
+          setFormData(prev => ({ ...prev, state: lastUsedState }));
+          
+          // Auto-fill district if it was used with this state
+          if (lastUsedDistrict) {
+            setTimeout(() => {
+              const districtExists = districts.some((district: any) => district._id === lastUsedDistrict);
+              if (districtExists) {
+                setFormData(prev => ({ ...prev, district: lastUsedDistrict }));
+              }
+            }, 300); // Wait for districts to load
+          }
+        }
+      }
+    }
+  }, [userDetails, states]); // Removed districts to prevent circular updates
+
+  // Load user details for auto-fill
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const response = await apiService.getMe();
+        if (response.success) {
+          setUserDetails(response.user);
+        }
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+      }
+    };
+
+    if (isOpen && !slum) { // Only fetch for new slums, not editing
+      fetchUserDetails();
+    }
+  }, [isOpen, slum]); // This dependency array is correct
 
   useEffect(() => {
     if (slum) {
@@ -50,8 +96,17 @@ export default function SlumForm({
         landOwnership: slum.landOwnership || "",
         totalHouseholds: slum.totalHouseholds || 0,
       });
+    } else if (userDetails && !slum) {
+      // Auto-fill based on user details when creating a new slum
+      // You can customize this logic based on your user data structure
+      setFormData(prev => ({
+        ...prev,
+        state: prev.state || "", // Will be set after state selection
+        district: prev.district || "",
+        city: prev.city || "",
+      }));
     }
-  }, [slum]);
+  }, [slum]); // Only depend on slum to prevent auto-fill from triggering unnecessary updates
 
   useEffect(() => {
     const fetchStates = async () => {
@@ -59,6 +114,13 @@ export default function SlumForm({
         const response = await apiService.getStates();
         if (response.success) {
           setStates(response.data || []);
+          
+          // Auto-fill after states are loaded
+          if (isOpen && !slum) {
+            setTimeout(() => {
+              autoFillLocation();
+            }, 100);
+          }
         }
       } catch (error) {
         console.error("Error fetching states:", error);
@@ -68,7 +130,7 @@ export default function SlumForm({
     if (isOpen) {
       fetchStates();
     }
-  }, [isOpen]);
+  }, [isOpen, slum]); // Removed autoFillLocation from dependencies to prevent circular updates
 
   useEffect(() => {
     const fetchDistricts = async () => {
@@ -85,7 +147,7 @@ export default function SlumForm({
     };
 
     fetchDistricts();
-  }, [formData.state]);
+  }, [formData.state]); // This is correct as it should update when state changes
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -95,11 +157,21 @@ export default function SlumForm({
       ...prev,
       [name]: name === "totalHouseholds" ? parseInt(value) || 0 : value,
     }));
+    
+    // Save to localStorage for auto-fill
+    if (name === 'state') {
+      localStorage.setItem('lastSelectedState', value);
+    } else if (name === 'district') {
+      localStorage.setItem('lastSelectedDistrict', value);
+    }
+    
     setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('SlumForm: HandleSubmit called', { slum, formData });
 
     if (
       !formData.name ||
@@ -107,20 +179,32 @@ export default function SlumForm({
       !formData.state ||
       !formData.district
     ) {
+      console.log('SlumForm: Validation failed', {
+        name: !!formData.name,
+        location: !!formData.location,
+        state: !!formData.state,
+        district: !!formData.district
+      });
       setError("Please fill all required fields");
       return;
     }
 
     setLoading(true);
     try {
+      console.log('SlumForm: Calling API service', { slumId: slum?._id, formData });
       let response;
       if (slum) {
+        console.log('SlumForm: Updating existing slum', slum._id);
         response = await apiService.updateSlum(slum._id, formData);
       } else {
+        console.log('SlumForm: Creating new slum');
         response = await apiService.createSlum(formData);
       }
+      
+      console.log('SlumForm: API response received', response);
 
       if (response.success) {
+        console.log('SlumForm: Operation successful, calling callbacks');
         onSuccess();
         onClose();
         setFormData({
@@ -135,14 +219,23 @@ export default function SlumForm({
           totalHouseholds: 0,
         });
       } else {
+        console.log('SlumForm: Operation failed', response.message);
         setError(response.message || "Failed to save slum");
       }
     } catch (err) {
+      console.error('SlumForm: handleSubmit error caught', err);
       setError("Error saving slum");
       console.error(err);
     } finally {
       setLoading(false);
+      console.log('SlumForm: Loading state set to false');
     }
+  };
+
+  const handleButtonClick = () => {
+    // Create a synthetic form event for the button click
+    const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+    handleSubmit(fakeEvent);
   };
 
   if (!isOpen) return null;
@@ -194,6 +287,14 @@ export default function SlumForm({
                 required
               />
             </div>
+
+            {/* Auto-fill hint */}
+            {!slum && (
+              <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-3 rounded-lg text-sm flex items-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2" />
+                <span>Fields may be auto-filled based on your previous selections</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Select
@@ -291,7 +392,8 @@ export default function SlumForm({
               Cancel
             </Button>
             <Button 
-                type="submit"
+                type="button"
+                onClick={handleButtonClick}
                 disabled={loading}
                 className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white"
             >

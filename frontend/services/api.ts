@@ -182,15 +182,32 @@ class ApiService {
 
 
   public async createSlum(data: any): Promise<ApiResponse> {
+    console.log('ApiService: Sending create slum request', { data, url: `${this.baseUrl}/surveys/slums` });
     try {
       const response = await fetch(`${this.baseUrl}/surveys/slums`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(data),
       });
+      
+      console.log('ApiService: Create slum response received', { 
+        status: response.status, 
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url
+      });
 
       return await this.handleResponse(response);
     } catch (error: any) {
+      console.error('ApiService: Create slum error caught', {
+        error,
+        errorMessage: error?.message,
+        errorStack: error?.stack,
+        errorToString: error?.toString ? error.toString() : 'no toString',
+        errorType: typeof error,
+        rawError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+      });
+      
       return {
         success: false,
         user: undefined,
@@ -200,15 +217,32 @@ class ApiService {
   }
 
   public async updateSlum(id: string, data: any): Promise<ApiResponse> {
+    console.log('ApiService: Sending update slum request', { id, data, url: `${this.baseUrl}/surveys/slums/${id}` });
     try {
       const response = await fetch(`${this.baseUrl}/surveys/slums/${id}`, {
         method: 'PUT',
         headers: this.getHeaders(),
         body: JSON.stringify(data),
       });
+      
+      console.log('ApiService: Update slum response received', { 
+        status: response.status, 
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url
+      });
 
       return await this.handleResponse(response);
     } catch (error: any) {
+      console.error('ApiService: Update slum error caught', {
+        error,
+        errorMessage: error?.message,
+        errorStack: error?.stack,
+        errorToString: error?.toString ? error.toString() : 'no toString',
+        errorType: typeof error,
+        rawError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+      });
+      
       return {
         success: false,
         user: undefined,
@@ -218,14 +252,31 @@ class ApiService {
   }
 
   public async deleteSlum(id: string): Promise<ApiResponse> {
+    console.log('ApiService: Sending delete slum request', { id, url: `${this.baseUrl}/surveys/slums/${id}` });
     try {
       const response = await fetch(`${this.baseUrl}/surveys/slums/${id}`, {
         method: 'DELETE',
         headers: this.getHeaders(),
       });
+      
+      console.log('ApiService: Delete slum response received', { 
+        status: response.status, 
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url
+      });
 
       return await this.handleResponse(response);
     } catch (error: any) {
+      console.error('ApiService: Delete slum error caught', {
+        error,
+        errorMessage: error?.message,
+        errorStack: error?.stack,
+        errorToString: error?.toString ? error.toString() : 'no toString',
+        errorType: typeof error,
+        rawError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+      });
+      
       return {
         success: false,
         user: undefined,
@@ -674,7 +725,7 @@ class ApiService {
 
   public async createOrGetSlumSurvey(slumId: string): Promise<ApiResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/surveys/slum-survey/${slumId}`, {
+      const response = await fetch(`${this.baseUrl}/surveys/slum-surveys/${slumId}`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({}),
@@ -690,9 +741,9 @@ class ApiService {
     }
   }
 
-  public async submitSlumSurvey(slumId: string, data: any): Promise<ApiResponse> {
+  public async submitSlumSurvey(surveyId: string, data: any): Promise<ApiResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/surveys/slum-survey/${slumId}/submit`, {
+      const response = await fetch(`${this.baseUrl}/surveys/slum-surveys/${surveyId}/submit`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(data),

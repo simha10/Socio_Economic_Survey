@@ -5,11 +5,18 @@ const District = require('../../models/District');
 // Create a new slum
 const createSlum = async (req, res) => {
   try {
+    console.log('[DEBUG] Create slum request received:', {
+      body: req.body,
+      userId: req.user._id,
+      userRole: req.user.role
+    });
+    
     const { name, location, state: stateId, district: districtId, city, ward, slumType, landOwnership, totalHouseholds } = req.body;
 
     // Validate that state and district exist
     const state = await State.findById(stateId);
     if (!state) {
+      console.log('[DEBUG] Invalid state ID provided for creation:', stateId);
       return res.status(400).json({
         success: false,
         message: 'Invalid state ID.'
@@ -18,6 +25,7 @@ const createSlum = async (req, res) => {
 
     const district = await District.findById(districtId);
     if (!district) {
+      console.log('[DEBUG] Invalid district ID provided for creation:', districtId);
       return res.status(400).json({
         success: false,
         message: 'Invalid district ID.'
@@ -26,6 +34,7 @@ const createSlum = async (req, res) => {
 
     // Check if district belongs to the specified state
     if (district.state.toString() !== stateId.toString()) {
+      console.log('[DEBUG] District does not belong to state for creation:', { districtState: district.state, providedState: stateId });
       return res.status(400).json({
         success: false,
         message: 'District does not belong to the specified state.'
@@ -47,12 +56,16 @@ const createSlum = async (req, res) => {
     });
 
     await slum.save();
+    
+    console.log('[DEBUG] Slum saved to database:', slum._id);
 
     // Populate the references before returning
     const populatedSlum = await Slum.findById(slum._id)
       .populate('state', 'name code')
       .populate('district', 'name')
       .populate('createdBy', 'name username');
+      
+    console.log('[DEBUG] Created slum with populated data:', populatedSlum._id);
 
     res.status(201).json({
       success: true,
@@ -61,9 +74,11 @@ const createSlum = async (req, res) => {
     });
   } catch (error) {
     console.error('Create slum error:', error);
+    console.error('Create slum error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: error.message || 'Server error creating slum.'
+      message: error.message || 'Server error creating slum.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -71,6 +86,12 @@ const createSlum = async (req, res) => {
 // Get all slums
 const getAllSlums = async (req, res) => {
   try {
+    console.log('[DEBUG] Get all slums request received:', {
+      query: req.query,
+      userId: req.user._id,
+      userRole: req.user.role
+    });
+    
     const { page = 1, limit = 10, state, district, search } = req.query;
     
     let filter = {};
@@ -89,6 +110,8 @@ const getAllSlums = async (req, res) => {
         { location: { $regex: search, $options: 'i' } }
       ];
     }
+    
+    console.log('[DEBUG] Slums query filter:', filter);
 
     const slums = await Slum.find(filter)
       .populate('state', 'name code')
@@ -97,8 +120,12 @@ const getAllSlums = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
+      
+    console.log('[DEBUG] Retrieved slums count:', slums.length);
 
     const total = await Slum.countDocuments(filter);
+    
+    console.log('[DEBUG] Total slums count:', total);
 
     res.json({
       success: true,
@@ -109,9 +136,11 @@ const getAllSlums = async (req, res) => {
     });
   } catch (error) {
     console.error('Get all slums error:', error);
+    console.error('Get all slums error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: error.message || 'Server error getting slums.'
+      message: error.message || 'Server error getting slums.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -119,17 +148,26 @@ const getAllSlums = async (req, res) => {
 // Get slum by ID
 const getSlumById = async (req, res) => {
   try {
+    console.log('[DEBUG] Get slum by ID request received:', {
+      slumId: req.params.id,
+      userId: req.user._id,
+      userRole: req.user.role
+    });
+    
     const slum = await Slum.findById(req.params.id)
       .populate('state', 'name code')
       .populate('district', 'name')
       .populate('createdBy', 'name username');
 
     if (!slum) {
+      console.log('[DEBUG] Slum not found for ID:', req.params.id);
       return res.status(404).json({
         success: false,
         message: 'Slum not found.'
       });
     }
+    
+    console.log('[DEBUG] Retrieved slum:', slum._id);
 
     res.json({
       success: true,
@@ -137,9 +175,11 @@ const getSlumById = async (req, res) => {
     });
   } catch (error) {
     console.error('Get slum by ID error:', error);
+    console.error('Get slum by ID error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: error.message || 'Server error getting slum.'
+      message: error.message || 'Server error getting slum.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -147,18 +187,29 @@ const getSlumById = async (req, res) => {
 // Update slum
 const updateSlum = async (req, res) => {
   try {
+    console.log('[DEBUG] Update slum request received:', {
+      slumId: req.params.id,
+      body: req.body,
+      userId: req.user._id,
+      userRole: req.user.role
+    });
+    
     const { name, location, state: stateId, district: districtId, city, ward, slumType, landOwnership, totalHouseholds } = req.body;
 
     const slum = await Slum.findById(req.params.id);
     if (!slum) {
+      console.log('[DEBUG] Slum not found for update:', req.params.id);
       return res.status(404).json({
         success: false,
         message: 'Slum not found.'
       });
     }
+    
+    console.log('[DEBUG] Found existing slum:', slum._id, 'with status:', slum.surveyStatus);
 
     // Prevent editing if slum survey is already submitted
     if (slum.surveyStatus === 'SUBMITTED') {
+      console.log('[DEBUG] Attempt to update submitted slum blocked:', slum._id);
       return res.status(400).json({
         success: false,
         message: 'Cannot edit slum after survey has been submitted.'
@@ -167,8 +218,10 @@ const updateSlum = async (req, res) => {
 
     // Validate state and district if provided
     if (stateId) {
+      console.log('[DEBUG] Validating state:', stateId);
       const state = await State.findById(stateId);
       if (!state) {
+        console.log('[DEBUG] Invalid state ID provided:', stateId);
         return res.status(400).json({
           success: false,
           message: 'Invalid state ID.'
@@ -177,8 +230,10 @@ const updateSlum = async (req, res) => {
     }
 
     if (districtId) {
+      console.log('[DEBUG] Validating district:', districtId);
       const district = await District.findById(districtId);
       if (!district) {
+        console.log('[DEBUG] Invalid district ID provided:', districtId);
         return res.status(400).json({
           success: false,
           message: 'Invalid district ID.'
@@ -186,6 +241,7 @@ const updateSlum = async (req, res) => {
       }
 
       if (stateId && district.state.toString() !== stateId.toString()) {
+        console.log('[DEBUG] District does not belong to state:', { districtState: district.state, providedState: stateId });
         return res.status(400).json({
           success: false,
           message: 'District does not belong to the specified state.'
@@ -193,7 +249,7 @@ const updateSlum = async (req, res) => {
       }
     }
 
-    // Update slum
+    // Prepare update fields
     const updatedFields = {
       name,
       location,
@@ -206,6 +262,8 @@ const updateSlum = async (req, res) => {
 
     if (stateId) updatedFields.state = stateId;
     if (districtId) updatedFields.district = districtId;
+    
+    console.log('[DEBUG] Updating slum with fields:', updatedFields);
 
     const updatedSlum = await Slum.findByIdAndUpdate(
       req.params.id,
@@ -215,6 +273,8 @@ const updateSlum = async (req, res) => {
       .populate('state', 'name code')
       .populate('district', 'name')
       .populate('createdBy', 'name username');
+      
+    console.log('[DEBUG] Successfully updated slum:', updatedSlum._id);
 
     res.json({
       success: true,
@@ -223,9 +283,11 @@ const updateSlum = async (req, res) => {
     });
   } catch (error) {
     console.error('Update slum error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: error.message || 'Server error updating slum.'
+      message: error.message || 'Server error updating slum.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -233,16 +295,26 @@ const updateSlum = async (req, res) => {
 // Delete slum (only if survey is in draft status)
 const deleteSlum = async (req, res) => {
   try {
+    console.log('[DEBUG] Delete slum request received:', {
+      slumId: req.params.id,
+      userId: req.user._id,
+      userRole: req.user.role
+    });
+    
     const slum = await Slum.findById(req.params.id);
     if (!slum) {
+      console.log('[DEBUG] Slum not found for deletion:', req.params.id);
       return res.status(404).json({
         success: false,
         message: 'Slum not found.'
       });
     }
+    
+    console.log('[DEBUG] Checking slum status for deletion:', { slumId: slum._id, status: slum.surveyStatus });
 
     // Only allow deletion if survey is in draft status
     if (slum.surveyStatus !== 'DRAFT') {
+      console.log('[DEBUG] Cannot delete slum, survey already submitted:', slum._id);
       return res.status(400).json({
         success: false,
         message: 'Cannot delete slum after survey has been submitted.'
@@ -250,6 +322,8 @@ const deleteSlum = async (req, res) => {
     }
 
     await Slum.findByIdAndDelete(req.params.id);
+    
+    console.log('[DEBUG] Slum deleted successfully:', req.params.id);
 
     res.json({
       success: true,
@@ -257,9 +331,11 @@ const deleteSlum = async (req, res) => {
     });
   } catch (error) {
     console.error('Delete slum error:', error);
+    console.error('Delete slum error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: error.message || 'Server error deleting slum.'
+      message: error.message || 'Server error deleting slum.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
