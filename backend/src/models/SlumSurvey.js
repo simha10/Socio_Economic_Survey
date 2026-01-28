@@ -316,6 +316,16 @@ const slumSurveySchema = new mongoose.Schema({
     enum: ['DRAFT', 'IN_PROGRESS', 'SUBMITTED', 'COMPLETED'],
     default: 'DRAFT'
   },
+  completionPercentage: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  completedSections: {
+    type: [String],
+    default: []
+  },
   submittedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

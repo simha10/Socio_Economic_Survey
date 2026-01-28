@@ -604,7 +604,6 @@ class ApiService {
       const body = JSON.stringify({ 
         surveyorId, 
         slumId,
-        assignmentType: 'FULL_SLUM'  // Default assignment type for simple slum assignment
       });
       console.log('Request URL:', url);
       console.log('Request Body:', body);
@@ -725,7 +724,7 @@ class ApiService {
     }
   }
 
-  public async updateAssignment(assignmentId: string, assignmentData: { status?: string; assignmentType?: string; surveyor?: string; slum?: string }): Promise<ApiResponse> {
+  public async updateAssignment(assignmentId: string, assignmentData: { status?: string; surveyor?: string; slum?: string }): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/admin/assignments/${assignmentId}`, {
         method: 'PUT',
@@ -930,6 +929,24 @@ class ApiService {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(data),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
+  
+  public async updateSurveySection(surveyId: string, section: string, data: any): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/surveys/slum-surveys/${surveyId}/section`, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ section, data }),
       });
 
       return await this.handleResponse(response);

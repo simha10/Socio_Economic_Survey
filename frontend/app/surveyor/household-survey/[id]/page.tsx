@@ -174,7 +174,7 @@ export default function HouseholdSurveyPage() {
     householdId: '',
   });
 
-  const loadHouseholdsForSlum = async (slumId: string) => {
+  const loadHouseholdsForSlum = useCallback(async (slumId: string) => {
     try {
       setHouseholdsLoading(true);
       // TODO: Add API method to fetch households for a slum
@@ -188,7 +188,7 @@ export default function HouseholdSurveyPage() {
     } finally {
       setHouseholdsLoading(false);
     }
-  };
+  }, [showToast]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -231,7 +231,7 @@ export default function HouseholdSurveyPage() {
     };
 
     loadData();
-  }, [assignmentId, router, showToast, loadHouseholdsForSlum]);
+  }, [assignmentId, router, showToast]);
 
   const toggleSection = useCallback((sectionId: string) => {
     setExpandedSections(prev => {
@@ -336,7 +336,7 @@ export default function HouseholdSurveyPage() {
             <h1 className="text-3xl font-bold text-white tracking-tight">Household Survey</h1>
             <p className="text-slate-400 mt-1 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-              {slum?.name} - Assignment #{assignmentId}
+              {slum?.name}
             </p>
           </div>
         </div>

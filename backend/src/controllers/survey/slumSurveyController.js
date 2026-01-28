@@ -225,9 +225,67 @@ exports.updateSurveySection = async (req, res) => {
             return sendError(res, 'Not authorized to update this survey', 403);
         }
 
+        // Define all survey sections
+        const surveySections = [
+            'basicInformation',
+            'landStatus',
+            'populationAndHealth',
+            'literacyAndEducation',
+            'employmentAndOccupation',
+            'waterAndSanitation',
+            'housingConditions',
+            'utilities',
+            'socialInfrastructure',
+            'transportationAndAccessibility',
+            'environmentalConditions',
+            'socialIssuesAndVulnerableGroups',
+            'slumImprovementAndDevelopment'
+        ];
+
         // Update the specific section
         survey[section] = data;
-        survey.surveyStatus = 'IN_PROGRESS';
+        
+        // Track completion explicitly
+        // Add current section to completed sections if it has meaningful data
+        if (!survey.completedSections.includes(section)) {
+            // Check if the section has meaningful data before marking as completed
+            const sectionData = survey[section];
+            let hasMeaningfulData = false;
+            
+            if (sectionData && typeof sectionData === 'object' && sectionData !== null) {
+                // Check if object has at least one non-empty value
+                for (let key in sectionData) {
+                    if (sectionData[key] !== null && sectionData[key] !== undefined && sectionData[key] !== '') {
+                        hasMeaningfulData = true;
+                        break;
+                    }
+                }
+            } else if (sectionData !== null && sectionData !== undefined && sectionData !== '') {
+                hasMeaningfulData = true;
+            }
+            
+            if (hasMeaningfulData) {
+                survey.completedSections.push(section);
+            }
+        }
+        
+        // Calculate completion percentage based on explicitly tracked completed sections
+        // Each of the 13 sections contributes ~7.69% to the total completion (100/13)
+        const completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 13) * 100));
+        survey.completionPercentage = completionPercentage;
+        
+        // Update survey status based on completion
+        // Only set to COMPLETED after explicit submission, not just filling all sections
+        if (completionPercentage === 0) {
+            survey.surveyStatus = 'DRAFT';
+        } else if (completionPercentage > 0 && completionPercentage < 100) {
+            survey.surveyStatus = 'IN_PROGRESS';
+        } else if (completionPercentage === 100 && survey.surveyStatus !== 'SUBMITTED' && survey.surveyStatus !== 'COMPLETED') {
+            // When 100% complete but not yet submitted, keep as IN_PROGRESS
+            survey.surveyStatus = 'IN_PROGRESS';
+        }
+        // If already SUBMITTED or COMPLETED, don't change the status
+        
         survey.lastModifiedBy = userId;
         survey.lastModifiedAt = new Date();
 
@@ -237,8 +295,8 @@ exports.updateSurveySection = async (req, res) => {
             { path: 'surveyor', select: 'name email' },
         ]);
 
-        console.log(`Updated survey section: ${section} for survey ${surveyId}`);
-        sendSuccess(res, survey, `${section} updated successfully`);
+        console.log(`Updated survey section: ${section} for survey ${surveyId}. Completion: ${completionPercentage}%`);
+        sendSuccess(res, {...survey.toObject(), completionPercentage}, `${section} updated successfully. Overall completion: ${completionPercentage}%`);
     } catch (error) {
         console.error('Error in updateSurveySection:', error.message);
         sendError(res, error.message || 'Failed to update survey section', 500);

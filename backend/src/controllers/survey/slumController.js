@@ -62,7 +62,7 @@ const createSlum = async (req, res) => {
     // Populate the references before returning
     const populatedSlum = await Slum.findById(slum._id)
       .populate('state', 'name code')
-      .populate('district', 'name')
+      .populate('district', 'name code')
       .populate('createdBy', 'name username');
       
     console.log('[DEBUG] Created slum with populated data:', populatedSlum._id);
@@ -115,7 +115,7 @@ const getAllSlums = async (req, res) => {
 
     const slums = await Slum.find(filter)
       .populate('state', 'name code')
-      .populate('district', 'name')
+      .populate('district', 'name code')
       .populate('createdBy', 'name username')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
@@ -156,7 +156,7 @@ const getSlumById = async (req, res) => {
     
     const slum = await Slum.findById(req.params.id)
       .populate('state', 'name code')
-      .populate('district', 'name')
+      .populate('district', 'name code')
       .populate('createdBy', 'name username');
 
     if (!slum) {
@@ -271,7 +271,7 @@ const updateSlum = async (req, res) => {
       { new: true, runValidators: true }
     )
       .populate('state', 'name code')
-      .populate('district', 'name')
+      .populate('district', 'name code')
       .populate('createdBy', 'name username');
       
     console.log('[DEBUG] Successfully updated slum:', updatedSlum._id);

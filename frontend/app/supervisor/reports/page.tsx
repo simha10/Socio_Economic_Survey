@@ -26,7 +26,6 @@ interface Assignment {
     name: string;
     location: string;
   };
-  assignmentType: string;
   status: string;
   createdAt: string;
   householdSurveyCount?: number;
@@ -247,13 +246,13 @@ export default function SupervisorReportsPage() {
           {reportTypes.map((report, index) => (
             <div 
               key={index}
-              className="group relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-slate-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
+              className="group relative overflow-hidden bg-linear-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-slate-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
               onClick={() => alert(`Generating ${report.title} report...`)}
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${report.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+              <div className={`absolute inset-0 bg-linear-to-br ${report.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
               
               <div className="relative z-10">
-                <div className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${report.color} mb-4`}>
+                <div className={`inline-flex p-3 rounded-lg bg-linear-to-br ${report.color} mb-4`}>
                   <div className="text-white">
                     {report.icon}
                   </div>
@@ -270,57 +269,6 @@ export default function SupervisorReportsPage() {
           ))}
         </div>
       </div>
-
-      {/* Report Preview */}
-      {reportData && (
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <BarChart3 className="w-5 h-5 text-blue-500" />
-            <h3 className="text-lg font-semibold text-white">Report Preview</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-              <p className="text-slate-400 text-sm">Total Assignments</p>
-              <p className="text-2xl font-bold text-white">{reportData.totalAssignments}</p>
-            </div>
-            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-              <p className="text-slate-400 text-sm">Completed</p>
-              <p className="text-2xl font-bold text-green-500">{reportData.completedAssignments}</p>
-            </div>
-            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-              <p className="text-slate-400 text-sm">In Progress</p>
-              <p className="text-2xl font-bold text-amber-500">{reportData.inProgressAssignments}</p>
-            </div>
-            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-              <p className="text-slate-400 text-sm">Completion Rate</p>
-              <p className="text-2xl font-bold text-blue-500">{reportData.completionRate}%</p>
-            </div>
-            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-              <p className="text-slate-400 text-sm">Total Surveyors</p>
-              <p className="text-2xl font-bold text-cyan-500">{reportData.totalSurveyors}</p>
-            </div>
-            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-              <p className="text-slate-400 text-sm">Total Slums</p>
-              <p className="text-2xl font-bold text-purple-500">{reportData.totalSlums}</p>
-            </div>
-            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-              <p className="text-slate-400 text-sm">Household Surveys</p>
-              <p className="text-2xl font-bold text-rose-500">{reportData.totalHouseholdSurveys}</p>
-            </div>
-            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-              <p className="text-slate-400 text-sm">Progress Rate</p>
-              <p className="text-2xl font-bold text-emerald-500">{reportData.progressRate}%</p>
-            </div>
-          </div>
-          
-          <div className="text-center py-8">
-            <div className="text-5xl mb-4">📋</div>
-            <p className="text-slate-400 mb-2">Report data loaded successfully</p>
-            <p className="text-sm text-slate-500">Select a report type above to generate detailed analysis</p>
-          </div>
-        </div>
-      )}
     </SupervisorAdminLayout>
   );
 }

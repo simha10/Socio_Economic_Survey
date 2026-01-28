@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import SurveyorLayout from "@/components/SurveyorLayout";
 import ModernTable from "@/components/ModernTable";
 import apiService from "@/services/api";
@@ -15,12 +16,27 @@ interface Slum {
   area?: string;
 }
 
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  role: string;
+}
+
+interface Assignment {
+  _id: string;
+  slum: Slum;
+  surveyor: string;
+  status: string;
+  createdAt: string;
+}
+
 export default function SlumsPage() {
   const { showToast } = useToast();
   const router = useRouter();
   const [slums, setSlums] = useState<Slum[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     // Load user data
@@ -33,15 +49,17 @@ export default function SlumsPage() {
     const loadSlums = async () => {
       try {
         setLoading(true);
-        const response = await apiService.getSlums();
+        const response = await apiService.getMyAssignments();
         if (response.success) {
-          setSlums(response.data || []);
+          // Extract slum data from assignments
+          const assignedSlums = (response.data || []).map((assignment: Assignment) => assignment.slum);
+          setSlums(assignedSlums);
         } else {
-          showToast("Failed to load slums", "error");
+          showToast("Failed to load assigned slums", "error");
         }
       } catch (error) {
-        console.error("Error loading slums:", error);
-        showToast("Error loading slums", "error");
+        console.error("Error loading assigned slums:", error);
+        showToast("Error loading assigned slums", "error");
       } finally {
         setLoading(false);
       }
@@ -84,10 +102,20 @@ export default function SlumsPage() {
 
   return (
     <SurveyorLayout username={user?.name || user?.username}>
-      <div className="max-w-7xl mx-auto w-full">
-        <div className="mb-8">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Available Slums</h1>
-            <p className="text-slate-400 mt-1">Select a slum to conduct surveys</p>
+      <div className="max-w-4xl mx-auto w-full">
+        <div className="mb-6 flex items-center justify-between">
+            <button 
+              onClick={() => router.back()} 
+              className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back</span>
+            </button>
+            <div className="text-center flex-1 mx-4">
+              <h1 className="text-xl font-bold text-white tracking-tight">My Assigned Slums</h1>
+            </div>
+            <div className="w-16"></div> {/* Spacer for alignment */}
         </div>
 
         <ModernTable

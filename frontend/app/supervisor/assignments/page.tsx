@@ -22,14 +22,12 @@ interface Assignment {
     name: string;
     location: string;
   };
-  assignmentType: string;
   status: string;
   createdAt: string;
 }
 
 interface AssignmentFormData {
   status: 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-  assignmentType: 'SLUM_SURVEY' | 'HOUSEHOLD_SURVEY';
   surveyor: string;  // ID of the surveyor
   slum: string;      // ID of the slum
 }
@@ -64,12 +62,10 @@ export default function SupervisorAssignmentsPage() {
   const [newAssignment, setNewAssignment] = useState({
     surveyorId: "",
     slumId: "",
-    assignmentType: "FULL_SLUM",
   });
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [editFormData, setEditFormData] = useState<AssignmentFormData>({
     status: 'PENDING',
-    assignmentType: 'SLUM_SURVEY',
     surveyor: '',
     slum: '',
   });
@@ -153,7 +149,6 @@ export default function SupervisorAssignmentsPage() {
         setNewAssignment({
           surveyorId: "",
           slumId: "",
-          assignmentType: "FULL_SLUM",
         });
       } else {
         const errorMsg = response.error || "Unknown error occurred";
@@ -183,7 +178,6 @@ export default function SupervisorAssignmentsPage() {
       setEditingAssignment(assignmentToEdit);
       setEditFormData({
         status: assignmentToEdit.status as "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED",
-        assignmentType: assignmentToEdit.assignmentType as "SLUM_SURVEY" | "HOUSEHOLD_SURVEY",
         surveyor: assignmentToEdit.surveyor._id,
         slum: assignmentToEdit.slum._id, // Keep the slum constant
       });
@@ -216,7 +210,6 @@ export default function SupervisorAssignmentsPage() {
       // Prepare update data - only include fields that can be changed (excluding slum)
       const updateData: Partial<AssignmentFormData> = {
         status: editFormData.status,
-        assignmentType: editFormData.assignmentType,
         surveyor: editFormData.surveyor,
         // Note: slum is intentionally excluded as it should remain constant
       };
@@ -487,19 +480,6 @@ export default function SupervisorAssignmentsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Assignment Type
-                  </label>
-                  <select
-                    value={editFormData.assignmentType}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, assignmentType: e.target.value as "SLUM_SURVEY" | "HOUSEHOLD_SURVEY" })
-                    }
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  >
-                    <option value="SLUM_SURVEY">Slum Survey</option>
-                    <option value="HOUSEHOLD_SURVEY">Household Survey</option>
-                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">

@@ -6,15 +6,16 @@ import { cn } from "@/lib/utils";
 interface StepperProps {
   steps: string[];
   currentStep: number;
+  completionPercentage?: number;
   onStepChange?: (step: number) => void; 
 }
 
 export default function Stepper({
   steps,
   currentStep,
+  completionPercentage = 0,
   onStepChange,
 }: StepperProps) {
-  const progressPercentage = ((currentStep + 1) / steps.length) * 100;
   const currentTitle = steps[currentStep];
 
   return (
@@ -24,10 +25,10 @@ export default function Stepper({
            <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
             {currentTitle}
           </h2>
-           <p className="text-sm text-slate-400 mt-1">Section {currentStep + 1} of {steps.length}</p>
+           <p className="text-sm text-slate-400 mt-1">Section {currentStep + 1} of {steps.length} (13 total)</p>
         </div>
         <div className="text-right hidden sm:block">
-           <span className="text-sm font-medium text-blue-500">{Math.round(progressPercentage)}% Complete</span>
+           <span className="text-sm font-medium text-slate-300">{completionPercentage}% Complete</span>
         </div>
       </div>
       
@@ -35,14 +36,14 @@ export default function Stepper({
       <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden relative">
         {/* Animated Progress Fill */}
         <div 
-            className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${progressPercentage}%` }}
+            className={`h-full rounded-full transition-all duration-500 ease-out ${completionPercentage === 0 ? 'bg-red-500' : completionPercentage < 100 ? 'bg-yellow-500' : 'bg-green-500'}`}
+            style={{ width: `${completionPercentage}%` }}
         />
       </div>
       
       {/* Mobile percentage text */}
       <div className="mt-2 text-right sm:hidden">
-         <span className="text-xs font-medium text-blue-500">{Math.round(progressPercentage)}% Complete</span>
+         <span className="text-xs font-medium text-slate-300">{completionPercentage}% Complete</span>
       </div>
     </div>
   );

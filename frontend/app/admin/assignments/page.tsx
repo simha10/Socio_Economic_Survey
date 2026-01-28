@@ -22,7 +22,6 @@ interface Assignment {
     name: string;
     location: string;
   };
-  assignmentType: string;
   status: string;
   createdAt: string;
 }
@@ -50,7 +49,6 @@ interface User {
 
 interface AssignmentFormData {
   status: 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-  assignmentType: 'SLUM_SURVEY' | 'HOUSEHOLD_SURVEY';
   surveyor: string;  // ID of the surveyor
   slum: string;      // ID of the slum
 }
@@ -66,7 +64,6 @@ export default function AssignmentsPage() {
   const [newAssignment, setNewAssignment] = useState({
     surveyorId: "",
     slumId: "",
-    assignmentType: "FULL_SLUM",
   });
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -74,7 +71,6 @@ export default function AssignmentsPage() {
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [editFormData, setEditFormData] = useState<AssignmentFormData>({
     status: 'PENDING',
-    assignmentType: 'SLUM_SURVEY',
     surveyor: '',
     slum: '',
   });
@@ -183,7 +179,6 @@ export default function AssignmentsPage() {
       const response = await apiService.post("/surveys/assignments", {
         surveyor: newAssignment.surveyorId,
         slum: newAssignment.slumId,
-        assignmentType: newAssignment.assignmentType,
       });
 
       if (response.success) {
@@ -191,7 +186,6 @@ export default function AssignmentsPage() {
         setNewAssignment({
           surveyorId: "",
           slumId: "",
-          assignmentType: "FULL_SLUM",
         });
         setShowForm(false);
         loadAssignments();
@@ -209,7 +203,7 @@ export default function AssignmentsPage() {
     setEditingAssignment(assignment);
     setEditFormData({
       status: assignment.status as "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED",
-      assignmentType: assignment.assignmentType as "SLUM_SURVEY" | "HOUSEHOLD_SURVEY",
+      
       surveyor: assignment.surveyor._id,
       slum: assignment.slum._id,
     });
@@ -226,7 +220,6 @@ export default function AssignmentsPage() {
       // Prepare update data - only include fields that changed
       const updateData: Partial<AssignmentFormData> = {
         status: editFormData.status,
-        assignmentType: editFormData.assignmentType,
         // Include surveyor and slum IDs if they changed
         surveyor: editFormData.surveyor,
         slum: editFormData.slum,
@@ -361,27 +354,6 @@ export default function AssignmentsPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Assignment Type
-                  </label>
-                  <Select
-                    options={[
-                      { value: "FULL_SLUM", label: "Full Slum" },
-                      { value: "HOUSEHOLD_ONLY", label: "Household Only" }
-                    ]}
-                    value={newAssignment.assignmentType}
-                    onChange={(e) =>
-                      setNewAssignment({
-                        ...newAssignment,
-                        assignmentType: e.target.value,
-                      })
-                    }
-                    className="w-full"
-                    placeholder="Select assignment type"
-                    required
-                  />
-                </div>
               </div>
 
               {message && (
@@ -459,21 +431,6 @@ export default function AssignmentsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Assignment Type
-                  </label>
-                  <select
-                    value={editFormData.assignmentType}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, assignmentType: e.target.value as "SLUM_SURVEY" | "HOUSEHOLD_SURVEY" })
-                    }
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  >
-                    <option value="SLUM_SURVEY">Slum Survey</option>
-                    <option value="HOUSEHOLD_SURVEY">Household Survey</option>
-                  </select>
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Status
@@ -562,11 +519,6 @@ export default function AssignmentsPage() {
                     </td>
                     <td className="py-4 px-4 text-slate-400">
                       {assignment.slum.name}
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
-                        {assignment.assignmentType.replace("_", " ")}
-                      </span>
                     </td>
                     <td className="py-4 px-4">
                       <span

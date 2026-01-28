@@ -5,7 +5,7 @@ const Slum = require('../../models/Slum');
 // Assign slum to surveyor
 const assignSlumToSurveyor = async (req, res) => {
   try {
-    const { surveyorId, slumId, assignmentType = 'FULL_SLUM' } = req.body;
+    const { surveyorId, slumId } = req.body;
 
     // Validate surveyor exists and is a surveyor
     const surveyor = await User.findById(surveyorId);
@@ -61,7 +61,6 @@ const assignSlumToSurveyor = async (req, res) => {
     const assignment = new Assignment({
       surveyor: surveyorId,
       slum: slumId,
-      assignmentType,
       assignedBy: req.user._id
     });
 
@@ -206,14 +205,21 @@ const getMyAssignments = async (req, res) => {
       let slumSurveyStatus = 'NOT_STARTED';
       let householdSurveyProgress = { completed: 0, total: 0 };
 
-      // Check Slum Survey status
+      // Check Slum Survey status and completion
       const slumSurvey = await SlumSurvey.findOne({
         slum: assignment.slum._id,
         surveyor: req.user._id
       });
 
+      let slumSurveyCompletion = 0;
       if (slumSurvey) {
-        slumSurveyStatus = 'COMPLETED';
+        slumSurveyStatus = slumSurvey.surveyStatus || 'COMPLETED';
+        slumSurveyCompletion = slumSurvey.completionPercentage || 0;
+        if (slumSurveyCompletion >= 100) {
+          slumSurveyStatus = 'COMPLETED';
+        } else if (slumSurveyCompletion > 0) {
+          slumSurveyStatus = 'IN_PROGRESS';
+        }
       }
 
       // Check Household Survey progress
@@ -237,6 +243,7 @@ const getMyAssignments = async (req, res) => {
       return {
         ...assignment.toObject(),
         slumSurveyStatus,
+        slumSurveyCompletion,
         householdSurveyProgress
       };
     }));
@@ -351,7 +358,7 @@ const getAssignmentsForSurveyor = async (req, res) => {
 const updateAssignment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, assignmentType, surveyor, slum } = req.body;
+    const { status, surveyor, slum } = req.body;
 
     const assignment = await Assignment.findById(id);
     if (!assignment) {
@@ -371,9 +378,6 @@ const updateAssignment = async (req, res) => {
       }
     }
 
-    if (assignmentType) {
-      assignment.assignmentType = assignmentType;
-    }
 
     if (surveyor) {
       assignment.surveyor = surveyor;

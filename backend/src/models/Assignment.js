@@ -16,12 +16,6 @@ const assignmentSchema = new mongoose.Schema({
     ref: 'User',
     required: false
   },
-  assignmentType: {
-    type: String,
-    enum: ['FULL_SLUM', 'HOUSEHOLD_ONLY'],
-    required: true,
-    default: 'FULL_SLUM'
-  },
   assignedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
