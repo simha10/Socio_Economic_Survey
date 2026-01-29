@@ -664,6 +664,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="sex"
                       error={getFieldError('sex')}
+                      required
                       options={[
                         { value: 'MALE', label: 'Male' },
                         { value: 'FEMALE', label: 'Female' },
@@ -677,6 +678,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="caste"
                       error={getFieldError('caste')}
+                      required
                       options={[
                         { value: 'GENERAL', label: 'General' },
                         { value: 'SC', label: 'SC' },
@@ -711,6 +713,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="minorityStatus"
                       error={getFieldError('minorityStatus')}
+                      required
                       options={[
                         { value: 'NON_MINORITY', label: 'Non-minority' },
                         { value: 'MINORITY', label: 'Minority' },
@@ -757,6 +760,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="femaleHeadStatus"
                       error={getFieldError('femaleHeadStatus')}
+                      required
                       options={[
                         { value: 'MARRIED', label: 'Married' },
                         { value: 'WIDOWED', label: 'Widowed' },
@@ -873,6 +877,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="femaleEarningStatus"
                       error={getFieldError('femaleEarningStatus')}
+                      required
                       options={[
                         { value: 'MARRIED', label: 'Married' },
                         { value: 'WIDOWED', label: 'Widowed' },
@@ -890,6 +895,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="belowPovertyLine"
                       error={getFieldError('belowPovertyLine')}
+                      required
                       options={[
                         { value: 'YES', label: 'Yes' },
                         { value: 'NO', label: 'No' },
@@ -904,6 +910,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="bplCard"
                       error={getFieldError('bplCard')}
+                      required
                       options={[
                         { value: 'YES', label: 'Yes' },
                         { value: 'NO', label: 'No' },
@@ -922,6 +929,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="landTenureStatus"
                       error={getFieldError('landTenureStatus')}
+                      required
                       options={[
                         { value: 'PATTA', label: 'Patta' },
                         { value: 'POSSESSION_CERTIFICATE', label: 'Possession Certificate/Occupancy Right' },
@@ -939,6 +947,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="houseStructure"
                       error={getFieldError('houseStructure')}
+                      required
                       options={[
                         { value: 'PUCCA', label: 'Pucca' },
                         { value: 'SEMI_PUCCA', label: 'Semi-Pucca' },
@@ -953,6 +962,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="roofType"
                       error={getFieldError('roofType')}
+                      required
                       options={[
                         { value: 'GRASS_THATCHED', label: 'Grass/thatched' },
                         { value: 'TARPAULIN', label: 'Tarpaulin' },
@@ -971,6 +981,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="flooringType"
                       error={getFieldError('flooringType')}
+                      required
                       options={[
                         { value: 'MUD', label: 'Mud' },
                         { value: 'BRICK', label: 'Brick' },
@@ -988,6 +999,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="houseLighting"
                       error={getFieldError('houseLighting')}
+                      required
                       options={[
                         { value: 'ELECTRICITY', label: 'Electricity connection' },
                         { value: 'KEROSENE', label: 'Kerosene' },
@@ -1003,6 +1015,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="cookingFuel"
                       error={getFieldError('cookingFuel')}
+                      required
                       options={[
                         { value: 'GAS', label: 'Gas' },
                         { value: 'ELECTRICITY', label: 'Electricity' },
@@ -1020,6 +1033,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="waterSource"
                       error={getFieldError('waterSource')}
+                      required
                       options={[
                         { value: 'WITHIN_PREMISES_TAP', label: 'Within premises - Tap' },
                         { value: 'WITHIN_PREMISES_TUBEWELL', label: 'Within premises - Tubewell/handpump' },
@@ -1041,6 +1055,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="waterSupplyDuration"
                       error={getFieldError('waterSupplyDuration')}
+                      required
                       options={[
                         { value: 'LESS_THAN_1_HOUR', label: 'Less than 1 hour daily' },
                         { value: 'ONE_TWO_HOURS', label: '1-2 hrs daily' },
@@ -1059,6 +1074,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="waterSourceDistance"
                       error={getFieldError('waterSourceDistance')}
+                      required
                       options={[
                         { value: 'LESS_THAN_HALF_KM', label: 'Less than 0.5 kms' },
                         { value: 'HALF_TO_ONE_KM', label: '0.5 to 1.0 km' },
@@ -1075,6 +1091,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="toiletFacility"
                       error={getFieldError('toiletFacility')}
+                      required
                       options={[
                         { value: 'OWN_SEPTIC_FLUSH', label: 'Own septic tank/flush latrine' },
                         { value: 'OWN_DRY_LATRINE', label: 'Own dry latrine' },
@@ -1093,6 +1110,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="bathroomFacility"
                       error={getFieldError('bathroomFacility')}
+                      required
                       options={[
                         { value: 'WITHIN_PREMISES', label: 'Within premises' },
                         { value: 'OUTSIDE_PREMISES', label: 'Outside premises' },
@@ -1108,6 +1126,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="roadFrontType"
                       error={getFieldError('roadFrontType')}
+                      required
                       options={[
                         { value: 'MOTORABLE_PUCCA', label: 'Motorable pucca' },
                         { value: 'MOTORABLE_KATCHA', label: 'Motorable katcha' },
@@ -1128,6 +1147,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="preschoolType"
                       error={getFieldError('preschoolType')}
+                      required
                       options={[
                         { value: 'MUNICIPAL', label: 'Municipal' },
                         { value: 'GOVERNMENT', label: 'Government' },
@@ -1142,6 +1162,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="primarySchoolType"
                       error={getFieldError('primarySchoolType')}
+                      required
                       options={[
                         { value: 'MUNICIPAL', label: 'Municipal' },
                         { value: 'GOVERNMENT', label: 'Government' },
@@ -1156,6 +1177,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="highSchoolType"
                       error={getFieldError('highSchoolType')}
+                      required
                       options={[
                         { value: 'MUNICIPAL', label: 'Municipal' },
                         { value: 'GOVERNMENT', label: 'Government' },
@@ -1170,6 +1192,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="healthFacilityType"
                       error={getFieldError('healthFacilityType')}
+                      required
                       options={[
                         { value: 'PRIMARY_HEALTH_CENTRE', label: 'Primary Health Centre' },
                         { value: 'GOVT_HOSPITAL', label: 'Government Hospital' },
@@ -1249,6 +1272,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="yearsInTown"
                       error={getFieldError('yearsInTown')}
+                      required
                       options={[
                         { value: 'ZERO_TO_ONE_YEAR', label: '0 to 1 year' },
                         { value: 'ONE_TO_THREE_YEARS', label: '1 to 3 years' },
@@ -1264,6 +1288,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="migrated"
                       error={getFieldError('migrated')}
+                      required
                       options={[
                         { value: 'YES', label: 'Yes' },
                         { value: 'NO', label: 'No' },
@@ -1277,6 +1302,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="migratedFrom"
                       error={getFieldError('migratedFrom')}
+                      required
                       options={[
                         { value: 'RURAL_TO_URBAN', label: 'Rural Area to Urban Area' },
                         { value: 'URBAN_TO_URBAN', label: 'Urban Area to Urban Area' },
@@ -1290,6 +1316,7 @@ export default function HouseholdSurveyPage() {
                       }
                       name="migrationType"
                       error={getFieldError('migrationType')}
+                      required
                       options={[
                         { value: 'SEASONAL', label: 'Seasonal' },
                         { value: 'PERMANENT', label: 'Permanent' },

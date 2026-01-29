@@ -384,6 +384,12 @@ export default function SlumSurveyPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [user, setUser] = useState<any>(null);
 
+  // Validation state
+  interface FieldError {
+    field: string;
+    message: string;
+  }
+  const [errors, setErrors] = useState<FieldError[]>([]);
 
   const [formData, setFormData] = useState<SlumSurveyForm>({
     slumId: "",
@@ -639,7 +645,152 @@ export default function SlumSurveyPage() {
     });
   };
 
+  // Validation functions
+  const validateForm = (): FieldError[] => {
+    const newErrors: FieldError[] = [];
+    
+    // Part A - General Information - City/Town
+    if (!formData.cityTownCode?.trim()) {
+      newErrors.push({ field: 'cityTownCode', message: 'City/Town Code is required' });
+    }
+    if (!formData.cityTownName?.trim()) {
+      newErrors.push({ field: 'cityTownName', message: 'City/Town Name is required' });
+    }
+    if (formData.cityTownNoHouseholds === undefined || formData.cityTownNoHouseholds === null || isNaN(formData.cityTownNoHouseholds) || formData.cityTownNoHouseholds < 0) {
+      newErrors.push({ field: 'cityTownNoHouseholds', message: 'City/Town No. of Households is required' });
+    }
+    
+    // Part B - City/Town Slum Profile
+    if (!formData.slumType) {
+      newErrors.push({ field: 'slumType', message: 'Slum Type is required' });
+    }
+    if (!formData.slumIdField?.trim()) {
+      newErrors.push({ field: 'slumIdField', message: 'Slum ID is required' });
+    }
+    if (!formData.ownershipLand) {
+      newErrors.push({ field: 'ownershipLand', message: 'Ownership of Land is required' });
+    }
+    if (formData.areaSqMtrs === undefined || formData.areaSqMtrs === null || isNaN(formData.areaSqMtrs) || formData.areaSqMtrs < 0) {
+      newErrors.push({ field: 'areaSqMtrs', message: 'Area (sq Mtrs) is required' });
+    }
+    if (formData.slumPopulation === undefined || formData.slumPopulation === null || isNaN(formData.slumPopulation) || formData.slumPopulation < 0) {
+      newErrors.push({ field: 'slumPopulation', message: 'Slum Population is required' });
+    }
+    if (formData.noSlumHouseholds === undefined || formData.noSlumHouseholds === null || isNaN(formData.noSlumHouseholds) || formData.noSlumHouseholds < 0) {
+      newErrors.push({ field: 'noSlumHouseholds', message: 'No. of Slum Households is required' });
+    }
+    if (formData.bplPopulation === undefined || formData.bplPopulation === null || isNaN(formData.bplPopulation) || formData.bplPopulation < 0) {
+      newErrors.push({ field: 'bplPopulation', message: 'BPL Population is required' });
+    }
+    if (formData.noBplHouseholds === undefined || formData.noBplHouseholds === null || isNaN(formData.noBplHouseholds) || formData.noBplHouseholds < 0) {
+      newErrors.push({ field: 'noBplHouseholds', message: 'No. of BPL Households is required' });
+    }
+    
+    // Part C - Particulars of Survey Operation
+    if (!formData.surveyorName?.trim()) {
+      newErrors.push({ field: 'surveyorName', message: 'Surveyor Name is required' });
+    }
+    if (!formData.surveyDate) {
+      newErrors.push({ field: 'surveyDate', message: 'Survey Date is required' });
+    }
+    if (!formData.receiptQuestionnaireDate) {
+      newErrors.push({ field: 'receiptQuestionnaireDate', message: 'Receipt of Questionnaire Date is required' });
+    }
+    if (!formData.scrutinyDate) {
+      newErrors.push({ field: 'scrutinyDate', message: 'Scrutiny Date is required' });
+    }
+    if (!formData.receiptByNodalCellDate) {
+      newErrors.push({ field: 'receiptByNodalCellDate', message: 'Receipt by Nodal Cell Date is required' });
+    }
+    
+    // Part D - Basic Information on Slum
+    if (!formData.slumCode?.trim()) {
+      newErrors.push({ field: 'slumCode', message: 'Slum Code is required' });
+    }
+    if (!formData.locationWard?.trim()) {
+      newErrors.push({ field: 'locationWard', message: 'Location Ward is required' });
+    }
+    if (formData.ageSlumYears === undefined || formData.ageSlumYears === null || isNaN(formData.ageSlumYears) || formData.ageSlumYears < 0) {
+      newErrors.push({ field: 'ageSlumYears', message: 'Age of Slum (Years) is required' });
+    }
+    if (formData.areaSlumSqMtrs === undefined || formData.areaSlumSqMtrs === null || isNaN(formData.areaSlumSqMtrs) || formData.areaSlumSqMtrs < 0) {
+      newErrors.push({ field: 'areaSlumSqMtrs', message: 'Area of Slum (sq Mtrs) is required' });
+    }
+    if (!formData.locationCoreOrFringe) {
+      newErrors.push({ field: 'locationCoreOrFringe', message: 'Location - Core City/Town or Fringe Area is required' });
+    }
+    if (!formData.typeAreaSurrounding) {
+      newErrors.push({ field: 'typeAreaSurrounding', message: 'Type of Area Surrounding is required' });
+    }
+    if (!formData.physicalLocationSlum) {
+      newErrors.push({ field: 'physicalLocationSlum', message: 'Physical Location of Slum is required' });
+    }
+    if (!formData.isSlumNotified) {
+      newErrors.push({ field: 'isSlumNotified', message: 'Is Slum Notified? is required' });
+    }
+    if (formData.isSlumNotified === 'YES' && (formData.yearOfNotification === undefined || formData.yearOfNotification === null || isNaN(formData.yearOfNotification) || formData.yearOfNotification < 0)) {
+      newErrors.push({ field: 'yearOfNotification', message: 'Year of Notification is required when Slum is Notified' });
+    }
+    
+    // Part E - Land Status
+    if (!formData.ownershipLandDetail) {
+      newErrors.push({ field: 'ownershipLandDetail', message: 'Ownership of Land is required' });
+    }
+    if (!formData.ownershipLandSpecify?.trim()) {
+      newErrors.push({ field: 'ownershipLandSpecify', message: 'Specify Ownership (if Other) is required' });
+    }
+    
+    // Part H - Housing Status
+    if (formData.dwellingUnitsPucca === undefined || formData.dwellingUnitsPucca === null || isNaN(formData.dwellingUnitsPucca) || formData.dwellingUnitsPucca < 0) {
+      newErrors.push({ field: 'dwellingUnitsPucca', message: 'Dwelling Units - Pucca is required' });
+    }
+    if (formData.dwellingUnitsSemiPucca === undefined || formData.dwellingUnitsSemiPucca === null || isNaN(formData.dwellingUnitsSemiPucca) || formData.dwellingUnitsSemiPucca < 0) {
+      newErrors.push({ field: 'dwellingUnitsSemiPucca', message: 'Dwelling Units - Semi-Pucca is required' });
+    }
+    if (formData.dwellingUnitsKatcha === undefined || formData.dwellingUnitsKatcha === null || isNaN(formData.dwellingUnitsKatcha) || formData.dwellingUnitsKatcha < 0) {
+      newErrors.push({ field: 'dwellingUnitsKatcha', message: 'Dwelling Units - Katcha is required' });
+    }
+    if (formData.dwellingUnitsTotal === undefined || formData.dwellingUnitsTotal === null || isNaN(formData.dwellingUnitsTotal) || formData.dwellingUnitsTotal < 0) {
+      newErrors.push({ field: 'dwellingUnitsTotal', message: 'Dwelling Units - Total is required' });
+    }
+    if (formData.landTenureWithPatta === undefined || formData.landTenureWithPatta === null || isNaN(formData.landTenureWithPatta) || formData.landTenureWithPatta < 0) {
+      newErrors.push({ field: 'landTenureWithPatta', message: 'Land Tenure With Patta is required' });
+    }
+    
+    return newErrors;
+  };
+  
+  const getFieldError = (fieldName: string): string | undefined => {
+    const error = errors.find(err => err.field === fieldName);
+    return error ? error.message : undefined;
+  };
+  
+  const scrollToFirstError = () => {
+    if (errors.length > 0) {
+      const firstErrorField = errors[0].field;
+      // Wait for the DOM to update before scrolling
+      setTimeout(() => {
+        const element = document.querySelector(`[name="${firstErrorField}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          (element as HTMLElement).focus();
+        }
+      }, 100);
+    }
+  };
+
   const handleSubmit = async () => {
+    // Validate the form
+    const validationErrors = validateForm();
+    setErrors(validationErrors);
+    
+    if (validationErrors.length > 0) {
+      // Scroll to first error
+      scrollToFirstError();
+      showToast('Please fill in all required fields', 'error');
+      return;
+    }
+    
     try {
       setSubmitting(true);
       
@@ -1157,11 +1308,17 @@ export default function SlumSurveyPage() {
                     label="City/Town Code"
                     value={formData.cityTownCode || ""}
                     onChange={(e) => handleInputChange("cityTownCode", e.target.value)}
+                    required
+                    name="cityTownCode"
+                    error={getFieldError('cityTownCode')}
                     />
                     <Input
                     label="City/Town Name"
                     value={formData.cityTownName || ""}
                     onChange={(e) => handleInputChange("cityTownName", e.target.value)}
+                    required
+                    name="cityTownName"
+                    error={getFieldError('cityTownName')}
                     />
                     <div className="md:col-span-2">
                         <Input
@@ -1169,6 +1326,9 @@ export default function SlumSurveyPage() {
                         type="number"
                         value={formData.cityTownNoHouseholds || ""}
                         onChange={(e) => handleInputChange("cityTownNoHouseholds", parseInt(e.target.value) || 0)}
+                        required
+                        name="cityTownNoHouseholds"
+                        error={getFieldError('cityTownNoHouseholds')}
                         />
                     </div>
                 </div>
@@ -1184,7 +1344,10 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Slum Type"
                     value={formData.slumType || ""}
-                    onChange={(value) => handleInputChange("slumType", value)}
+                    onChange={(e) => handleInputChange("slumType", e.target.value)}
+                    required
+                    name="slumType"
+                    error={getFieldError('slumType')}
                     options={[
                         { value: "NOTIFIED", label: "Notified" },
                         { value: "NON_NOTIFIED", label: "Non-Notified" },
@@ -1195,6 +1358,9 @@ export default function SlumSurveyPage() {
                     label="Slum ID"
                     value={formData.slumIdField || ""}
                     onChange={(e) => handleInputChange("slumIdField", e.target.value)}
+                    required
+                    name="slumIdField"
+                    error={getFieldError('slumIdField')}
                     />
                     <div className="md:col-span-2">
                         <Input
@@ -1207,7 +1373,10 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Ownership of Land"
                     value={formData.ownershipLand || ""}
-                    onChange={(value) => handleInputChange("ownershipLand", value)}
+                    onChange={(e) => handleInputChange("ownershipLand", e.target.value)}
+                    required
+                    name="ownershipLand"
+                    error={getFieldError('ownershipLand')}
                     options={[
                         { value: "LOCAL_BODY", label: "Local Body" },
                         { value: "STATE_GOVERNMENT", label: "State Government" },
@@ -1221,30 +1390,45 @@ export default function SlumSurveyPage() {
                     type="number"
                     value={formData.areaSqMtrs || ""}
                     onChange={(e) => handleInputChange("areaSqMtrs", parseFloat(e.target.value) || 0)}
+                    required
+                    name="areaSqMtrs"
+                    error={getFieldError('areaSqMtrs')}
                     />
                     <Input
                     label="Slum Population"
                     type="number"
                     value={formData.slumPopulation || ""}
                     onChange={(e) => handleInputChange("slumPopulation", parseInt(e.target.value) || 0)}
+                    required
+                    name="slumPopulation"
+                    error={getFieldError('slumPopulation')}
                     />
                     <Input
                     label="No. of Slum Households"
                     type="number"
                     value={formData.noSlumHouseholds || ""}
                     onChange={(e) => handleInputChange("noSlumHouseholds", parseInt(e.target.value) || 0)}
+                    required
+                    name="noSlumHouseholds"
+                    error={getFieldError('noSlumHouseholds')}
                     />
                     <Input
                     label="BPL Population"
                     type="number"
                     value={formData.bplPopulation || ""}
                     onChange={(e) => handleInputChange("bplPopulation", parseInt(e.target.value) || 0)}
+                    required
+                    name="bplPopulation"
+                    error={getFieldError('bplPopulation')}
                     />
                     <Input
                     label="No. of BPL Households"
                     type="number"
                     value={formData.noBplHouseholds || ""}
                     onChange={(e) => handleInputChange("noBplHouseholds", parseInt(e.target.value) || 0)}
+                    required
+                    name="noBplHouseholds"
+                    error={getFieldError('noBplHouseholds')}
                     />
                 </div>
             </div>
@@ -1258,32 +1442,45 @@ export default function SlumSurveyPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
                     label="Surveyor Name"
-                    value={formData.surveyorName || ""}
+                    value={formData.surveyorName || user?.name || ""}
                     onChange={(e) => handleInputChange("surveyorName", e.target.value)}
+                    required
                     />
                     <Input
                     label="Survey Date"
                     type="date"
                     value={formData.surveyDate || ""}
                     onChange={(e) => handleInputChange("surveyDate", e.target.value)}
+                    required
+                    name="surveyDate"
+                    error={getFieldError('surveyDate')}
                     />
                     <Input
                     label="Receipt of Questionnaire Date"
                     type="date"
                     value={formData.receiptQuestionnaireDate || ""}
                     onChange={(e) => handleInputChange("receiptQuestionnaireDate", e.target.value)}
+                    required
+                    name="receiptQuestionnaireDate"
+                    error={getFieldError('receiptQuestionnaireDate')}
                     />
                     <Input
                     label="Scrutiny Date"
                     type="date"
                     value={formData.scrutinyDate || ""}
                     onChange={(e) => handleInputChange("scrutinyDate", e.target.value)}
+                    required
+                    name="scrutinyDate"
+                    error={getFieldError('scrutinyDate')}
                     />
                     <Input
                     label="Receipt by Nodal Cell Date"
                     type="date"
                     value={formData.receiptByNodalCellDate || ""}
                     onChange={(e) => handleInputChange("receiptByNodalCellDate", e.target.value)}
+                    required
+                    name="receiptByNodalCellDate"
+                    error={getFieldError('receiptByNodalCellDate')}
                     />
                     <div className="md:col-span-2">
                         <Input
@@ -1315,28 +1512,43 @@ export default function SlumSurveyPage() {
                     label="Slum Code"
                     value={formData.slumCode || ""}
                     onChange={(e) => handleInputChange("slumCode", e.target.value)}
+                    required
+                    name="slumCode"
+                    error={getFieldError('slumCode')}
                     />
                     <Input
                     label="Location Ward"
                     value={formData.locationWard || ""}
                     onChange={(e) => handleInputChange("locationWard", e.target.value)}
+                    required
+                    name="locationWard"
+                    error={getFieldError('locationWard')}
                     />
                     <Input
                     label="Age of Slum (Years)"
                     type="number"
                     value={formData.ageSlumYears || ""}
                     onChange={(e) => handleInputChange("ageSlumYears", parseInt(e.target.value) || 0)}
+                    required
+                    name="ageSlumYears"
+                    error={getFieldError('ageSlumYears')}
                     />
                     <Input
                     label="Area of Slum (sq Mtrs)"
                     type="number"
                     value={formData.areaSlumSqMtrs || ""}
                     onChange={(e) => handleInputChange("areaSlumSqMtrs", parseFloat(e.target.value) || 0)}
+                    required
+                    name="areaSlumSqMtrs"
+                    error={getFieldError('areaSlumSqMtrs')}
                     />
                     <Select
                     label="Location - Core City/Town or Fringe Area"
                     value={formData.locationCoreOrFringe || ""}
-                    onChange={(value) => handleInputChange("locationCoreOrFringe", value)}
+                    onChange={(e) => handleInputChange("locationCoreOrFringe", e.target.value)}
+                    required
+                    name="locationCoreOrFringe"
+                    error={getFieldError('locationCoreOrFringe')}
                     options={[
                         { value: "CORE_CITY", label: "Core City/Town" },
                         { value: "FRINGE_AREA", label: "Fringe Area" },
@@ -1345,7 +1557,10 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Type of Area Surrounding"
                     value={formData.typeAreaSurrounding || ""}
-                    onChange={(value) => handleInputChange("typeAreaSurrounding", value)}
+                    onChange={(e) => handleInputChange("typeAreaSurrounding", e.target.value)}
+                    required
+                    name="typeAreaSurrounding"
+                    error={getFieldError('typeAreaSurrounding')}
                     options={[
                         { value: "RESIDENTIAL", label: "Residential" },
                         { value: "INDUSTRIAL", label: "Industrial" },
@@ -1357,7 +1572,10 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Physical Location of Slum"
                     value={formData.physicalLocationSlum || ""}
-                    onChange={(value) => handleInputChange("physicalLocationSlum", value)}
+                    onChange={(e) => handleInputChange("physicalLocationSlum", e.target.value)}
+                    required
+                    name="physicalLocationSlum"
+                    error={getFieldError('physicalLocationSlum')}
                     options={[
                         { value: "ALONG_NALLAH", label: "Along Nallah" },
                         { value: "ALONG_OTHER_DRAINS", label: "Along Other Drains" },
@@ -1369,7 +1587,10 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Is Slum Notified?"
                     value={formData.isSlumNotified || ""}
-                    onChange={(value) => handleInputChange("isSlumNotified", value)}
+                    onChange={(e) => handleInputChange("isSlumNotified", e.target.value)}
+                    required
+                    name="isSlumNotified"
+                    error={getFieldError('isSlumNotified')}
                     options={[
                         { value: "YES", label: "Yes" },
                         { value: "NO", label: "No" },
@@ -1381,6 +1602,9 @@ export default function SlumSurveyPage() {
                         type="number"
                         value={formData.yearOfNotification || ""}
                         onChange={(e) => handleInputChange("yearOfNotification", parseInt(e.target.value) || 0)}
+                        required
+                        name="yearOfNotification"
+                        error={getFieldError('yearOfNotification')}
                     />
                     )}
                 </div>
@@ -1396,7 +1620,10 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Ownership of Land"
                     value={formData.ownershipLandDetail || ""}
-                    onChange={(value) => handleInputChange("ownershipLandDetail", value)}
+                    onChange={(e) => handleInputChange("ownershipLandDetail", e.target.value)}
+                    required
+                    name="ownershipLandDetail"
+                    error={getFieldError('ownershipLandDetail')}
                     options={[
                         { value: "LOCAL_BODY", label: "Public: Local Body" },
                         { value: "STATE_GOVERNMENT", label: "Public: State Government" },
@@ -1411,6 +1638,9 @@ export default function SlumSurveyPage() {
                         value={formData.ownershipLandSpecify || ""}
                         onChange={(e) => handleInputChange("ownershipLandSpecify", e.target.value)}
                         placeholder="Specify ownership details..."
+                        required
+                        name="ownershipLandSpecify"
+                        error={getFieldError('ownershipLandSpecify')}
                         />
                     </div>
                 </div>
@@ -1431,6 +1661,9 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalPopulationSlumSC || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlumSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalPopulationSlumSC"
+                            error={getFieldError('totalPopulationSlumSC')}
                             />
                             <Input
                             label="ST"
@@ -1656,24 +1889,36 @@ export default function SlumSurveyPage() {
                     type="number"
                     value={formData.dwellingUnitsPucca || ""}
                     onChange={(e) => handleInputChange("dwellingUnitsPucca", parseInt(e.target.value) || 0)}
+                    required
+                    name="dwellingUnitsPucca"
+                    error={getFieldError('dwellingUnitsPucca')}
                     />
                     <Input
                     label="Dwelling Units - Semi-Pucca"
                     type="number"
                     value={formData.dwellingUnitsSemiPucca || ""}
                     onChange={(e) => handleInputChange("dwellingUnitsSemiPucca", parseInt(e.target.value) || 0)}
+                    required
+                    name="dwellingUnitsSemiPucca"
+                    error={getFieldError('dwellingUnitsSemiPucca')}
                     />
                     <Input
                     label="Dwelling Units - Katcha"
                     type="number"
                     value={formData.dwellingUnitsKatcha || ""}
                     onChange={(e) => handleInputChange("dwellingUnitsKatcha", parseInt(e.target.value) || 0)}
+                    required
+                    name="dwellingUnitsKatcha"
+                    error={getFieldError('dwellingUnitsKatcha')}
                     />
                     <Input
                     label="Dwelling Units - Total"
                     type="number"
                     value={formData.dwellingUnitsTotal || ""}
                     onChange={(e) => handleInputChange("dwellingUnitsTotal", parseInt(e.target.value) || 0)}
+                    required
+                    name="dwellingUnitsTotal"
+                    error={getFieldError('dwellingUnitsTotal')}
                     />
                     <div className="md:col-span-2">
                         <h3 className="text-lg font-semibold text-white mb-4">Land Tenure</h3>
@@ -1683,6 +1928,9 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.landTenureWithPatta || ""}
                             onChange={(e) => handleInputChange("landTenureWithPatta", parseInt(e.target.value) || 0)}
+                            required
+                            name="landTenureWithPatta"
+                            error={getFieldError('landTenureWithPatta')}
                             />
                             <Input
                             label="Possession Certificate"
@@ -1876,7 +2124,7 @@ export default function SlumSurveyPage() {
                         <Select
                         label="Connectivity to City Water Supply"
                         value={formData.connectivityCityWaterSupply || ""}
-                        onChange={(value) => handleInputChange("connectivityCityWaterSupply", value)}
+                        onChange={(e) => handleInputChange("connectivityCityWaterSupply", e.target.value)}
                         options={[
                             { value: "FULLY_CONNECTED", label: "Fully Connected" },
                             { value: "PARTIALLY_CONNECTED", label: "Partially Connected" },
@@ -1886,7 +2134,7 @@ export default function SlumSurveyPage() {
                         <Select
                         label="Drainage/Sewerage Facility"
                         value={formData.drainageSewerageFacility || ""}
-                        onChange={(value) => handleInputChange("drainageSewerageFacility", value)}
+                        onChange={(e) => handleInputChange("drainageSewerageFacility", e.target.value)}
                         options={[
                             { value: "YES", label: "Yes" },
                             { value: "NO", label: "No" },
@@ -1895,7 +2143,7 @@ export default function SlumSurveyPage() {
                         <Select
                         label="Connectivity to Storm Water Drainage"
                         value={formData.connectivityStormWaterDrainage || ""}
-                        onChange={(value) => handleInputChange("connectivityStormWaterDrainage", value)}
+                        onChange={(e) => handleInputChange("connectivityStormWaterDrainage", e.target.value)}
                         options={[
                             { value: "FULLY_CONNECTED", label: "Fully Connected" },
                             { value: "PARTIALLY_CONNECTED", label: "Partially Connected" },
@@ -1905,7 +2153,7 @@ export default function SlumSurveyPage() {
                         <Select
                         label="Connectivity to Sewerage System"
                         value={formData.connectivitySewerageSystem || ""}
-                        onChange={(value) => handleInputChange("connectivitySewerageSystem", value)}
+                        onChange={(e) => handleInputChange("connectivitySewerageSystem", e.target.value)}
                         options={[
                             { value: "FULLY_CONNECTED", label: "Fully Connected" },
                             { value: "PARTIALLY_CONNECTED", label: "Partially Connected" },
@@ -1915,7 +2163,7 @@ export default function SlumSurveyPage() {
                         <Select
                         label="Prone to Flooding"
                         value={formData.proneToFlooding || ""}
-                        onChange={(value) => handleInputChange("proneToFlooding", value)}
+                        onChange={(e) => handleInputChange("proneToFlooding", e.target.value)}
                         options={[
                             { value: "NOT_PRONE", label: "Not Prone" },
                             { value: "UPTO_15_DAYS", label: "Up to 15 Days" },
@@ -1926,7 +2174,7 @@ export default function SlumSurveyPage() {
                         <Select
                         label="Street Light Available"
                         value={formData.streetLightAvailable || ""}
-                        onChange={(value) => handleInputChange("streetLightAvailable", value)}
+                        onChange={(e) => handleInputChange("streetLightAvailable", e.target.value)}
                         options={[
                             { value: "YES", label: "Yes" },
                             { value: "NO", label: "No" },
@@ -2022,7 +2270,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Urban Health Post"
                     value={formData.urbanHealthPost || ""}
-                    onChange={(value) => handleInputChange("urbanHealthPost", value)}
+                    onChange={(e) => handleInputChange("urbanHealthPost", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
                         { value: "NO", label: "No" },
@@ -2031,7 +2279,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Primary Health Centre"
                     value={formData.primaryHealthCentre || ""}
-                    onChange={(value) => handleInputChange("primaryHealthCentre", value)}
+                    onChange={(e) => handleInputChange("primaryHealthCentre", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
                         { value: "NO", label: "No" },
@@ -2040,7 +2288,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Government Hospital"
                     value={formData.governmentHospital || ""}
-                    onChange={(value) => handleInputChange("governmentHospital", value)}
+                    onChange={(e) => handleInputChange("governmentHospital", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
                         { value: "NO", label: "No" },
@@ -2049,7 +2297,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Maternity Centre"
                     value={formData.maternityCentre || ""}
-                    onChange={(value) => handleInputChange("maternityCentre", value)}
+                    onChange={(e) => handleInputChange("maternityCentre", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
                         { value: "NO", label: "No" },
@@ -2058,7 +2306,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Private Clinic"
                     value={formData.privateClinic || ""}
-                    onChange={(value) => handleInputChange("privateClinic", value)}
+                    onChange={(e) => handleInputChange("privateClinic", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
                         { value: "NO", label: "No" },
@@ -2067,7 +2315,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="RMP (Registered Medical Practitioner)"
                     value={formData.rmp || ""}
-                    onChange={(value) => handleInputChange("rmp", value)}
+                    onChange={(e) => handleInputChange("rmp", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
                         { value: "NO", label: "No" },
@@ -2076,7 +2324,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="Ayurvedic Doctor"
                     value={formData.ayurvedicDoctor || ""}
-                    onChange={(value) => handleInputChange("ayurvedicDoctor", value)}
+                    onChange={(e) => handleInputChange("ayurvedicDoctor", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
                         { value: "NO", label: "No" },
@@ -2200,7 +2448,7 @@ export default function SlumSurveyPage() {
                             <Select
                             label="Slum Dwellers Association"
                             value={formData.slumDwellersAssociation || ""}
-                            onChange={(value) => handleInputChange("slumDwellersAssociation", value)}
+                            onChange={(e) => handleInputChange("slumDwellersAssociation", e.target.value)}
                             options={[
                                 { value: "YES", label: "Yes" },
                                 { value: "NO", label: "No" },

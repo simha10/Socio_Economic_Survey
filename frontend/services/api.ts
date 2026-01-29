@@ -941,9 +941,9 @@ class ApiService {
     }
   }
 
-  public async submitHouseholdSurvey(householdId: string, data: any): Promise<ApiResponse> {
+  public async submitHouseholdSurvey(surveyId: string, data: any): Promise<ApiResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/surveys/household/${householdId}/submit`, {
+      const response = await fetch(`${this.baseUrl}/surveys/household-surveys/${surveyId}/submit`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(data),
