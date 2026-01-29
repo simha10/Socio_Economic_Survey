@@ -1,41 +1,33 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 import Button from "@/components/Button";
 
-interface ConfirmationDialogProps {
+interface BackNavigationDialogProps {
   isOpen: boolean;
   title: string;
   message: string;
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
-  confirmText?: string;
-  cancelText?: string;
-  icon?: React.ReactNode;
-  confirmButtonStyle?: string;
 }
 
-export default function ConfirmationDialog({
+export default function BackNavigationDialog({
   isOpen,
   title,
   message,
   onConfirm,
   onCancel,
   loading = false,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
-  icon,
-  confirmButtonStyle = "bg-red-600 hover:bg-red-700",
-}: ConfirmationDialogProps) {
+}: BackNavigationDialogProps) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-[#111827] border border-slate-700 rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl">
         <div className="flex items-center gap-3 mb-4">
-          <div className="bg-red-500/20 p-3 rounded-lg">
-            {icon || <Trash2 className="w-5 h-5 text-red-400" />}
+          <div className="bg-blue-500/20 p-3 rounded-lg">
+            <ArrowLeft className="w-5 h-5 text-blue-400" />
           </div>
           <h2 className="text-lg font-bold text-white">{title}</h2>
         </div>
@@ -47,12 +39,12 @@ export default function ConfirmationDialog({
             variant="primary"
             onClick={onConfirm}
             disabled={loading}
-            className={confirmButtonStyle}
+            className="bg-blue-600 hover:bg-blue-700"
           >
-            {loading ? `${confirmText}...` : confirmText}
+            {loading ? "Leaving..." : "Leave Survey"}
           </Button>
           <Button variant="secondary" onClick={onCancel} disabled={loading}>
-            {cancelText}
+            Stay Here
           </Button>
         </div>
       </div>

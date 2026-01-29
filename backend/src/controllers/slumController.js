@@ -46,7 +46,10 @@ exports.createSlum = async (req, res) => {
     });
 
     await newSlum.save();
-    await newSlum.populate(['state', 'district']);
+    await newSlum.populate([
+      { path: 'state', select: 'name code' },
+      { path: 'district', select: 'name code' }
+    ]);
 
     res.status(201).json({
       success: true,

@@ -46,7 +46,6 @@ interface Slum {
 interface Assignment {
   _id: string;
   status: string;
-  assignmentType: string;
   surveyor: { _id: string; name: string; username: string; };
   slum: Slum;
 }

@@ -1,41 +1,33 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Pencil, AlertTriangle } from "lucide-react";
 import Button from "@/components/Button";
 
-interface ConfirmationDialogProps {
+interface EditConfirmationDialogProps {
   isOpen: boolean;
   title: string;
   message: string;
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
-  confirmText?: string;
-  cancelText?: string;
-  icon?: React.ReactNode;
-  confirmButtonStyle?: string;
 }
 
-export default function ConfirmationDialog({
+export default function EditConfirmationDialog({
   isOpen,
   title,
   message,
   onConfirm,
   onCancel,
   loading = false,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
-  icon,
-  confirmButtonStyle = "bg-red-600 hover:bg-red-700",
-}: ConfirmationDialogProps) {
+}: EditConfirmationDialogProps) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-[#111827] border border-slate-700 rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl">
         <div className="flex items-center gap-3 mb-4">
-          <div className="bg-red-500/20 p-3 rounded-lg">
-            {icon || <Trash2 className="w-5 h-5 text-red-400" />}
+          <div className="bg-yellow-500/20 p-3 rounded-lg">
+            <AlertTriangle className="w-5 h-5 text-yellow-400" />
           </div>
           <h2 className="text-lg font-bold text-white">{title}</h2>
         </div>
@@ -47,12 +39,12 @@ export default function ConfirmationDialog({
             variant="primary"
             onClick={onConfirm}
             disabled={loading}
-            className={confirmButtonStyle}
+            className="bg-yellow-600 hover:bg-yellow-700"
           >
-            {loading ? `${confirmText}...` : confirmText}
+            {loading ? "Editing..." : "Edit Survey"}
           </Button>
           <Button variant="secondary" onClick={onCancel} disabled={loading}>
-            {cancelText}
+            Cancel
           </Button>
         </div>
       </div>

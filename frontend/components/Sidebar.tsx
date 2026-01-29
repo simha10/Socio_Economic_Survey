@@ -18,7 +18,6 @@ const supervisorItems = [
   { href: "/supervisor/slums", label: "Slums", icon: Map },
   { href: "/supervisor/assignments", label: "Assignments", icon: ClipboardList },
   { href: "/supervisor/reports", label: "Reports", icon: TrendingUp },
-  { href: "/supervisor/progress", label: "Progress", icon: TrendingUp },
 ];
 
 const adminItems = [
@@ -62,7 +61,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          "hidden md:flex flex-col relative h-screen transition-all duration-300 border-r border-slate-800 bg-slate-900 flex-shrink-0",
+          "hidden md:flex flex-col relative h-screen transition-all duration-300 border-r border-slate-800 bg-slate-900 shrink-0",
           isSidebarOpen ? "w-64" : "w-16"
         )}
       >
@@ -113,7 +112,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
         {/* Footer/User */}
         <div className="p-4 border-t border-slate-800">
           <div className={cn("flex items-center gap-3", !isSidebarOpen && "justify-center")}>
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs ring-2 ring-slate-900 flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs ring-2 ring-slate-900 shrink-0">
               {role.charAt(0)}
             </div>
             {isSidebarOpen && (

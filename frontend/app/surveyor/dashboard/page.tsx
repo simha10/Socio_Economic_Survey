@@ -5,7 +5,15 @@ import { useRouter } from "next/navigation";
 import SurveyorLayout from "@/components/SurveyorLayout";
 import DashboardStats from "@/components/DashboardStats";
 import apiService from "@/services/api";
-import { MapPin, Users, CheckCircle, Clock, ArrowRight } from "lucide-react";
+import { MapPin, Users, CheckCircle, Clock, ArrowRight, CircleEllipsis, ListTodo } from "lucide-react";
+import SurveyConfirmationDialog from "@/components/SurveyConfirmationDialog";
+
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  role: string;
+}
 
 interface Assignment {
   _id: string;
@@ -20,10 +28,10 @@ interface Assignment {
     name: string;
     username: string;
   };
-  assignmentType: string;
   status: string;
   createdAt: string;
   slumSurveyStatus?: string;
+  slumSurveyCompletion?: number;
   householdSurveyProgress?: {
     completed: number;
     total: number;
@@ -34,7 +42,13 @@ export default function SurveyorDashboard() {
   const router = useRouter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingSurvey, setPendingSurvey] = useState<{
+    type: 'slum' | 'household';
+    assignmentId: string;
+    slumName: string;
+  } | null>(null);
 
   useEffect(() => {
     // Verify user is surveyor
@@ -74,6 +88,43 @@ export default function SurveyorDashboard() {
     }
   };
 
+  const handleSlumSurveyClick = (assignmentId: string, slumName: string) => {
+    setPendingSurvey({
+      type: 'slum',
+      assignmentId,
+      slumName
+    });
+    setShowConfirmation(true);
+  };
+
+  const handleHouseholdSurveyClick = (assignmentId: string, slumName: string) => {
+    setPendingSurvey({
+      type: 'household',
+      assignmentId,
+      slumName
+    });
+    setShowConfirmation(true);
+  };
+
+  const confirmSurvey = () => {
+    if (!pendingSurvey) return;
+    
+    if (pendingSurvey.type === 'slum') {
+      router.push(`/surveyor/slum-survey/${pendingSurvey.assignmentId}`);
+    } else {
+      router.push(`/surveyor/household-survey/${pendingSurvey.assignmentId}`);
+    }
+    
+    // Reset confirmation state
+    setShowConfirmation(false);
+    setPendingSurvey(null);
+  };
+
+  const cancelSurvey = () => {
+    setShowConfirmation(false);
+    setPendingSurvey(null);
+  };
+
   // Calculate stats based on assignment status
   const totalAssignments = assignments.length;
   const completedSurveys = assignments.filter(
@@ -87,24 +138,7 @@ export default function SurveyorDashboard() {
   ).length;
   return (
     <SurveyorLayout username={user?.name || user?.username}>
-      {/* Dashboard Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">
-            Dashboard
-          </h2>
-          <p className="text-slate-400 text-sm md:text-base">
-            Overview of your survey assignments and progress
-          </p>
-        </div>
-        <button
-          onClick={() => router.push("/surveyor/dashboard")}
-          className="self-start md:self-center flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-sm font-medium transition-colors"
-        >
-          <Clock className="w-4 h-4" />
-          Refresh Data
-        </button>
-      </div>
+      {/* Dashboard Stats Only - No header or refresh button */}
 
       <DashboardStats
         stats={[
@@ -115,50 +149,50 @@ export default function SurveyorDashboard() {
             colorClass: "text-blue-500 bg-blue-500/20",
           },
           {
+            label: "Pending",
+            value: pendingSurveys,
+            icon: <CircleEllipsis className="w-5 h-5" />,
+            colorClass: "text-red-500 bg-red-500/20",
+          },
+          {
+            label: "In Progress",
+            value: inProgressSurveys,
+            icon: <ListTodo className="w-5 h-5" />,
+            colorClass: "text-amber-500 bg-amber-500/20",
+          },
+          {
             label: "Completed",
             value: completedSurveys,
             icon: <CheckCircle className="w-5 h-5" />,
             colorClass: "text-green-500 bg-green-500/20",
           },
-          {
-            label: "In Progress",
-            value: inProgressSurveys,
-            icon: <Clock className="w-5 h-5" />,
-            colorClass: "text-amber-500 bg-amber-500/20",
-          },
-          {
-            label: "Pending",
-            value: pendingSurveys,
-            icon: <Clock className="w-5 h-5" />,
-            colorClass: "text-red-500 bg-red-500/20",
-          },
         ]}
       />
-      <div className="mb-10"></div>
+      <div className="mb-6"></div>
 
       {/* Content Area */}
       {assignments.length === 0 ? (
-        <div className="bg-slate-800/30 border border-slate-700/50 rounded-3xl p-12 md:p-20 text-center relative overflow-hidden group">
+        <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-6 md:p-8 text-center relative overflow-hidden group">
           {/* Decorative background elements */}
-          <div className="absolute top-0 right-0 p-20 bg-blue-500/5 blur-[100px] rounded-full pointer-events-none transform translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute bottom-0 left-0 p-20 bg-purple-500/5 blur-[100px] rounded-full pointer-events-none transform -translate-x-1/2 translate-y-1/2"></div>
+          <div className="absolute top-0 right-0 p-10 bg-blue-500/5 blur-[80px] rounded-full pointer-events-none transform translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 left-0 p-10 bg-purple-500/5 blur-[80px] rounded-full pointer-events-none transform -translate-x-1/2 translate-y-1/2"></div>
 
           <div className="relative z-10 flex flex-col items-center">
-            <div className="text-6xl md:text-7xl mb-6 opacity-80 transform group-hover:scale-110 transition-transform duration-500">
+            <div className="text-4xl md:text-5xl mb-4 opacity-80">
               🏘️
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-              No Assignments Yet
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
+              No Assignments Now
             </h2>
-            <p className="text-slate-400 text-base md:text-lg max-w-lg leading-relaxed mb-8">
-              You don't have any slums assigned yet. Your supervisor will assign
+            <p className="text-slate-400 text-sm md:text-base max-w-md leading-relaxed mb-6">
+              You don&#39;t have any slums assigned right now. Your supervisor will assign
               you slums to survey. Check back soon.
             </p>
 
-            <div className="absolute bottom-6 right-6 text-slate-700 animate-pulse">
+            <div className="absolute bottom-4 right-4 text-slate-700 animate-pulse">
               <svg
-                width="24"
-                height="24"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
@@ -169,12 +203,12 @@ export default function SurveyorDashboard() {
         </div>
       ) : (
         /* Assignments List */
-        <div className="space-y-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-white">Active Assignments</h3>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h3 className="text-lg font-bold text-white">Active Assignments</h3>
             <button
               onClick={() => router.push("/surveyor/slums")}
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium"
+              className="text-xs sm:text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium self-start sm:self-auto"
             >
               View all slums →
             </button>
@@ -220,12 +254,6 @@ export default function SurveyorDashboard() {
                   <div>
                     <p className="text-slate-400 text-sm mb-1">
                       <span className="font-medium text-white">
-                        Assignment Type:
-                      </span>{" "}
-                      {assignment.assignmentType}
-                    </p>
-                    <p className="text-slate-400 text-sm mb-1">
-                      <span className="font-medium text-white">
                         Total Households:
                       </span>{" "}
                       {assignment.slum?.totalHouseholds || "N/A"}
@@ -246,16 +274,28 @@ export default function SurveyorDashboard() {
                           Slum Survey
                         </span>
                         <span
-                          className={`text-xs font-medium ${
-                            assignment.slumSurveyStatus === "COMPLETED"
-                              ? "text-green-400"
-                              : "text-amber-400"
+                          className={`text-xs font-medium $ {
+                            (assignment.slumSurveyCompletion || 0) === 0 ? 'text-red-400' :
+                            (assignment.slumSurveyCompletion || 0) < 100 ? 'text-amber-400' :
+                            'text-green-400'
                           }`}
                         >
-                          {assignment.slumSurveyStatus === "COMPLETED"
-                            ? "✓ Completed"
-                            : "Not Started"}
+                          {(assignment.slumSurveyCompletion || 0) === 0
+                            ? "Not Started"
+                            : (assignment.slumSurveyCompletion || 0) < 100
+                            ? `${assignment.slumSurveyCompletion || 0}%`
+                            : "✓ Completed"}
                         </span>
+                      </div>
+                      <div className="w-full bg-slate-700 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all $ {
+                            (assignment.slumSurveyCompletion || 0) === 0 ? 'bg-red-500' :
+                            (assignment.slumSurveyCompletion || 0) < 100 ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`}
+                          style={{ width: `${assignment.slumSurveyCompletion || 0}%` }}
+                        ></div>
                       </div>
                     </div>
 
@@ -295,7 +335,7 @@ export default function SurveyorDashboard() {
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={() =>
-                      router.push(`/surveyor/slum-survey/${assignment._id}`)
+                      handleSlumSurveyClick(assignment._id, assignment.slum?.name || "Unknown Slum")
                     }
                     className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-all"
                   >
@@ -303,9 +343,7 @@ export default function SurveyorDashboard() {
                   </button>
                   <button
                     onClick={() =>
-                      router.push(
-                        `/surveyor/household-survey/${assignment._id}`,
-                      )
+                      handleHouseholdSurveyClick(assignment._id, assignment.slum?.name || "Unknown Slum")
                     }
                     className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-900/20"
                   >
@@ -317,6 +355,15 @@ export default function SurveyorDashboard() {
           ))}
         </div>
       )}
+      
+      {/* Survey Confirmation Dialog */}
+      <SurveyConfirmationDialog
+        isOpen={showConfirmation}
+        surveyType={pendingSurvey?.type || 'slum'}
+        slumName={pendingSurvey?.slumName || ''}
+        onConfirm={confirmSurvey}
+        onCancel={cancelSurvey}
+      />
     </SurveyorLayout>
   );
 }

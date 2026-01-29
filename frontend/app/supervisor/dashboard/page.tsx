@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import SupervisorAdminLayout from "@/components/SupervisorAdminLayout";
 import DashboardStats from "@/components/DashboardStats";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { Users, CheckCircle, Clock, MapPin, FileText, BarChart3, Plus, Eye, TrendingUp, Calendar } from "lucide-react";
+import { Users, CheckCircle, Clock, MapPin, FileText, BarChart3, Plus, Eye, TrendingUp, Calendar, RefreshCw } from "lucide-react";
 import apiService from "@/services/api";
 
 interface User {
@@ -235,11 +235,4 @@ export default function SupervisorDashboardPage() {
     </SupervisorAdminLayout>
   );
 }
-
-// Add RefreshCw icon
-const RefreshCw = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-  </svg>
-);
 

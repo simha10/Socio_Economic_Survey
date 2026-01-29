@@ -7,6 +7,12 @@ const districtSchema = new mongoose.Schema({
     trim: true,
     uppercase: true
   },
+  code: {
+    type: String,
+    required: [true, 'District code is required'],
+    unique: true,
+    uppercase: true
+  },
   state: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'State',

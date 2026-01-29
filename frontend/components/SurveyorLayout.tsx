@@ -1,8 +1,9 @@
 "use client";
 
 import React, { ReactNode } from "react";
-import { SidebarProvider } from "@/contexts/SidebarContext";
-import Sidebar from "@/components/Sidebar";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { LogOut } from "lucide-react";
 
 interface SurveyorLayoutProps {
   children: ReactNode;
@@ -15,20 +16,13 @@ export default function SurveyorLayout({
   username,
   fullScreen = false,
 }: SurveyorLayoutProps) {
-  return (
-    <SidebarProvider>
-      <LayoutContent username={username} fullScreen={fullScreen}>
-        {children}
-      </LayoutContent>
-    </SidebarProvider>
-  );
-}
+  const router = useRouter();
 
-const LayoutContent = ({
-  children,
-  username,
-  fullScreen,
-}: SurveyorLayoutProps) => {
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
 
   if (fullScreen) {
     return (
@@ -42,26 +36,55 @@ const LayoutContent = ({
 
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-200 font-sans overflow-hidden">
-      {/* Sidebar: Fixed width, sticky logic handled inside Sidebar component */}
-      <Sidebar role="SURVEYOR" username={username} />
-
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        {/* Header - Minimal, just title mostly, or can be hidden if Sidebar has it all. 
-            For now, keeping a clean header for context. */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative pb-20 md:pb-0">
+        {/* Header with top-right logout */}
         <header className="h-16 border-b border-slate-800 flex items-center justify-between px-4 md:px-8 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-20">
-             <div className="ml-10 md:ml-0"> {/* Margin left for mobile menu trigger space */}
-               <span className="text-sm text-slate-400">Welcome back, <span className="text-white font-medium">{username || "Surveyor"}</span></span>
-             </div>
+          <div>
+            <span className="text-sm text-slate-400">Welcome back, <span className="text-white font-medium">{username || "Surveyor"}</span></span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-300 hover:text-red-400 transition-colors"
+            title="Logout"
+          >
+            <LogOut size={18} />
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         </header>
 
         {/* Scrollable Content Canvas */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-          <div className="max-w-7xl mx-auto space-y-8 animate-slide-up">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="max-w-7xl mx-auto space-y-6">
             {children}
           </div>
         </div>
       </main>
+      
+      {/* Bottom Navigation for mobile */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0">
+        <nav className="bg-slate-900 border-t border-slate-800 flex items-center justify-around h-20 z-40">
+          <Link href="/surveyor/dashboard" className="flex flex-col items-center gap-1 px-4 py-2 transition-colors text-slate-400 hover:text-cyan-400">
+            <span className="text-2xl">📊</span>
+            <span className="text-xs font-medium">Dashboard</span>
+          </Link>
+          <Link href="/surveyor/slums" className="flex flex-col items-center gap-1 px-4 py-2 transition-colors text-slate-400 hover:text-cyan-400">
+            <span className="text-2xl">🏘️</span>
+            <span className="text-xs font-medium">Slums</span>
+          </Link>
+          <Link href="/surveyor/profile" className="flex flex-col items-center gap-1 px-4 py-2 transition-colors text-slate-400 hover:text-cyan-400">
+            <span className="text-2xl">👤</span>
+            <span className="text-xs font-medium">Profile</span>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex flex-col items-center gap-1 px-4 py-2 transition-colors text-slate-400 hover:text-red-400"
+          >
+            <LogOut size={20} />
+            <span className="text-xs font-medium">Logout</span>
+          </button>
+        </nav>
+      </div>
     </div>
   );
 };

@@ -7,14 +7,17 @@ import Card from "@/components/Card";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import Select from "@/components/Select";
-import Checkbox from "@/components/Checkbox";
-import Stepper from "@/components/Stepper";
-import apiService from "@/services/api";
-import { useToast } from "@/components/Toast";
+import Checkbox from '@/components/Checkbox';
+import Stepper from '@/components/Stepper';
+import BackNavigationDialog from '@/components/BackNavigationDialog';
+import EditConfirmationDialog from '@/components/EditConfirmationDialog';
+import apiService from '@/services/api';
+import { useToast } from '@/components/Toast';
 
 interface SlumSurveyForm {
   slumId: string;
   surveyed: boolean;
+  completionPercentage?: number;
   // Part A - General Information - City/Town
   stateCode?: string;
   stateName?: string;
@@ -377,8 +380,10 @@ export default function SlumSurveyPage() {
   const [slumSurvey, setSlumSurvey] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [user, setUser] = useState<any>(null);
+
 
   const [formData, setFormData] = useState<SlumSurveyForm>({
     slumId: "",
@@ -414,21 +419,19 @@ export default function SlumSurveyPage() {
   });
 
   const steps = [
-    { title: "General Info", id: "general" },
-    { title: "Slum Profile", id: "profile" },
-    { title: "Survey Operation", id: "operation" },
-    { title: "Basic Info", id: "basic" },
-    { title: "Land Status", id: "land" },
-    { title: "Population & Health", id: "population" },
-    { title: "Literacy & Education", id: "literacy" },
-    { title: "Housing Status", id: "housing" },
-    { title: "Economic Status", id: "economic" },
-    { title: "Occupation Status", id: "occupation" },
-    { title: "Infrastructure", id: "infrastructure" },
-    { title: "Education", id: "education" },
-    { title: "Health", id: "health" },
-    { title: "Social Development", id: "social" },
-    { title: "Review & Submit", id: "review" },
+    { title: "Basic Information", id: "basicInformation" },
+    { title: "Land Status", id: "landStatus" },
+    { title: "Population & Health", id: "populationAndHealth" },
+    { title: "Literacy & Education", id: "literacyAndEducation" },
+    { title: "Employment & Occupation", id: "employmentAndOccupation" },
+    { title: "Water & Sanitation", id: "waterAndSanitation" },
+    { title: "Housing Conditions", id: "housingConditions" },
+    { title: "Utilities", id: "utilities" },
+    { title: "Social Infrastructure", id: "socialInfrastructure" },
+    { title: "Transportation", id: "transportationAndAccessibility" },
+    { title: "Environmental Conditions", id: "environmentalConditions" },
+    { title: "Social Issues", id: "socialIssuesAndVulnerableGroups" },
+    { title: "Slum Improvement", id: "slumImprovementAndDevelopment" },
   ];
 
   useEffect(() => {
@@ -465,9 +468,9 @@ export default function SlumSurveyPage() {
               ...prev,
               slumName: slumData.name || "",
               stateName: slumData.state?.name || "",
-              stateCode: slumData.state?._id || "",
+              stateCode: slumData.state?.code || "",
               districtName: slumData.district?.name || "",
-              districtCode: slumData.district?._id || "",
+              districtCode: slumData.district?.code || "",
               locationWard: slumData.ward || "",
               slumType: slumData.slumType || "",
               ownershipLand: slumData.landOwnership || "",
@@ -482,6 +485,35 @@ export default function SlumSurveyPage() {
           if (surveyResponse.success) {
             const surveyData = surveyResponse.data;
             setSlumSurvey(surveyData);
+            
+            // Set completion percentage from existing survey data
+            if (surveyData.completionPercentage !== undefined) {
+              setFormData(prev => ({
+                ...prev,
+                completionPercentage: surveyData.completionPercentage
+              }));
+            }
+            
+            // Navigate to the correct section based on completion percentage
+            if (surveyData.completionPercentage !== undefined) {
+              // Calculate section based on completion percentage
+              // Each section represents ~7.69% (100/13), so we divide by 7.69 and round down
+              // If completion is 100%, we should be on the last section (index 12)
+              let sectionIndex = Math.floor(surveyData.completionPercentage / (100 / 13));
+              // Cap at 12 (the last section index) but if it's 100%, we should be at the review section
+              // If completion is 100%, we're at the end (last section)
+              if (surveyData.completionPercentage >= 100) {
+                sectionIndex = 12; // Last section
+              } else if (surveyData.completionPercentage === 0) {
+                sectionIndex = 0; // First section
+              } else {
+                // For intermediate percentages, use the calculated value but cap at 12
+                sectionIndex = Math.min(12, sectionIndex);
+              }
+              setCurrentStep(sectionIndex);
+            }
+            
+            // Skip permission check here since it should be handled at the assignment level
             
             // If survey has existing data, populate the form
             if (surveyData.basicInformation) {
@@ -570,6 +602,8 @@ export default function SlumSurveyPage() {
 
     if (assignmentId) loadData();
   }, [assignmentId, router, showToast]);
+
+
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({
@@ -910,11 +944,15 @@ export default function SlumSurveyPage() {
         }
       };
 
+      // First, save the current section to ensure completion percentage is accurate
+      await saveSection();
+      
       const response = await apiService.submitSlumSurvey(slumSurvey._id, surveyData);
 
       if (response.success) {
         showToast("Slum survey submitted successfully", "success");
-        router.push(`/surveyor/slums/${formData.slumId}`);
+        // Redirect to dashboard after successful submission
+        router.push('/surveyor/dashboard');
       } else {
         showToast(response.message || "Failed to submit survey", "error");
       }
@@ -923,6 +961,105 @@ export default function SlumSurveyPage() {
       showToast("Failed to submit survey", "error");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handlePrevious = () => {
+    // Validation for back navigation - check if current section is saved
+    if (currentStep > 0) {
+      setCurrentStep((prev) => Math.max(0, prev - 1));
+    }
+  };
+
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+
+  const handleBackToDashboard = () => {
+    // Show confirmation dialog before navigating back to dashboard
+    setShowLeaveConfirm(true);
+  };
+
+  const confirmLeave = () => {
+    setShowLeaveConfirm(false);
+    router.back();
+  };
+
+  const cancelLeave = () => {
+    setShowLeaveConfirm(false);
+  };
+
+  const saveSection = async () => {
+    try {
+      setSaving(true);
+      
+      // Map current step to section name (13 sections total)
+      const sectionMap: Record<number, string> = {
+        0: 'basicInformation',
+        1: 'landStatus',
+        2: 'populationAndHealth',
+        3: 'literacyAndEducation',
+        4: 'employmentAndOccupation',
+        5: 'waterAndSanitation',
+        6: 'housingConditions',
+        7: 'utilities',
+        8: 'socialInfrastructure',
+        9: 'transportationAndAccessibility',
+        10: 'environmentalConditions',
+        11: 'socialIssuesAndVulnerableGroups',
+        12: 'slumImprovementAndDevelopment'
+      };
+      
+      // Extract data for current section
+      const sectionName = sectionMap[currentStep];
+      if (!sectionName) {
+        showToast("Invalid section", "error");
+        return;
+      }
+      
+      // Extract data for current section based on the step
+      // This is a simplified mapping - in reality, you'd need to map
+      // form fields to the appropriate section structure
+      const extractSectionData = () => {
+        const data: any = {};
+        // Add logic to extract only the fields relevant to the current section
+        // For now, we'll send all form data but in a real implementation,
+        // you would filter based on the current step
+        Object.keys(formData).forEach(key => {
+          if (formData[key as keyof SlumSurveyForm] !== undefined && 
+              formData[key as keyof SlumSurveyForm] !== null && 
+              formData[key as keyof SlumSurveyForm] !== '') {
+            data[key] = formData[key as keyof SlumSurveyForm];
+          }
+        });
+        return data;
+      };
+      
+      const sectionData = extractSectionData();
+      
+      const response = await apiService.updateSurveySection(
+        slumSurvey._id,
+        sectionName,
+        sectionData
+      );
+      
+      if (response.success) {
+        showToast(`Section saved successfully! (${response.data?.completionPercentage || 0}% complete)`, "success");
+        // Update local state with new completion percentage
+        if (response.data?.completionPercentage !== undefined) {
+          setFormData(prev => ({
+            ...prev,
+            completionPercentage: response.data.completionPercentage
+          }));
+        }
+        // Move to next step
+        setCurrentStep((prev) => Math.min(steps.length - 1, prev + 1));
+      } else {
+        showToast(response.error || "Failed to save section", "error");
+      }
+    } catch (error) {
+      console.error("Save section error:", error);
+      showToast("Failed to save section", "error");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -953,11 +1090,22 @@ export default function SlumSurveyPage() {
         <div className="mb-8 flex items-center justify-between">
            <div>
               <button
-                onClick={() => router.back()}
+                onClick={handleBackToDashboard}
                 className="mb-2 text-sm text-slate-400 hover:text-white flex items-center transition-colors"
                >
                 <span className="mr-1">←</span> Back to Dashboard
               </button>
+              
+              {/* Back Navigation Dialog for Leaving Survey */}
+              <BackNavigationDialog
+                isOpen={showLeaveConfirm}
+                title="Leave Survey?"
+                message="Are you sure you want to leave the survey? Your progress will be saved."
+                onConfirm={confirmLeave}
+                onCancel={cancelLeave}
+              />
+              
+
               <h1 className="text-3xl font-bold text-white tracking-tight">Slum Survey</h1>
               <p className="text-slate-400 mt-1 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-500"></span>
@@ -970,6 +1118,7 @@ export default function SlumSurveyPage() {
         <Stepper 
             steps={steps.map(s => s.title)} 
             currentStep={currentStep} 
+            completionPercentage={formData.completionPercentage || 0}
         />
 
         {/* Form Container */}
@@ -2102,27 +2251,32 @@ export default function SlumSurveyPage() {
             <div className="flex justify-between mt-8 pt-6 border-t border-slate-800">
                 <Button
                     variant="secondary"
-                    onClick={() => setCurrentStep((prev) => Math.max(0, prev - 1))}
-                    disabled={currentStep === 0 || submitting}
+                    onClick={handlePrevious}
+                    disabled={currentStep === 0 || submitting || saving}
                 >
                     Previous
                 </Button>
                 
-                {currentStep < steps.length - 1 ? (
-                    <Button
-                        onClick={() => setCurrentStep((prev) => Math.min(steps.length - 1, prev + 1))}
-                    >
-                        Next Step
-                    </Button>
-                ) : (
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={submitting}
-                        className="bg-green-600 hover:bg-green-500"
-                    >
-                        {submitting ? "Submitting..." : "Submit Survey"}
-                    </Button>
-                )}
+                <div className="flex gap-3">
+                    {currentStep < steps.length - 1 ? (
+                        <Button
+                            variant="secondary"
+                            onClick={saveSection}
+                            disabled={saving || submitting}
+                            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50"
+                        >
+                            {saving ? "Saving..." : "Save & Next"}
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={submitting || saving}
+                            className="bg-green-600 hover:bg-green-500"
+                        >
+                            {submitting ? "Submitting..." : "Submit Survey"}
+                        </Button>
+                    )}
+                </div>
             </div>
         </Card>
       </div>
