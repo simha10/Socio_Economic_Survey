@@ -10,6 +10,7 @@ import Select from "@/components/Select";
 import Checkbox from '@/components/Checkbox';
 import Stepper from '@/components/Stepper';
 import BackNavigationDialog from '@/components/BackNavigationDialog';
+import EditConfirmationDialog from '@/components/EditConfirmationDialog';
 import apiService from '@/services/api';
 import { useToast } from '@/components/Toast';
 
@@ -383,6 +384,7 @@ export default function SlumSurveyPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [user, setUser] = useState<any>(null);
 
+
   const [formData, setFormData] = useState<SlumSurveyForm>({
     slumId: "",
     surveyed: false,
@@ -492,6 +494,27 @@ export default function SlumSurveyPage() {
               }));
             }
             
+            // Navigate to the correct section based on completion percentage
+            if (surveyData.completionPercentage !== undefined) {
+              // Calculate section based on completion percentage
+              // Each section represents ~7.69% (100/13), so we divide by 7.69 and round down
+              // If completion is 100%, we should be on the last section (index 12)
+              let sectionIndex = Math.floor(surveyData.completionPercentage / (100 / 13));
+              // Cap at 12 (the last section index) but if it's 100%, we should be at the review section
+              // If completion is 100%, we're at the end (last section)
+              if (surveyData.completionPercentage >= 100) {
+                sectionIndex = 12; // Last section
+              } else if (surveyData.completionPercentage === 0) {
+                sectionIndex = 0; // First section
+              } else {
+                // For intermediate percentages, use the calculated value but cap at 12
+                sectionIndex = Math.min(12, sectionIndex);
+              }
+              setCurrentStep(sectionIndex);
+            }
+            
+            // Skip permission check here since it should be handled at the assignment level
+            
             // If survey has existing data, populate the form
             if (surveyData.basicInformation) {
               setFormData(prev => ({
@@ -579,6 +602,8 @@ export default function SlumSurveyPage() {
 
     if (assignmentId) loadData();
   }, [assignmentId, router, showToast]);
+
+
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({
@@ -919,11 +944,15 @@ export default function SlumSurveyPage() {
         }
       };
 
+      // First, save the current section to ensure completion percentage is accurate
+      await saveSection();
+      
       const response = await apiService.submitSlumSurvey(slumSurvey._id, surveyData);
 
       if (response.success) {
         showToast("Slum survey submitted successfully", "success");
-        router.push(`/surveyor/slums/${formData.slumId}`);
+        // Redirect to dashboard after successful submission
+        router.push('/surveyor/dashboard');
       } else {
         showToast(response.message || "Failed to submit survey", "error");
       }
@@ -962,23 +991,21 @@ export default function SlumSurveyPage() {
     try {
       setSaving(true);
       
-      // Map current step to section name
+      // Map current step to section name (13 sections total)
       const sectionMap: Record<number, string> = {
         0: 'basicInformation',
         1: 'landStatus',
-        2: 'surveyOperation',
-        3: 'basicInformation', // This overlaps with step 0, need to adjust
-        4: 'landStatus',      // This overlaps with step 1, need to adjust
-        5: 'populationAndHealth',
-        6: 'literacyAndEducation',
-        7: 'housingConditions',
-        8: 'economicStatus',
-        9: 'employmentAndOccupation',
-        10: 'infrastructure',
-        11: 'education',
-        12: 'health',
-        13: 'socialDevelopment',
-        14: 'review'
+        2: 'populationAndHealth',
+        3: 'literacyAndEducation',
+        4: 'employmentAndOccupation',
+        5: 'waterAndSanitation',
+        6: 'housingConditions',
+        7: 'utilities',
+        8: 'socialInfrastructure',
+        9: 'transportationAndAccessibility',
+        10: 'environmentalConditions',
+        11: 'socialIssuesAndVulnerableGroups',
+        12: 'slumImprovementAndDevelopment'
       };
       
       // Extract data for current section
@@ -1077,6 +1104,8 @@ export default function SlumSurveyPage() {
                 onConfirm={confirmLeave}
                 onCancel={cancelLeave}
               />
+              
+
               <h1 className="text-3xl font-bold text-white tracking-tight">Slum Survey</h1>
               <p className="text-slate-400 mt-1 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-500"></span>

@@ -117,8 +117,13 @@ export default function SupervisorReportsPage() {
       return;
     }
 
-    setUser(userData);
-    setLoading(false);
+    // Use setTimeout to prevent synchronous state updates in effects
+    const timer = setTimeout(() => {
+      setUser(userData);
+      setLoading(false);
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [router]);
 
   useEffect(() => {
@@ -246,13 +251,13 @@ export default function SupervisorReportsPage() {
           {reportTypes.map((report, index) => (
             <div 
               key={index}
-              className="group relative overflow-hidden bg-linear-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-slate-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
+              className="group relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-slate-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
               onClick={() => alert(`Generating ${report.title} report...`)}
             >
-              <div className={`absolute inset-0 bg-linear-to-br ${report.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+              <div className={`absolute inset-0 bg-gradient-to-br ${report.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
               
               <div className="relative z-10">
-                <div className={`inline-flex p-3 rounded-lg bg-linear-to-br ${report.color} mb-4`}>
+                <div className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${report.color} mb-4`}>
                   <div className="text-white">
                     {report.icon}
                   </div>

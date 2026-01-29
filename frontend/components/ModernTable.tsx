@@ -39,11 +39,14 @@ export default function ModernTable<T>({
   }>({ key: null, direction: "asc" });
 
   // Filter data
-  const filteredData = data.filter((row) =>
-    Object.values(row as any).some((value) =>
+  const filteredData = data.filter((row) => {
+    // Convert row to a record type for safe property iteration
+    const rowRecord = row as Record<string, unknown>;
+    const rowValues = Object.values(rowRecord);
+    return rowValues.some((value) =>
       String(value).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+    );
+  });
 
   // Sort data
   const sortedData = [...filteredData].sort((a, b) => {
@@ -145,7 +148,7 @@ export default function ModernTable<T>({
                     {columns.map((column, index) => (
                       <td
                         key={index}
-                        className={cn("px-6 py-4 text-sm text-slate-300", column.className)}
+                        className={cn("px-6 py-4 text-sm text-slate-300 align-middle", column.className)}
                       >
                          {typeof column.accessorKey === 'function' 
                             ? column.accessorKey(row) 

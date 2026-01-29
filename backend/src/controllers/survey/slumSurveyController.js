@@ -123,6 +123,50 @@ exports.submitSlumSurvey = async (req, res) => {
             return sendError(res, 'Not authorized to submit this survey', 403);
         }
 
+        // Mark all sections as completed when submitting
+        const allSections = [
+            'basicInformation',
+            'landStatus',
+            'populationAndHealth',
+            'literacyAndEducation',
+            'employmentAndOccupation',
+            'waterAndSanitation',
+            'housingConditions',
+            'utilities',
+            'socialInfrastructure',
+            'transportationAndAccessibility',
+            'environmentalConditions',
+            'socialIssuesAndVulnerableGroups',
+            'slumImprovementAndDevelopment'
+        ];
+        
+        // Add all sections to completed sections if they have meaningful data
+        allSections.forEach(section => {
+            if (!survey.completedSections.includes(section)) {
+                const sectionData = survey[section];
+                let hasMeaningfulData = false;
+                
+                if (sectionData && typeof sectionData === 'object' && sectionData !== null) {
+                    for (let key in sectionData) {
+                        if (sectionData[key] !== null && sectionData[key] !== undefined && sectionData[key] !== '') {
+                            hasMeaningfulData = true;
+                            break;
+                        }
+                    }
+                } else if (sectionData !== null && sectionData !== undefined && sectionData !== '') {
+                    hasMeaningfulData = true;
+                }
+                
+                if (hasMeaningfulData) {
+                    survey.completedSections.push(section);
+                    console.log(`Section ${section} marked as completed during submission`);
+                }
+            }
+        });
+        
+        // Calculate final completion percentage
+        survey.completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 13) * 100));
+        
         survey.surveyStatus = 'SUBMITTED';
         survey.submittedBy = userId;
         survey.submittedAt = new Date();
@@ -130,6 +174,8 @@ exports.submitSlumSurvey = async (req, res) => {
         survey.lastModifiedAt = new Date();
 
         await survey.save();
+        
+        console.log(`Final completion after submission: ${survey.completedSections.length}/13 = ${survey.completionPercentage}%`);
         await survey.populate([
             { path: 'slum', select: 'name location population' },
             { path: 'surveyor', select: 'name email' },
@@ -266,12 +312,19 @@ exports.updateSurveySection = async (req, res) => {
             
             if (hasMeaningfulData) {
                 survey.completedSections.push(section);
+                console.log(`Section ${section} marked as completed. Total completed: ${survey.completedSections.length}`);
+                console.log(`Completed sections:`, survey.completedSections);
+            } else {
+                console.log(`Section ${section} has no meaningful data, not marking as completed`);
             }
+        } else {
+            console.log(`Section ${section} already marked as completed`);
         }
         
         // Calculate completion percentage based on explicitly tracked completed sections
         // Each of the 13 sections contributes ~7.69% to the total completion (100/13)
         const completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 13) * 100));
+        console.log(`Completion calculation: ${survey.completedSections.length}/13 sections = ${completionPercentage}%`);
         survey.completionPercentage = completionPercentage;
         
         // Update survey status based on completion

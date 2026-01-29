@@ -10,6 +10,7 @@ import Select from '@/components/Select';
 import Checkbox from '@/components/Checkbox';
 import apiService from '@/services/api';
 import { useToast } from '@/components/Toast';
+import BackNavigationDialog from '@/components/BackNavigationDialog';
 
 interface HouseholdSurveyForm {
   householdId: string;
@@ -97,6 +98,11 @@ interface HouseholdSurveyForm {
   notes?: string;
 }
 
+interface FieldError {
+  field: string;
+  message: string;
+}
+
 const SECTIONS = [
   { id: 'general', title: 'General Information', icon: '🏢' },
   { id: 'household', title: 'Household Details', icon: '👥' },
@@ -159,13 +165,12 @@ export default function HouseholdSurveyPage() {
   const assignmentId = params.id as string;
   const { showToast } = useToast();
 
-  const [slum, setSlum] = useState<any>(null);
-  const [assignment, setAssignment] = useState<any>(null);
-  const [households, setHouseholds] = useState<any[]>([]);
-  const [selectedHousehold, setSelectedHousehold] = useState<any>(null);
+  const [slum, setSlum] = useState<{ name: string } | null>(null);
+  const [assignment, setAssignment] = useState(null);
+  const [households, setHouseholds] = useState([]);
+  const [selectedHousehold, setSelectedHousehold] = useState(null);
   const [loading, setLoading] = useState(true);
   const [householdsLoading, setHouseholdsLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['general', 'household'])
   );
@@ -173,6 +178,14 @@ export default function HouseholdSurveyPage() {
   const [formData, setFormData] = useState<HouseholdSurveyForm>({
     householdId: '',
   });
+  
+  // Validation state
+  const [errors, setErrors] = useState<FieldError[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Back navigation confirmation
+  const [showBackConfirm, setShowBackConfirm] = useState(false);
+  const [backDestination, setBackDestination] = useState<string>('');
 
   const loadHouseholdsForSlum = useCallback(async (slumId: string) => {
     try {
@@ -245,7 +258,7 @@ export default function HouseholdSurveyPage() {
     });
   }, []);
 
-  const handleInputChange = useCallback((field: string, value: any) => {
+  const handleInputChange = useCallback((field: string, value: string | number | undefined) => {
     setFormData((prev) => {
       // Only update if the value actually changed to prevent unnecessary re-renders
       if (prev[field as keyof HouseholdSurveyForm] === value) {
@@ -279,14 +292,232 @@ export default function HouseholdSurveyPage() {
     });
   }, []);
 
+  // Validation function
+  const validateForm = (): FieldError[] => {
+    const newErrors: FieldError[] = [];
+    
+    // General Information (except Additional Notes)
+    if (!formData.houseDoorNo?.trim()) {
+      newErrors.push({ field: 'houseDoorNo', message: 'House/Flat/Door No. is required' });
+    }
+    
+    // Household Details
+    if (!formData.headName?.trim()) {
+      newErrors.push({ field: 'headName', message: 'Head of Household Name is required' });
+    }
+    if (!formData.fatherName?.trim()) {
+      newErrors.push({ field: 'fatherName', message: "Father's Name is required" });
+    }
+    if (!formData.sex) {
+      newErrors.push({ field: 'sex', message: 'Sex is required' });
+    }
+    if (!formData.caste) {
+      newErrors.push({ field: 'caste', message: 'Caste is required' });
+    }
+    if (!formData.religion) {
+      newErrors.push({ field: 'religion', message: 'Religion is required' });
+    }
+    if (!formData.minorityStatus) {
+      newErrors.push({ field: 'minorityStatus', message: 'Minority Status is required' });
+    }
+    if (formData.familyMembersMale === undefined || formData.familyMembersMale === null || isNaN(formData.familyMembersMale) || formData.familyMembersMale < 0) {
+      newErrors.push({ field: 'familyMembersMale', message: 'Number of Family Members (Male) is required' });
+    }
+    if (formData.familyMembersFemale === undefined || formData.familyMembersFemale === null || isNaN(formData.familyMembersFemale) || formData.familyMembersFemale < 0) {
+      newErrors.push({ field: 'familyMembersFemale', message: 'Number of Family Members (Female) is required' });
+    }
+    if (formData.familyMembersTotal === undefined || formData.familyMembersTotal === null || isNaN(formData.familyMembersTotal) || formData.familyMembersTotal < 0) {
+      newErrors.push({ field: 'familyMembersTotal', message: 'Number of Family Members (Total) is required' });
+    }
+    if (!formData.femaleHeadStatus) {
+      newErrors.push({ field: 'femaleHeadStatus', message: 'Female Head Status is required' });
+    }
+    if (formData.illiterateAdultMale === undefined || formData.illiterateAdultMale === null || isNaN(formData.illiterateAdultMale) || formData.illiterateAdultMale < 0) {
+      newErrors.push({ field: 'illiterateAdultMale', message: 'Number of Illiterate Adult Members (Male) is required' });
+    }
+    if (formData.illiterateAdultFemale === undefined || formData.illiterateAdultFemale === null || isNaN(formData.illiterateAdultFemale) || formData.illiterateAdultFemale < 0) {
+      newErrors.push({ field: 'illiterateAdultFemale', message: 'Number of Illiterate Adult Members (Female) is required' });
+    }
+    if (formData.illiterateAdultTotal === undefined || formData.illiterateAdultTotal === null || isNaN(formData.illiterateAdultTotal) || formData.illiterateAdultTotal < 0) {
+      newErrors.push({ field: 'illiterateAdultTotal', message: 'Number of Illiterate Adult Members (Total) is required' });
+    }
+    if (formData.childrenNotAttendingMale === undefined || formData.childrenNotAttendingMale === null || isNaN(formData.childrenNotAttendingMale) || formData.childrenNotAttendingMale < 0) {
+      newErrors.push({ field: 'childrenNotAttendingMale', message: 'Number of Children Aged 6-14 Not Attending School (Male) is required' });
+    }
+    if (formData.childrenNotAttendingFemale === undefined || formData.childrenNotAttendingFemale === null || isNaN(formData.childrenNotAttendingFemale) || formData.childrenNotAttendingFemale < 0) {
+      newErrors.push({ field: 'childrenNotAttendingFemale', message: 'Number of Children Aged 6-14 Not Attending School (Female) is required' });
+    }
+    if (formData.childrenNotAttendingTotal === undefined || formData.childrenNotAttendingTotal === null || isNaN(formData.childrenNotAttendingTotal) || formData.childrenNotAttendingTotal < 0) {
+      newErrors.push({ field: 'childrenNotAttendingTotal', message: 'Number of Children Aged 6-14 Not Attending School (Total) is required' });
+    }
+    if (formData.handicappedPhysically === undefined || formData.handicappedPhysically === null || isNaN(formData.handicappedPhysically) || formData.handicappedPhysically < 0) {
+      newErrors.push({ field: 'handicappedPhysically', message: 'Number of Handicapped Persons (Physically) is required' });
+    }
+    if (formData.handicappedMentally === undefined || formData.handicappedMentally === null || isNaN(formData.handicappedMentally) || formData.handicappedMentally < 0) {
+      newErrors.push({ field: 'handicappedMentally', message: 'Number of Handicapped Persons (Mentally) is required' });
+    }
+    if (formData.handicappedTotal === undefined || formData.handicappedTotal === null || isNaN(formData.handicappedTotal) || formData.handicappedTotal < 0) {
+      newErrors.push({ field: 'handicappedTotal', message: 'Number of Handicapped Persons (Total) is required' });
+    }
+    if (!formData.femaleEarningStatus) {
+      newErrors.push({ field: 'femaleEarningStatus', message: 'If Major Earning Member is Female, Status is required' });
+    }
+    if (!formData.belowPovertyLine) {
+      newErrors.push({ field: 'belowPovertyLine', message: 'Is Your Family Below Poverty Line? is required' });
+    }
+    if (formData.belowPovertyLine === 'YES' && !formData.bplCard) {
+      newErrors.push({ field: 'bplCard', message: 'If BPL, Does the Family Possess BPL Card? is required' });
+    }
+
+    // Housing & Infrastructure
+    if (!formData.landTenureStatus) {
+      newErrors.push({ field: 'landTenureStatus', message: 'Land Tenure Status is required' });
+    }
+    if (!formData.houseStructure) {
+      newErrors.push({ field: 'houseStructure', message: 'House Structure is required' });
+    }
+    if (!formData.roofType) {
+      newErrors.push({ field: 'roofType', message: 'Roof Type is required' });
+    }
+    if (!formData.flooringType) {
+      newErrors.push({ field: 'flooringType', message: 'Flooring Type is required' });
+    }
+    if (!formData.houseLighting) {
+      newErrors.push({ field: 'houseLighting', message: 'House Lighting is required' });
+    }
+    if (!formData.cookingFuel) {
+      newErrors.push({ field: 'cookingFuel', message: 'Cooking Fuel is required' });
+    }
+    if (!formData.waterSource) {
+      newErrors.push({ field: 'waterSource', message: 'Water Source is required' });
+    }
+    if (!formData.waterSupplyDuration) {
+      newErrors.push({ field: 'waterSupplyDuration', message: 'Water Supply Duration is required' });
+    }
+    if (!formData.waterSourceDistance) {
+      newErrors.push({ field: 'waterSourceDistance', message: 'Distance to Water Source is required' });
+    }
+    if (!formData.toiletFacility) {
+      newErrors.push({ field: 'toiletFacility', message: 'Toilet Facility is required' });
+    }
+    if (!formData.bathroomFacility) {
+      newErrors.push({ field: 'bathroomFacility', message: 'Bathroom Facility is required' });
+    }
+    if (!formData.roadFrontType) {
+      newErrors.push({ field: 'roadFrontType', message: 'Road in Front of House is required' });
+    }
+
+    // Education & Health
+    if (!formData.preschoolType) {
+      newErrors.push({ field: 'preschoolType', message: 'Type of Pre-school Available is required' });
+    }
+    if (!formData.primarySchoolType) {
+      newErrors.push({ field: 'primarySchoolType', message: 'Type of Primary School Available is required' });
+    }
+    if (!formData.highSchoolType) {
+      newErrors.push({ field: 'highSchoolType', message: 'Type of High School Available is required' });
+    }
+    if (!formData.healthFacilityType) {
+      newErrors.push({ field: 'healthFacilityType', message: 'Type of Health Facility Access is required' });
+    }
+
+    // Migration Details
+    if (!formData.yearsInTown) {
+      newErrors.push({ field: 'yearsInTown', message: 'Number of Years of Stay in this Town/City is required' });
+    }
+    if (!formData.migrated) {
+      newErrors.push({ field: 'migrated', message: 'Migrated is required' });
+    }
+    if (formData.migrated === 'YES' && !formData.migratedFrom) {
+      newErrors.push({ field: 'migratedFrom', message: 'Whether Migrated From is required when Migrated is YES' });
+    }
+    if (formData.migrated === 'YES' && !formData.migrationType) {
+      newErrors.push({ field: 'migrationType', message: 'Migration Type is required when Migrated is YES' });
+    }
+
+    // Income & Expenditure
+    if (formData.earningAdultMale === undefined || formData.earningAdultMale === null || isNaN(formData.earningAdultMale) || formData.earningAdultMale < 0) {
+      newErrors.push({ field: 'earningAdultMale', message: 'Number of Earning Adult Members (Male) is required' });
+    }
+    if (formData.earningAdultFemale === undefined || formData.earningAdultFemale === null || isNaN(formData.earningAdultFemale) || formData.earningAdultFemale < 0) {
+      newErrors.push({ field: 'earningAdultFemale', message: 'Number of Earning Adult Members (Female) is required' });
+    }
+    if (formData.earningAdultTotal === undefined || formData.earningAdultTotal === null || isNaN(formData.earningAdultTotal) || formData.earningAdultTotal < 0) {
+      newErrors.push({ field: 'earningAdultTotal', message: 'Number of Earning Adult Members (Total) is required' });
+    }
+    if (formData.earningNonAdultMale === undefined || formData.earningNonAdultMale === null || isNaN(formData.earningNonAdultMale) || formData.earningNonAdultMale < 0) {
+      newErrors.push({ field: 'earningNonAdultMale', message: 'Number of Earning Non-Adult Members (Male) is required' });
+    }
+    if (formData.earningNonAdultFemale === undefined || formData.earningNonAdultFemale === null || isNaN(formData.earningNonAdultFemale) || formData.earningNonAdultFemale < 0) {
+      newErrors.push({ field: 'earningNonAdultFemale', message: 'Number of Earning Non-Adult Members (Female) is required' });
+    }
+    if (formData.earningNonAdultTotal === undefined || formData.earningNonAdultTotal === null || isNaN(formData.earningNonAdultTotal) || formData.earningNonAdultTotal < 0) {
+      newErrors.push({ field: 'earningNonAdultTotal', message: 'Number of Earning Non-Adult Members (Total) is required' });
+    }
+    if (formData.monthlyIncome === undefined || formData.monthlyIncome === null || isNaN(formData.monthlyIncome) || formData.monthlyIncome < 0) {
+      newErrors.push({ field: 'monthlyIncome', message: 'Average Monthly Income of Household (in Rs.) is required' });
+    }
+    if (formData.monthlyExpenditure === undefined || formData.monthlyExpenditure === null || isNaN(formData.monthlyExpenditure) || formData.monthlyExpenditure < 0) {
+      newErrors.push({ field: 'monthlyExpenditure', message: 'Average Monthly Expenditure of Household (in Rs.) is required' });
+    }
+    if (formData.debtOutstanding === undefined || formData.debtOutstanding === null || isNaN(formData.debtOutstanding) || formData.debtOutstanding < 0) {
+      newErrors.push({ field: 'debtOutstanding', message: 'Debt Outstanding as on Date of Survey (in Rs.) is required' });
+    }
+
+    return newErrors;
+  };
+
+  // Get error message for a field
+  const getFieldError = (fieldName: string): string | undefined => {
+    const error = errors.find(err => err.field === fieldName);
+    return error?.message;
+  };
+
+  // Scroll to first invalid field
+  const scrollToFirstError = () => {
+    if (errors.length > 0) {
+      const firstErrorField = errors[0].field;
+      // Wait for the DOM to update before scrolling
+      setTimeout(() => {
+        const element = document.querySelector(`[name="${firstErrorField}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          (element as HTMLElement).focus();
+        }
+      }, 100);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      const response = await apiService.submitHouseholdSurvey(
-        formData.householdId,
-        formData
-      );
-
+      
+      // Validate form
+      const validationErrors = validateForm();
+      setErrors(validationErrors);
+      
+      if (validationErrors.length > 0) {
+        showToast('Please fill all required fields', 'error');
+        scrollToFirstError();
+        return;
+      }
+      
+      // Clear previous errors
+      setErrors([]);
+      
+      // Create or get household survey
+      const surveyResponse = await apiService.createOrGetHouseholdSurvey(formData.householdId);
+      
+      if (!surveyResponse.success) {
+        showToast(surveyResponse.message || 'Failed to initialize survey', 'error');
+        return;
+      }
+      
+      const surveyId = surveyResponse.data._id;
+      
+      // Submit the survey
+      const response = await apiService.submitHouseholdSurvey(surveyId, formData);
+      
       if (response.success) {
         showToast('Household survey submitted successfully', 'success');
         router.push(`/surveyor/dashboard`);
@@ -328,10 +559,13 @@ export default function HouseholdSurveyPage() {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <button
-              onClick={() => router.back()}
+              onClick={() => {
+                setBackDestination('/surveyor/dashboard');
+                setShowBackConfirm(true);
+              }}
               className="mb-2 text-sm text-slate-400 hover:text-white flex items-center transition-colors"
             >
-              <span className="mr-1">←</span> Back to Assignment
+              <span className="mr-1">←</span> Back to Dashboard
             </button>
             <h1 className="text-3xl font-bold text-white tracking-tight">Household Survey</h1>
             <p className="text-slate-400 mt-1 flex items-center gap-2">
@@ -346,12 +580,14 @@ export default function HouseholdSurveyPage() {
           {SECTIONS.map((section) => (
             <Card
               key={`section-${section.id}`}
-              className="overflow-hidden cursor-pointer transition-colors"
-              onClick={() => toggleSection(section.id)}
+              className="overflow-hidden transition-colors"
               padding="none"
             >
               {/* Section Header */}
-              <div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
+              <div 
+                className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors cursor-pointer"
+                onClick={() => toggleSection(section.id)}
+              >
                 <div className="flex items-center gap-3">
                   <span className="text-xl p-2 bg-slate-800 rounded-lg">{section.icon}</span>
                   <h3 className="font-bold text-slate-200">{section.title}</h3>
@@ -392,6 +628,8 @@ export default function HouseholdSurveyPage() {
                       onChange={(e) =>
                         handleInputChange('houseDoorNo', e.target.value)
                       }
+                      name="houseDoorNo"
+                      error={getFieldError('houseDoorNo')}
                     />
                   </>
                 )}
@@ -405,6 +643,8 @@ export default function HouseholdSurveyPage() {
                       onChange={(e) =>
                         handleInputChange('headName', e.target.value)
                       }
+                      name="headName"
+                      error={getFieldError('headName')}
                     />
                     <Input
                       label="Father's Name"
@@ -413,13 +653,17 @@ export default function HouseholdSurveyPage() {
                       onChange={(e) =>
                         handleInputChange('fatherName', e.target.value)
                       }
+                      name="fatherName"
+                      error={getFieldError('fatherName')}
                     />
                     <Select
                       label="Sex"
                       value={formData.sex || ''}
-                      onChange={(value) =>
-                        handleInputChange('sex', value)
+                      onChange={(e) =>
+                        handleInputChange('sex', e.target.value)
                       }
+                      name="sex"
+                      error={getFieldError('sex')}
                       options={[
                         { value: 'MALE', label: 'Male' },
                         { value: 'FEMALE', label: 'Female' },
@@ -428,9 +672,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Caste"
                       value={formData.caste || ''}
-                      onChange={(value) =>
-                        handleInputChange('caste', value)
+                      onChange={(e) =>
+                        handleInputChange('caste', e.target.value)
                       }
+                      name="caste"
+                      error={getFieldError('caste')}
                       options={[
                         { value: 'GENERAL', label: 'General' },
                         { value: 'SC', label: 'SC' },
@@ -441,9 +687,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Religion"
                       value={formData.religion || ''}
-                      onChange={(value) =>
-                        handleInputChange('religion', value)
+                      onChange={(e) =>
+                        handleInputChange('religion', e.target.value)
                       }
+                      name="religion"
+                      error={getFieldError('religion')}
                       options={[
                         { value: 'HINDU', label: 'Hindu' },
                         { value: 'MUSLIM', label: 'Muslim' },
@@ -458,9 +706,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Minority Status"
                       value={formData.minorityStatus || ''}
-                      onChange={(value) =>
-                        handleInputChange('minorityStatus', value)
+                      onChange={(e) =>
+                        handleInputChange('minorityStatus', e.target.value)
                       }
+                      name="minorityStatus"
+                      error={getFieldError('minorityStatus')}
                       options={[
                         { value: 'NON_MINORITY', label: 'Non-minority' },
                         { value: 'MINORITY', label: 'Minority' },
@@ -470,35 +720,43 @@ export default function HouseholdSurveyPage() {
                       label="Number of Family Members (Male)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.familyMembersMale || ''}
+                      value={formData.familyMembersMale ?? ''}
                       onChange={(e) =>
-                        handleInputChange('familyMembersMale', parseInt(e.target.value) || undefined)
+                        handleInputChange('familyMembersMale', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="familyMembersMale"
+                      error={getFieldError('familyMembersMale')}
                     />
                     <Input
                       label="Number of Family Members (Female)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.familyMembersFemale || ''}
+                      value={formData.familyMembersFemale ?? ''}
                       onChange={(e) =>
-                        handleInputChange('familyMembersFemale', parseInt(e.target.value) || undefined)
+                        handleInputChange('familyMembersFemale', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="familyMembersFemale"
+                      error={getFieldError('familyMembersFemale')}
                     />
                     <Input
                       label="Number of Family Members (Total)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.familyMembersTotal || ''}
+                      value={formData.familyMembersTotal ?? ''}
                       onChange={(e) =>
-                        handleInputChange('familyMembersTotal', parseInt(e.target.value) || undefined)
+                        handleInputChange('familyMembersTotal', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="familyMembersTotal"
+                      error={getFieldError('familyMembersTotal')}
                     />
                     <Select
                       label="Female Head Status"
                       value={formData.femaleHeadStatus || ''}
-                      onChange={(value) =>
-                        handleInputChange('femaleHeadStatus', value)
+                      onChange={(e) =>
+                        handleInputChange('femaleHeadStatus', e.target.value)
                       }
+                      name="femaleHeadStatus"
+                      error={getFieldError('femaleHeadStatus')}
                       options={[
                         { value: 'MARRIED', label: 'Married' },
                         { value: 'WIDOWED', label: 'Widowed' },
@@ -512,89 +770,109 @@ export default function HouseholdSurveyPage() {
                       label="Number of Illiterate Adult Members (Male)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.illiterateAdultMale || ''}
+                      value={formData.illiterateAdultMale ?? ''}
                       onChange={(e) =>
-                        handleInputChange('illiterateAdultMale', parseInt(e.target.value) || undefined)
+                        handleInputChange('illiterateAdultMale', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="illiterateAdultMale"
+                      error={getFieldError('illiterateAdultMale')}
                     />
                     <Input
                       label="Number of Illiterate Adult Members (Female)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.illiterateAdultFemale || ''}
+                      value={formData.illiterateAdultFemale ?? ''}
                       onChange={(e) =>
-                        handleInputChange('illiterateAdultFemale', parseInt(e.target.value) || undefined)
+                        handleInputChange('illiterateAdultFemale', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="illiterateAdultFemale"
+                      error={getFieldError('illiterateAdultFemale')}
                     />
                     <Input
                       label="Number of Illiterate Adult Members (Total)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.illiterateAdultTotal || ''}
+                      value={formData.illiterateAdultTotal ?? ''}
                       onChange={(e) =>
-                        handleInputChange('illiterateAdultTotal', parseInt(e.target.value) || undefined)
+                        handleInputChange('illiterateAdultTotal', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="illiterateAdultTotal"
+                      error={getFieldError('illiterateAdultTotal')}
                     />
                     <Input
                       label="Number of Children Aged 6-14 Not Attending School (Male)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.childrenNotAttendingMale || ''}
+                      value={formData.childrenNotAttendingMale ?? ''}
                       onChange={(e) =>
-                        handleInputChange('childrenNotAttendingMale', parseInt(e.target.value) || undefined)
+                        handleInputChange('childrenNotAttendingMale', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="childrenNotAttendingMale"
+                      error={getFieldError('childrenNotAttendingMale')}
                     />
                     <Input
                       label="Number of Children Aged 6-14 Not Attending School (Female)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.childrenNotAttendingFemale || ''}
+                      value={formData.childrenNotAttendingFemale ?? ''}
                       onChange={(e) =>
-                        handleInputChange('childrenNotAttendingFemale', parseInt(e.target.value) || undefined)
+                        handleInputChange('childrenNotAttendingFemale', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="childrenNotAttendingFemale"
+                      error={getFieldError('childrenNotAttendingFemale')}
                     />
                     <Input
                       label="Number of Children Aged 6-14 Not Attending School (Total)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.childrenNotAttendingTotal || ''}
+                      value={formData.childrenNotAttendingTotal ?? ''}
                       onChange={(e) =>
-                        handleInputChange('childrenNotAttendingTotal', parseInt(e.target.value) || undefined)
+                        handleInputChange('childrenNotAttendingTotal', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="childrenNotAttendingTotal"
+                      error={getFieldError('childrenNotAttendingTotal')}
                     />
                     <Input
                       label="Number of Handicapped Persons (Physically)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.handicappedPhysically || ''}
+                      value={formData.handicappedPhysically ?? ''}
                       onChange={(e) =>
-                        handleInputChange('handicappedPhysically', parseInt(e.target.value) || undefined)
+                        handleInputChange('handicappedPhysically', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="handicappedPhysically"
+                      error={getFieldError('handicappedPhysically')}
                     />
                     <Input
                       label="Number of Handicapped Persons (Mentally)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.handicappedMentally || ''}
+                      value={formData.handicappedMentally ?? ''}
                       onChange={(e) =>
-                        handleInputChange('handicappedMentally', parseInt(e.target.value) || undefined)
+                        handleInputChange('handicappedMentally', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="handicappedMentally"
+                      error={getFieldError('handicappedMentally')}
                     />
                     <Input
                       label="Number of Handicapped Persons (Total)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.handicappedTotal || ''}
+                      value={formData.handicappedTotal ?? ''}
                       onChange={(e) =>
-                        handleInputChange('handicappedTotal', parseInt(e.target.value) || undefined)
+                        handleInputChange('handicappedTotal', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="handicappedTotal"
+                      error={getFieldError('handicappedTotal')}
                     />
                     <Select
                       label="If Major Earning Member is Female, Status"
                       value={formData.femaleEarningStatus || ''}
-                      onChange={(value) =>
-                        handleInputChange('femaleEarningStatus', value)
+                      onChange={(e) =>
+                        handleInputChange('femaleEarningStatus', e.target.value)
                       }
+                      name="femaleEarningStatus"
+                      error={getFieldError('femaleEarningStatus')}
                       options={[
                         { value: 'MARRIED', label: 'Married' },
                         { value: 'WIDOWED', label: 'Widowed' },
@@ -607,9 +885,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Is Your Family Below Poverty Line?"
                       value={formData.belowPovertyLine || ''}
-                      onChange={(value) =>
-                        handleInputChange('belowPovertyLine', value)
+                      onChange={(e) =>
+                        handleInputChange('belowPovertyLine', e.target.value)
                       }
+                      name="belowPovertyLine"
+                      error={getFieldError('belowPovertyLine')}
                       options={[
                         { value: 'YES', label: 'Yes' },
                         { value: 'NO', label: 'No' },
@@ -619,9 +899,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="If BPL, Does the Family Possess BPL Card?"
                       value={formData.bplCard || ''}
-                      onChange={(value) =>
-                        handleInputChange('bplCard', value)
+                      onChange={(e) =>
+                        handleInputChange('bplCard', e.target.value)
                       }
+                      name="bplCard"
+                      error={getFieldError('bplCard')}
                       options={[
                         { value: 'YES', label: 'Yes' },
                         { value: 'NO', label: 'No' },
@@ -635,9 +917,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Land Tenure Status"
                       value={formData.landTenureStatus || ''}
-                      onChange={(value) =>
-                        handleInputChange('landTenureStatus', value)
+                      onChange={(e) =>
+                        handleInputChange('landTenureStatus', e.target.value)
                       }
+                      name="landTenureStatus"
+                      error={getFieldError('landTenureStatus')}
                       options={[
                         { value: 'PATTA', label: 'Patta' },
                         { value: 'POSSESSION_CERTIFICATE', label: 'Possession Certificate/Occupancy Right' },
@@ -650,9 +934,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="House Structure"
                       value={formData.houseStructure || ''}
-                      onChange={(value) =>
-                        handleInputChange('houseStructure', value)
+                      onChange={(e) =>
+                        handleInputChange('houseStructure', e.target.value)
                       }
+                      name="houseStructure"
+                      error={getFieldError('houseStructure')}
                       options={[
                         { value: 'PUCCA', label: 'Pucca' },
                         { value: 'SEMI_PUCCA', label: 'Semi-Pucca' },
@@ -662,9 +948,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Roof Type"
                       value={formData.roofType || ''}
-                      onChange={(value) =>
-                        handleInputChange('roofType', value)
+                      onChange={(e) =>
+                        handleInputChange('roofType', e.target.value)
                       }
+                      name="roofType"
+                      error={getFieldError('roofType')}
                       options={[
                         { value: 'GRASS_THATCHED', label: 'Grass/thatched' },
                         { value: 'TARPAULIN', label: 'Tarpaulin' },
@@ -678,9 +966,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Flooring Type"
                       value={formData.flooringType || ''}
-                      onChange={(value) =>
-                        handleInputChange('flooringType', value)
+                      onChange={(e) =>
+                        handleInputChange('flooringType', e.target.value)
                       }
+                      name="flooringType"
+                      error={getFieldError('flooringType')}
                       options={[
                         { value: 'MUD', label: 'Mud' },
                         { value: 'BRICK', label: 'Brick' },
@@ -693,9 +983,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="House Lighting"
                       value={formData.houseLighting || ''}
-                      onChange={(value) =>
-                        handleInputChange('houseLighting', value)
+                      onChange={(e) =>
+                        handleInputChange('houseLighting', e.target.value)
                       }
+                      name="houseLighting"
+                      error={getFieldError('houseLighting')}
                       options={[
                         { value: 'ELECTRICITY', label: 'Electricity connection' },
                         { value: 'KEROSENE', label: 'Kerosene' },
@@ -706,9 +998,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Cooking Fuel"
                       value={formData.cookingFuel || ''}
-                      onChange={(value) =>
-                        handleInputChange('cookingFuel', value)
+                      onChange={(e) =>
+                        handleInputChange('cookingFuel', e.target.value)
                       }
+                      name="cookingFuel"
+                      error={getFieldError('cookingFuel')}
                       options={[
                         { value: 'GAS', label: 'Gas' },
                         { value: 'ELECTRICITY', label: 'Electricity' },
@@ -721,9 +1015,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Water Source"
                       value={formData.waterSource || ''}
-                      onChange={(value) =>
-                        handleInputChange('waterSource', value)
+                      onChange={(e) =>
+                        handleInputChange('waterSource', e.target.value)
                       }
+                      name="waterSource"
+                      error={getFieldError('waterSource')}
                       options={[
                         { value: 'WITHIN_PREMISES_TAP', label: 'Within premises - Tap' },
                         { value: 'WITHIN_PREMISES_TUBEWELL', label: 'Within premises - Tubewell/handpump' },
@@ -740,9 +1036,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Water Supply Duration"
                       value={formData.waterSupplyDuration || ''}
-                      onChange={(value) =>
-                        handleInputChange('waterSupplyDuration', value)
+                      onChange={(e) =>
+                        handleInputChange('waterSupplyDuration', e.target.value)
                       }
+                      name="waterSupplyDuration"
+                      error={getFieldError('waterSupplyDuration')}
                       options={[
                         { value: 'LESS_THAN_1_HOUR', label: 'Less than 1 hour daily' },
                         { value: 'ONE_TWO_HOURS', label: '1-2 hrs daily' },
@@ -756,9 +1054,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Distance to Water Source"
                       value={formData.waterSourceDistance || ''}
-                      onChange={(value) =>
-                        handleInputChange('waterSourceDistance', value)
+                      onChange={(e) =>
+                        handleInputChange('waterSourceDistance', e.target.value)
                       }
+                      name="waterSourceDistance"
+                      error={getFieldError('waterSourceDistance')}
                       options={[
                         { value: 'LESS_THAN_HALF_KM', label: 'Less than 0.5 kms' },
                         { value: 'HALF_TO_ONE_KM', label: '0.5 to 1.0 km' },
@@ -770,9 +1070,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Toilet Facility"
                       value={formData.toiletFacility || ''}
-                      onChange={(value) =>
-                        handleInputChange('toiletFacility', value)
+                      onChange={(e) =>
+                        handleInputChange('toiletFacility', e.target.value)
                       }
+                      name="toiletFacility"
+                      error={getFieldError('toiletFacility')}
                       options={[
                         { value: 'OWN_SEPTIC_FLUSH', label: 'Own septic tank/flush latrine' },
                         { value: 'OWN_DRY_LATRINE', label: 'Own dry latrine' },
@@ -786,9 +1088,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Bathroom Facility"
                       value={formData.bathroomFacility || ''}
-                      onChange={(value) =>
-                        handleInputChange('bathroomFacility', value)
+                      onChange={(e) =>
+                        handleInputChange('bathroomFacility', e.target.value)
                       }
+                      name="bathroomFacility"
+                      error={getFieldError('bathroomFacility')}
                       options={[
                         { value: 'WITHIN_PREMISES', label: 'Within premises' },
                         { value: 'OUTSIDE_PREMISES', label: 'Outside premises' },
@@ -799,9 +1103,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Road in Front of House"
                       value={formData.roadFrontType || ''}
-                      onChange={(value) =>
-                        handleInputChange('roadFrontType', value)
+                      onChange={(e) =>
+                        handleInputChange('roadFrontType', e.target.value)
                       }
+                      name="roadFrontType"
+                      error={getFieldError('roadFrontType')}
                       options={[
                         { value: 'MOTORABLE_PUCCA', label: 'Motorable pucca' },
                         { value: 'MOTORABLE_KATCHA', label: 'Motorable katcha' },
@@ -817,9 +1123,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Type of Pre-school Available"
                       value={formData.preschoolType || ''}
-                      onChange={(value) =>
-                        handleInputChange('preschoolType', value)
+                      onChange={(e) =>
+                        handleInputChange('preschoolType', e.target.value)
                       }
+                      name="preschoolType"
+                      error={getFieldError('preschoolType')}
                       options={[
                         { value: 'MUNICIPAL', label: 'Municipal' },
                         { value: 'GOVERNMENT', label: 'Government' },
@@ -829,9 +1137,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Type of Primary School Available"
                       value={formData.primarySchoolType || ''}
-                      onChange={(value) =>
-                        handleInputChange('primarySchoolType', value)
+                      onChange={(e) =>
+                        handleInputChange('primarySchoolType', e.target.value)
                       }
+                      name="primarySchoolType"
+                      error={getFieldError('primarySchoolType')}
                       options={[
                         { value: 'MUNICIPAL', label: 'Municipal' },
                         { value: 'GOVERNMENT', label: 'Government' },
@@ -841,9 +1151,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Type of High School Available"
                       value={formData.highSchoolType || ''}
-                      onChange={(value) =>
-                        handleInputChange('highSchoolType', value)
+                      onChange={(e) =>
+                        handleInputChange('highSchoolType', e.target.value)
                       }
+                      name="highSchoolType"
+                      error={getFieldError('highSchoolType')}
                       options={[
                         { value: 'MUNICIPAL', label: 'Municipal' },
                         { value: 'GOVERNMENT', label: 'Government' },
@@ -853,9 +1165,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Type of Health Facility Access"
                       value={formData.healthFacilityType || ''}
-                      onChange={(value) =>
-                        handleInputChange('healthFacilityType', value)
+                      onChange={(e) =>
+                        handleInputChange('healthFacilityType', e.target.value)
                       }
+                      name="healthFacilityType"
+                      error={getFieldError('healthFacilityType')}
                       options={[
                         { value: 'PRIMARY_HEALTH_CENTRE', label: 'Primary Health Centre' },
                         { value: 'GOVT_HOSPITAL', label: 'Government Hospital' },
@@ -930,9 +1244,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Number of Years of Stay in this Town/City"
                       value={formData.yearsInTown || ''}
-                      onChange={(value) =>
-                        handleInputChange('yearsInTown', value)
+                      onChange={(e) =>
+                        handleInputChange('yearsInTown', e.target.value)
                       }
+                      name="yearsInTown"
+                      error={getFieldError('yearsInTown')}
                       options={[
                         { value: 'ZERO_TO_ONE_YEAR', label: '0 to 1 year' },
                         { value: 'ONE_TO_THREE_YEARS', label: '1 to 3 years' },
@@ -943,9 +1259,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Migrated"
                       value={formData.migrated || ''}
-                      onChange={(value) =>
-                        handleInputChange('migrated', value)
+                      onChange={(e) =>
+                        handleInputChange('migrated', e.target.value)
                       }
+                      name="migrated"
+                      error={getFieldError('migrated')}
                       options={[
                         { value: 'YES', label: 'Yes' },
                         { value: 'NO', label: 'No' },
@@ -954,9 +1272,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Whether Migrated From"
                       value={formData.migratedFrom || ''}
-                      onChange={(value) =>
-                        handleInputChange('migratedFrom', value)
+                      onChange={(e) =>
+                        handleInputChange('migratedFrom', e.target.value)
                       }
+                      name="migratedFrom"
+                      error={getFieldError('migratedFrom')}
                       options={[
                         { value: 'RURAL_TO_URBAN', label: 'Rural Area to Urban Area' },
                         { value: 'URBAN_TO_URBAN', label: 'Urban Area to Urban Area' },
@@ -965,9 +1285,11 @@ export default function HouseholdSurveyPage() {
                     <Select
                       label="Migration Type"
                       value={formData.migrationType || ''}
-                      onChange={(value) =>
-                        handleInputChange('migrationType', value)
+                      onChange={(e) =>
+                        handleInputChange('migrationType', e.target.value)
                       }
+                      name="migrationType"
+                      error={getFieldError('migrationType')}
                       options={[
                         { value: 'SEASONAL', label: 'Seasonal' },
                         { value: 'PERMANENT', label: 'Permanent' },
@@ -1010,82 +1332,100 @@ export default function HouseholdSurveyPage() {
                       label="Number of Earning Adult Members (Male)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.earningAdultMale || ''}
+                      value={formData.earningAdultMale ?? ''}
                       onChange={(e) =>
-                        handleInputChange('earningAdultMale', parseInt(e.target.value) || undefined)
+                        handleInputChange('earningAdultMale', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="earningAdultMale"
+                      error={getFieldError('earningAdultMale')}
                     />
                     <Input
                       label="Number of Earning Adult Members (Female)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.earningAdultFemale || ''}
+                      value={formData.earningAdultFemale ?? ''}
                       onChange={(e) =>
-                        handleInputChange('earningAdultFemale', parseInt(e.target.value) || undefined)
+                        handleInputChange('earningAdultFemale', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="earningAdultFemale"
+                      error={getFieldError('earningAdultFemale')}
                     />
                     <Input
                       label="Number of Earning Adult Members (Total)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.earningAdultTotal || ''}
+                      value={formData.earningAdultTotal ?? ''}
                       onChange={(e) =>
-                        handleInputChange('earningAdultTotal', parseInt(e.target.value) || undefined)
+                        handleInputChange('earningAdultTotal', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="earningAdultTotal"
+                      error={getFieldError('earningAdultTotal')}
                     />
                     <Input
                       label="Number of Earning Non-Adult Members (Male)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.earningNonAdultMale || ''}
+                      value={formData.earningNonAdultMale ?? ''}
                       onChange={(e) =>
-                        handleInputChange('earningNonAdultMale', parseInt(e.target.value) || undefined)
+                        handleInputChange('earningNonAdultMale', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="earningNonAdultMale"
+                      error={getFieldError('earningNonAdultMale')}
                     />
                     <Input
                       label="Number of Earning Non-Adult Members (Female)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.earningNonAdultFemale || ''}
+                      value={formData.earningNonAdultFemale ?? ''}
                       onChange={(e) =>
-                        handleInputChange('earningNonAdultFemale', parseInt(e.target.value) || undefined)
+                        handleInputChange('earningNonAdultFemale', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="earningNonAdultFemale"
+                      error={getFieldError('earningNonAdultFemale')}
                     />
                     <Input
                       label="Number of Earning Non-Adult Members (Total)"
                       type="number"
                       placeholder="Enter number"
-                      value={formData.earningNonAdultTotal || ''}
+                      value={formData.earningNonAdultTotal ?? ''}
                       onChange={(e) =>
-                        handleInputChange('earningNonAdultTotal', parseInt(e.target.value) || undefined)
+                        handleInputChange('earningNonAdultTotal', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="earningNonAdultTotal"
+                      error={getFieldError('earningNonAdultTotal')}
                     />
                     <Input
                       label="Average Monthly Income of Household (in Rs.)"
                       type="number"
                       placeholder="Enter amount"
-                      value={formData.monthlyIncome || ''}
+                      value={formData.monthlyIncome ?? ''}
                       onChange={(e) =>
-                        handleInputChange('monthlyIncome', parseInt(e.target.value) || undefined)
+                        handleInputChange('monthlyIncome', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="monthlyIncome"
+                      error={getFieldError('monthlyIncome')}
                     />
                     <Input
                       label="Average Monthly Expenditure of Household (in Rs.)"
                       type="number"
                       placeholder="Enter amount"
-                      value={formData.monthlyExpenditure || ''}
+                      value={formData.monthlyExpenditure ?? ''}
                       onChange={(e) =>
-                        handleInputChange('monthlyExpenditure', parseInt(e.target.value) || undefined)
+                        handleInputChange('monthlyExpenditure', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="monthlyExpenditure"
+                      error={getFieldError('monthlyExpenditure')}
                     />
                     <Input
                       label="Debt Outstanding as on Date of Survey (in Rs.)"
                       type="number"
                       placeholder="Enter amount"
-                      value={formData.debtOutstanding || ''}
+                      value={formData.debtOutstanding ?? ''}
                       onChange={(e) =>
-                        handleInputChange('debtOutstanding', parseInt(e.target.value) || undefined)
+                        handleInputChange('debtOutstanding', e.target.value ? parseInt(e.target.value) : undefined)
                       }
+                      name="debtOutstanding"
+                      error={getFieldError('debtOutstanding')}
                     />
                   </>
                 )}
@@ -1121,6 +1461,18 @@ export default function HouseholdSurveyPage() {
       >
         Submit Household Survey
       </Button>
+      
+      {/* Back Navigation Confirmation Dialog */}
+      <BackNavigationDialog
+        isOpen={showBackConfirm}
+        title="Leave Household Survey?"
+        message="Are you sure you want to leave this household survey? Your progress will be saved."
+        onConfirm={() => {
+          setShowBackConfirm(false);
+          router.push(backDestination);
+        }}
+        onCancel={() => setShowBackConfirm(false)}
+      />
       </div>
     </SurveyorLayout>
   );

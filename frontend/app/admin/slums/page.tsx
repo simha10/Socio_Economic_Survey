@@ -181,25 +181,6 @@ export default function AdminSlumsPage() {
           <Card>
             <div className="text-center py-12">
               <div className="text-slate-400 mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto opacity-50"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M12 7v5m0 0v3m0-3h3m-3 0H9"
-                  />
-                </svg>
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">
                 No Slums Found
@@ -207,13 +188,6 @@ export default function AdminSlumsPage() {
               <p className="text-slate-400 mb-4">
                 Get started by creating your first slum
               </p>
-              <Button
-                onClick={handleCreateSlum}
-                className="flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Create First Slum
-              </Button>
             </div>
           </Card>
         ) : (

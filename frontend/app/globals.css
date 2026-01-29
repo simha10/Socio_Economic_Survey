@@ -111,3 +111,12 @@ h6 {
 .animate-fade-in-up {
   animation: fade-in-up 0.3s ease-out forwards;
 }
+
+/* Table Alignment Fixes */
+.table-cell-center {
+  text-align: center !important;
+}
+
+.table-header-center {
+  text-align: center !important;
+}

@@ -16,12 +16,12 @@ interface Assignment {
     _id: string;
     username: string;
     name: string;
-  };
+  } | null;
   slum: {
     _id: string;
     name: string;
     location: string;
-  };
+  } | null;
   status: string;
   createdAt: string;
 }
@@ -163,7 +163,11 @@ export default function SupervisorAssignmentsPage() {
   };
 
   // Get list of already assigned slum IDs
-  const assignedSlumIds = new Set(assignments.map((a) => a.slum._id));
+  const assignedSlumIds = new Set(
+    assignments
+      .filter(a => a.slum !== null) // Only include assignments with valid slum
+      .map((a) => a.slum!._id)
+  );
 
   // Filter slums to only show those not yet assigned
   const availableSlums = slums.filter((slum) => !assignedSlumIds.has(slum._id));
@@ -178,8 +182,8 @@ export default function SupervisorAssignmentsPage() {
       setEditingAssignment(assignmentToEdit);
       setEditFormData({
         status: assignmentToEdit.status as "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED",
-        surveyor: assignmentToEdit.surveyor._id,
-        slum: assignmentToEdit.slum._id, // Keep the slum constant
+        surveyor: assignmentToEdit.surveyor?._id || '',
+        slum: assignmentToEdit.slum?._id || '', // Keep the slum constant
       });
       setShowEditConfirm(false);
       setAssignmentToEdit(null);
@@ -441,7 +445,7 @@ export default function SupervisorAssignmentsPage() {
         {editingAssignment && (
           <Card>
             <h2 className="text-xl font-bold text-white mb-4">
-              Edit Assignment: {editingAssignment.surveyor.name} - {editingAssignment.slum.name}
+              Edit Assignment: {editingAssignment.surveyor?.name || 'N/A'} - {editingAssignment.slum?.name || 'N/A'}
             </h2>
             <form onSubmit={handleUpdateAssignment} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -471,7 +475,7 @@ export default function SupervisorAssignmentsPage() {
                   </label>
                   <input
                     type="text"
-                    value={`${editingAssignment?.slum.name} - ${editingAssignment?.slum.location}`}
+                    value={`${editingAssignment?.slum?.name || 'N/A'} - ${editingAssignment?.slum?.location || 'N/A'}`}
                     readOnly
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
                   />
@@ -573,10 +577,10 @@ export default function SupervisorAssignmentsPage() {
               {
                 header: "Actions",
                 accessorKey: (row) => (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 justify-left items-center">
                     <button 
                       onClick={() => handleEditAssignment(row)}
-                      className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                      className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded-md transition-colors"
                       title="Edit"
                     >
                       <svg
@@ -595,7 +599,7 @@ export default function SupervisorAssignmentsPage() {
                     </button>
                     <button 
                       onClick={() => handleDeleteAssignment(row._id)}
-                      className="text-red-400 hover:text-red-300 transition-colors"
+                      className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-colors"
                       title="Delete"
                     >
                       <svg
@@ -614,6 +618,7 @@ export default function SupervisorAssignmentsPage() {
                     </button>
                   </div>
                 ),
+                className: "text-center align-middle",
               }
             ]}
           />

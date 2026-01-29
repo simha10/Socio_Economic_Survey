@@ -235,31 +235,31 @@ export default function SupervisorSlumsPage() {
             },
             {
               header: "Households",
-              accessorKey: (row) => row.totalHouseholds,
+              accessorKey: (row) => row.totalHouseholds?.toString() || "0",
               sortable: true,
-              className: "text-right",
+              className: "text-left font-medium tabular-nums align-middle",
             },
             {
               header: "Actions",
               accessorKey: (row) => (
-                <div className="flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                <div className="flex gap-2 justify-left" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleEditSlum(row)}
-                    className="p-2 text-cyan-400 hover:bg-cyan-500/20 rounded-lg transition-colors"
+                    className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteClick(row)}
-                    className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                    className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ),
-              className: "text-right",
+              className: "text-center align-middle",
             },
           ]}
         />

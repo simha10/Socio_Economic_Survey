@@ -8,6 +8,7 @@ import Card from "@/components/Card";
 import Button from "@/components/Button";
 import apiService from "@/services/api";
 import { useToast } from "@/components/Toast";
+import SurveyConfirmationDialog from "@/components/SurveyConfirmationDialog";
 
 interface Slum {
   _id: string;
@@ -21,6 +22,7 @@ interface Slum {
 interface SlumSurvey {
   _id: string;
   surveyStatus: string;
+  completionPercentage?: number;
 }
 
 export default function SlumDetailsPage() {
@@ -33,6 +35,7 @@ export default function SlumDetailsPage() {
   const [households, setHouseholds] = useState<any[]>([]);
   const [slumSurvey, setSlumSurvey] = useState<SlumSurvey | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSlumSurveyConfirm, setShowSlumSurveyConfirm] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -62,6 +65,28 @@ export default function SlumDetailsPage() {
 
     if (slumId) loadData();
   }, [slumId]);
+
+  const handleSlumSurveyClick = () => {
+    // Check the completion percentage to determine the message
+    const completionPercentage = slumSurvey?.completionPercentage || 0;
+    
+    if (completionPercentage === 0) {
+      // Show start confirmation
+      setShowSlumSurveyConfirm(true);
+    } else {
+      // Show edit confirmation
+      setShowSlumSurveyConfirm(true);
+    }
+  };
+
+  const handleSlumSurveyConfirm = () => {
+    setShowSlumSurveyConfirm(false);
+    router.push(`/surveyor/slum-survey/${slumId}`);
+  };
+
+  const handleSlumSurveyCancel = () => {
+    setShowSlumSurveyConfirm(false);
+  };
 
   if (loading) {
     return (
@@ -150,11 +175,21 @@ export default function SlumDetailsPage() {
             )}
           </div>
 
-          <Link href={`/surveyor/slum-survey/${slumId}`}>
-            <Button fullWidth className="w-full">
-              {slumSurvey ? "Continue Survey" : "Start Survey"}
-            </Button>
-          </Link>
+          <Button 
+            onClick={handleSlumSurveyClick}
+            fullWidth 
+            className="w-full"
+          >
+            {slumSurvey ? "Continue Survey" : "Start Survey"}
+          </Button>
+          
+          <SurveyConfirmationDialog
+            isOpen={showSlumSurveyConfirm}
+            surveyType="slum"
+            slumName={slum?.name || ""}
+            onConfirm={handleSlumSurveyConfirm}
+            onCancel={handleSlumSurveyCancel}
+          />
         </Card>
 
         {/* Household Surveys */}
