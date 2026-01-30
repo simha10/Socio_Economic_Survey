@@ -503,14 +503,123 @@ interface SlumSurveyForm {
   communityOthersCost?: number; // Others (Specify) - Estimated Cost
   
   // Additional fields that may be used
+  // Infrastructure and services
   waterSupplyDuration?: string;
+  waterSupplyHours?: number;
+  waterSupplySource?: string;
+  electricityConnection?: string;
+  electricityHours?: number;
+  streetLights?: string;
+  pavedRoads?: string;
+  unpavedRoads?: string;
+  dustbins?: string;
+  drainsCovered?: string;
+  drainsOpen?: string;
+  drainsAbsent?: string;
+  drainsType?: string;
+  roadsType?: string;
+  garbageDisposal?: string;
+  
+  // Education facilities
+  primarySchoolGovt?: number;
+  primarySchoolPrivate?: number;
+  secondarySchoolGovt?: number;
+  secondarySchoolPrivate?: number;
+  higherSecondarySchoolGovt?: number;
+  higherSecondarySchoolPrivate?: number;
+  anganwadiCenterGovt?: number;
+  anganwadiCenterPrivate?: number;
+  distanceToPrimarySchool?: string;
+  distanceToSecondarySchool?: string;
+  
+  // Health facilities
+  dispensaryGovt?: number;
+  dispensaryPrivate?: number;
+  hospitalGovt?: number;
+  hospitalPrivate?: number;
+  distanceToDispensary?: string;
+  distanceToHospital?: string;
+  medicalStoreGovt?: number;
+  medicalStorePrivate?: number;
+  phcGovt?: number;
+  phcPrivate?: number;
+  chcGovt?: number;
+  chcPrivate?: number;
+  
+  // Social welfare schemes
+  nrhmScheme?: string;
+  nrhmBeneficiaries?: number;
+  icdsScheme?: string;
+  icdsBeneficiaries?: number;
+  nirmalBharatAbhiyan?: string;
+  nbaBeneficiaries?: number;
+  midDayMeal?: string;
+  mdmBeneficiaries?: number;
+  sablaScheme?: string;
+  sablaBeneficiaries?: number;
+  rashtriyaSwasthyaBimaYojana?: string;
+  rsbyBeneficiaries?: number;
+  ayushmanBharat?: string;
+  ayushmanBeneficiaries?: number;
+  otherSchemes?: string;
+  otherSchemesBeneficiaries?: number;
+  
+  // Additional infrastructure
+  additionalInfrastructure?: {
+    waterSupply?: {
+      existing?: string;
+      additionalRequirement?: string;
+      estimatedCost?: number;
+    };
+    electricity?: {
+      existing?: string;
+      additionalRequirement?: string;
+      estimatedCost?: number;
+    };
+    drainage?: {
+      existing?: string;
+      additionalRequirement?: string;
+      estimatedCost?: number;
+    };
+    roads?: {
+      existing?: string;
+      additionalRequirement?: string;
+      estimatedCost?: number;
+    };
+    streetLighting?: {
+      existing?: string;
+      additionalRequirement?: string;
+      estimatedCost?: number;
+    };
+    sanitation?: {
+      existing?: string;
+      additionalRequirement?: string;
+      estimatedCost?: number;
+    };
+    toilets?: {
+      existing?: string;
+      additionalRequirement?: string;
+      estimatedCost?: number;
+    };
+    healthcare?: {
+      existing?: string;
+      additionalRequirement?: string;
+      estimatedCost?: number;
+    };
+    communityFacilities?: {
+      existing?: string;
+      additionalRequirement?: string;
+      estimatedCost?: number;
+    };
+  };
+  
   distanceToWaterSource?: string;
   typeOfToilet?: string;
   toiletAccessibility?: string;
   bathingFacility?: string;
   wastewaterDisposal?: string;
   drainageSystem?: string;
-  
+
 };
 
 const SANITATION_OPTIONS = [
@@ -1354,30 +1463,6 @@ export default function SlumSurveyPage() {
           commentsSupervisor: formData.commentsSupervisor || ""
         },
         
-        // PART-B: II. CITY/TOWN SLUM PROFILE
-        cityTownSlumProfile: {
-          slumType: formData.slumType || "",
-          slumIdField: formData.slumIdField || "",
-          slumName: formData.slumName || "",
-          ownershipLand: formData.ownershipLand || "",
-          areaSqMtrs: formData.areaSqMtrs || 0,
-          slumPopulation: formData.slumPopulation || 0,
-          noSlumHouseholds: formData.noSlumHouseholds || 0,
-          bplPopulation: formData.bplPopulation || 0,
-          noBplHouseholdsCityTown: formData.noBplHouseholdsCityTown || 0
-        },
-        
-        // PART-C: III. PARTICULARS OF SURVEY OPERATION
-        surveyOperation: {
-          surveyorName: formData.surveyorName || "",
-          surveyDate: formData.surveyDate || "",
-          receiptQuestionnaireDate: formData.receiptQuestionnaireDate || "",
-          scrutinyDate: formData.scrutinyDate || "",
-          receiptByNodalCellDate: formData.receiptByNodalCellDate || "",
-          remarksInvestigator: formData.remarksInvestigator || "",
-          commentsSupervisor: formData.commentsSupervisor || ""
-        },
-        
         // PART-D: I. BASIC INFORMATION ON SLUM
         basicInformation: {
           slumNameBasicInfo: formData.slumNameBasicInfo || "",
@@ -1397,179 +1482,206 @@ export default function SlumSurveyPage() {
           ownershipLandDetail: formData.ownershipLandDetail || "",
           ownershipLandSpecify: formData.ownershipLandSpecify || ""
         },
-        populationAndHealth: {
-          totalPopulation: {
-            SC: formData.totalPopulationSlumSC || 0,
-            ST: formData.totalPopulationSlumST || 0,
-            OBC: formData.totalPopulationSlumOBC || 0,
-            Others: formData.totalPopulationSlumOthers || 0,
-            Total: formData.totalPopulationSlum || 0,
-            Minorities: formData.totalPopulationSlumMinorities || 0
+        
+        // PART-F: III. DEMOGRAPHIC PROFILE - COMBINED SECTION
+        demographicProfile: {
+          // 12. Population & Health
+          populationAndHealth: {
+            totalPopulation: {
+              SC: formData.totalPopulationSlumSC || 0,
+              ST: formData.totalPopulationSlumST || 0,
+              OBC: formData.totalPopulationSlumOBC || 0,
+              Others: formData.totalPopulationSlumOthers || 0,
+              Total: formData.totalPopulationSlum || 0,
+              Minorities: formData.totalPopulationSlumMinorities || 0
+            },
+            bplPopulation: {
+              SC: formData.bplPopulationSlumSC || 0,
+              ST: formData.bplPopulationSlumST || 0,
+              OBC: formData.bplPopulationSlumOBC || 0,
+              Others: formData.bplPopulationSlumOthers || 0,
+              Total: formData.bplPopulationSlum || 0,
+              Minorities: formData.bplPopulationSlumMinorities || 0
+            },
+            numberOfHouseholds: {
+              SC: formData.noHouseholdsSlumSC || 0,
+              ST: formData.noHouseholdsSlumST || 0,
+              OBC: formData.noHouseholdsSlumOBC || 0,
+              Others: formData.noHouseholdsSlumOthers || 0,
+              Total: formData.noHouseholdsSlum || 0,
+              Minorities: formData.noHouseholdsSlumMinorities || 0
+            },
+            numberOfBplHouseholds: {
+              SC: formData.noBplHouseholdsSC || 0,
+              ST: formData.noBplHouseholdsST || 0,
+              OBC: formData.noBplHouseholdsOBC || 0,
+              Others: formData.noBplHouseholdsOthers || 0,
+              Total: formData.noBplHouseholdsTotal || 0,
+              Minorities: formData.noBplHouseholdsMinorities || 0
+            },
+            womenHeadedHouseholds: {
+              SC: formData.noWomenHeadedHouseholdsSC || 0,
+              ST: formData.noWomenHeadedHouseholdsST || 0,
+              OBC: formData.noWomenHeadedHouseholdsOBC || 0,
+              Others: formData.noWomenHeadedHouseholdsOthers || 0,
+              Total: formData.noWomenHeadedHouseholdsTotal || 0,
+              Minorities: formData.noWomenHeadedHouseholdsMinorities || 0
+            },
+            personsOlderThan65Years: {
+              SC: formData.noPersonsOlder65SC || 0,
+              ST: formData.noPersonsOlder65ST || 0,
+              OBC: formData.noPersonsOlder65OBC || 0,
+              Others: formData.noPersonsOlder65Others || 0,
+              Total: formData.noPersonsOlder65Total || 0,
+              Minorities: formData.noPersonsOlder65Minorities || 0
+            },
+            childLabourers: {
+              SC: formData.noChildLabourersSC || 0,
+              ST: formData.noChildLabourersST || 0,
+              OBC: formData.noChildLabourersOBC || 0,
+              Others: formData.noChildLabourersOthers || 0,
+              Total: formData.noChildLabourersTotal || 0,
+              Minorities: formData.noChildLabourersMinorities || 0
+            },
+            physicallyChallengedPersons: {
+              SC: formData.noPhysicallyChallengedSC || 0,
+              ST: formData.noPhysicallyChallengedST || 0,
+              OBC: formData.noPhysicallyChallengedOBC || 0,
+              Others: formData.noPhysicallyChallengedOthers || 0,
+              Total: formData.noPhysicallyChallengedTotal || 0,
+              Minorities: formData.noPhysicallyChallengedMinorities || 0
+            },
+            mentallyChallengedPersons: {
+              SC: formData.noMentallyChallengedSC || 0,
+              ST: formData.noMentallyChallengedST || 0,
+              OBC: formData.noMentallyChallengedOBC || 0,
+              Others: formData.noMentallyChallengedOthers || 0,
+              Total: formData.noMentallyChallengedTotal || 0,
+              Minorities: formData.noMentallyChallengedMinorities || 0
+            },
+            personsWithHivAids: {
+              SC: formData.noPersonsHivaidsSC || 0,
+              ST: formData.noPersonsHivaidsST || 0,
+              OBC: formData.noPersonsHivaidsOBC || 0,
+              Others: formData.noPersonsHivaidsOthers || 0,
+              Total: formData.noPersonsHivaidsTotal || 0,
+              Minorities: formData.noPersonsHivaidsMinorities || 0
+            },
+            personsWithTuberculosis: {
+              SC: formData.noPersonsTuberculosisSC || 0,
+              ST: formData.noPersonsTuberculosisST || 0,
+              OBC: formData.noPersonsTuberculosisOBC || 0,
+              Others: formData.noPersonsTuberculosisOthers || 0,
+              Total: formData.noPersonsTuberculosisTotal || 0,
+              Minorities: formData.noPersonsTuberculosisMinorities || 0
+            },
+            personsWithRespiratoryDiseases: {
+              SC: formData.noPersonsRespiratorySC || 0,
+              ST: formData.noPersonsRespiratoryST || 0,
+              OBC: formData.noPersonsRespiratoryOBC || 0,
+              Others: formData.noPersonsRespiratoryOthers || 0,
+              Total: formData.noPersonsRespiratoryTotal || 0,
+              Minorities: formData.noPersonsRespiratoryMinorities || 0
+            },
+            personsWithOtherChronicDiseases: {
+              SC: formData.noPersonsOtherChronicSC || 0,
+              ST: formData.noPersonsOtherChronicST || 0,
+              OBC: formData.noPersonsOtherChronicOBC || 0,
+              Others: formData.noPersonsOtherChronicOthers || 0,
+              Total: formData.noPersonsOtherChronicTotal || 0,
+              Minorities: formData.noPersonsOtherChronicMinorities || 0
+            }
           },
-          bplPopulation: {
-            SC: formData.bplPopulationSlumSC || 0,
-            ST: formData.bplPopulationSlumST || 0,
-            OBC: formData.bplPopulationSlumOBC || 0,
-            Others: formData.bplPopulationSlumOthers || 0,
-            Total: formData.bplPopulationSlum || 0,
-            Minorities: formData.bplPopulationSlumMinorities || 0
-          },
-          numberOfHouseholds: {
-            SC: formData.noHouseholdsSlumSC || 0,
-            ST: formData.noHouseholdsSlumST || 0,
-            OBC: formData.noHouseholdsSlumOBC || 0,
-            Others: formData.noHouseholdsSlumOthers || 0,
-            Total: formData.noHouseholdsSlum || 0,
-            Minorities: formData.noHouseholdsSlumMinorities || 0
-          },
-          numberOfBplHouseholds: {
-            SC: formData.noBplHouseholdsSC || 0,
-            ST: formData.noBplHouseholdsST || 0,
-            OBC: formData.noBplHouseholdsOBC || 0,
-            Others: formData.noBplHouseholdsOthers || 0,
-            Total: formData.noBplHouseholdsTotal || 0,
-            Minorities: formData.noBplHouseholdsMinorities || 0
-          },
-          womenHeadedHouseholds: {
-            SC: formData.noWomenHeadedHouseholdsSC || 0,
-            ST: formData.noWomenHeadedHouseholdsST || 0,
-            OBC: formData.noWomenHeadedHouseholdsOBC || 0,
-            Others: formData.noWomenHeadedHouseholdsOthers || 0,
-            Total: formData.noWomenHeadedHouseholdsTotal || 0,
-            Minorities: formData.noWomenHeadedHouseholdsMinorities || 0
-          },
-          personsOlderThan65Years: {
-            SC: formData.noPersonsOlder65SC || 0,
-            ST: formData.noPersonsOlder65ST || 0,
-            OBC: formData.noPersonsOlder65OBC || 0,
-            Others: formData.noPersonsOlder65Others || 0,
-            Total: formData.noPersonsOlder65Total || 0,
-            Minorities: formData.noPersonsOlder65Minorities || 0
-          },
-          childLabourers: {
-            SC: formData.noChildLabourersSC || 0,
-            ST: formData.noChildLabourersST || 0,
-            OBC: formData.noChildLabourersOBC || 0,
-            Others: formData.noChildLabourersOthers || 0,
-            Total: formData.noChildLabourersTotal || 0,
-            Minorities: formData.noChildLabourersMinorities || 0
-          },
-          physicallyChallengedPersons: {
-            SC: formData.noPhysicallyChallengedSC || 0,
-            ST: formData.noPhysicallyChallengedST || 0,
-            OBC: formData.noPhysicallyChallengedOBC || 0,
-            Others: formData.noPhysicallyChallengedOthers || 0,
-            Total: formData.noPhysicallyChallengedTotal || 0,
-            Minorities: formData.noPhysicallyChallengedMinorities || 0
-          },
-          mentallyChallengedPersons: {
-            SC: formData.noMentallyChallengedSC || 0,
-            ST: formData.noMentallyChallengedST || 0,
-            OBC: formData.noMentallyChallengedOBC || 0,
-            Others: formData.noMentallyChallengedOthers || 0,
-            Total: formData.noMentallyChallengedTotal || 0,
-            Minorities: formData.noMentallyChallengedMinorities || 0
-          },
-          personsWithHivAids: {
-            SC: formData.noPersonsHivaidsSC || 0,
-            ST: formData.noPersonsHivaidsST || 0,
-            OBC: formData.noPersonsHivaidsOBC || 0,
-            Others: formData.noPersonsHivaidsOthers || 0,
-            Total: formData.noPersonsHivaidsTotal || 0,
-            Minorities: formData.noPersonsHivaidsMinorities || 0
-          },
-          personsWithTuberculosis: {
-            SC: formData.noPersonsTuberculosisSC || 0,
-            ST: formData.noPersonsTuberculosisST || 0,
-            OBC: formData.noPersonsTuberculosisOBC || 0,
-            Others: formData.noPersonsTuberculosisOthers || 0,
-            Total: formData.noPersonsTuberculosisTotal || 0,
-            Minorities: formData.noPersonsTuberculosisMinorities || 0
-          },
-          personsWithRespiratoryDiseases: {
-            SC: formData.noPersonsRespiratorySC || 0,
-            ST: formData.noPersonsRespiratoryST || 0,
-            OBC: formData.noPersonsRespiratoryOBC || 0,
-            Others: formData.noPersonsRespiratoryOthers || 0,
-            Total: formData.noPersonsRespiratoryTotal || 0,
-            Minorities: formData.noPersonsRespiratoryMinorities || 0
-          },
-          personsWithOtherChronicDiseases: {
-            SC: formData.noPersonsOtherChronicSC || 0,
-            ST: formData.noPersonsOtherChronicST || 0,
-            OBC: formData.noPersonsOtherChronicOBC || 0,
-            Others: formData.noPersonsOtherChronicOthers || 0,
-            Total: formData.noPersonsOtherChronicTotal || 0,
-            Minorities: formData.noPersonsOtherChronicMinorities || 0
+          
+          // 13. Literacy & Education
+          literacyAndEducation: {
+            totalIlliteratePerson: {
+              SC: formData.totalIlliteratePersonsSC || 0,
+              ST: formData.totalIlliteratePersonsST || 0,
+              OBC: formData.totalIlliteratePersonsOBC || 0,
+              Others: formData.totalIlliteratePersonsOthers || 0,
+              Total: formData.totalIlliteratePersonsTotal || 0,
+              Minorities: formData.totalIlliteratePersonsMinorities || 0
+            },
+            maleIlliterate: {
+              SC: formData.noMaleIlliterateSC || 0,
+              ST: formData.noMaleIlliterateST || 0,
+              OBC: formData.noMaleIlliterateOBC || 0,
+              Others: formData.noMaleIlliterateOthers || 0,
+              Total: formData.noMaleIlliterateTotal || 0,
+              Minorities: formData.noMaleIlliterateMinorities || 0
+            },
+            femaleIlliterate: {
+              SC: formData.noFemaleIlliterateSC || 0,
+              ST: formData.noFemaleIlliterateST || 0,
+              OBC: formData.noFemaleIlliterateOBC || 0,
+              Others: formData.noFemaleIlliterateOthers || 0,
+              Total: formData.noFemaleIlliterateTotal || 0,
+              Minorities: formData.noFemaleIlliterateMinorities || 0
+            },
+            bplIlliteratePerson: {
+              SC: formData.noBplIlliteratePersonsSC || 0,
+              ST: formData.noBplIlliteratePersonsST || 0,
+              OBC: formData.noBplIlliteratePersonsOBC || 0,
+              Others: formData.noBplIlliteratePersonsOthers || 0,
+              Total: formData.noBplIlliteratePersonsTotal || 0,
+              Minorities: formData.noBplIlliteratePersonsMinorities || 0
+            },
+            maleBplIlliterate: {
+              SC: formData.noMaleBplIlliterateSC || 0,
+              ST: formData.noMaleBplIlliterateST || 0,
+              OBC: formData.noMaleBplIlliterateOBC || 0,
+              Others: formData.noMaleBplIlliterateOthers || 0,
+              Total: formData.noMaleBplIlliterateTotal || 0,
+              Minorities: formData.noMaleBplIlliterateMinorities || 0
+            },
+            femaleBplIlliterate: {
+              SC: formData.noFemaleBplIlliterateSC || 0,
+              ST: formData.noFemaleBplIlliterateST || 0,
+              OBC: formData.noFemaleBplIlliterateOBC || 0,
+              Others: formData.noFemaleBplIlliterateOthers || 0,
+              Total: formData.noFemaleBplIlliterateTotal || 0,
+              Minorities: formData.noFemaleBplIlliterateMinorities || 0
+            },
+            schoolDropoutsMale: {
+              SC: formData.schoolDropoutsMaleSC || 0,
+              ST: formData.schoolDropoutsMaleST || 0,
+              OBC: formData.schoolDropoutsMaleOBC || 0,
+              Others: formData.schoolDropoutsMaleOthers || 0,
+              Total: formData.schoolDropoutsMaleTotal || 0,
+              Minorities: formData.schoolDropoutsMaleMinorities || 0
+            },
+            schoolDropoutsFemale: {
+              SC: formData.schoolDropoutsFemaleSC || 0,
+              ST: formData.schoolDropoutsFemaleST || 0,
+              OBC: formData.schoolDropoutsFemaleOBC || 0,
+              Others: formData.schoolDropoutsFemaleOthers || 0,
+              Total: formData.schoolDropoutsFemaleTotal || 0,
+              Minorities: formData.schoolDropoutsFemaleMinorities || 0
+            }
           }
         },
-        literacyAndEducation: {
-          totalIlliteratePerson: {
-            SC: formData.totalIlliteratePersonsSC || 0,
-            ST: formData.totalIlliteratePersonsST || 0,
-            OBC: formData.totalIlliteratePersonsOBC || 0,
-            Others: formData.totalIlliteratePersonsOthers || 0,
-            Total: formData.totalIlliteratePersonsTotal || 0,
-            Minorities: formData.totalIlliteratePersonsMinorities || 0
-          },
-          maleIlliterate: {
-            SC: formData.noMaleIlliterateSC || 0,
-            ST: formData.noMaleIlliterateST || 0,
-            OBC: formData.noMaleIlliterateOBC || 0,
-            Others: formData.noMaleIlliterateOthers || 0,
-            Total: formData.noMaleIlliterateTotal || 0,
-            Minorities: formData.noMaleIlliterateMinorities || 0
-          },
-          femaleIlliterate: {
-            SC: formData.noFemaleIlliterateSC || 0,
-            ST: formData.noFemaleIlliterateST || 0,
-            OBC: formData.noFemaleIlliterateOBC || 0,
-            Others: formData.noFemaleIlliterateOthers || 0,
-            Total: formData.noFemaleIlliterateTotal || 0,
-            Minorities: formData.noFemaleIlliterateMinorities || 0
-          },
-          bplIlliteratePerson: {
-            SC: formData.noBplIlliteratePersonsSC || 0,
-            ST: formData.noBplIlliteratePersonsST || 0,
-            OBC: formData.noBplIlliteratePersonsOBC || 0,
-            Others: formData.noBplIlliteratePersonsOthers || 0,
-            Total: formData.noBplIlliteratePersonsTotal || 0,
-            Minorities: formData.noBplIlliteratePersonsMinorities || 0
-          },
-          maleBplIlliterate: {
-            SC: formData.noMaleBplIlliterateSC || 0,
-            ST: formData.noMaleBplIlliterateST || 0,
-            OBC: formData.noMaleBplIlliterateOBC || 0,
-            Others: formData.noMaleBplIlliterateOthers || 0,
-            Total: formData.noMaleBplIlliterateTotal || 0,
-            Minorities: formData.noMaleBplIlliterateMinorities || 0
-          },
-          femaleBplIlliterate: {
-            SC: formData.noFemaleBplIlliterateSC || 0,
-            ST: formData.noFemaleBplIlliterateST || 0,
-            OBC: formData.noFemaleBplIlliterateOBC || 0,
-            Others: formData.noFemaleBplIlliterateOthers || 0,
-            Total: formData.noFemaleBplIlliterateTotal || 0,
-            Minorities: formData.noFemaleBplIlliterateMinorities || 0
-          },
-          schoolDropoutsMale: {
-            SC: formData.schoolDropoutsMaleSC || 0,
-            ST: formData.schoolDropoutsMaleST || 0,
-            OBC: formData.schoolDropoutsMaleOBC || 0,
-            Others: formData.schoolDropoutsMaleOthers || 0,
-            Total: formData.schoolDropoutsMaleTotal || 0,
-            Minorities: formData.schoolDropoutsMaleMinorities || 0
-          },
-          schoolDropoutsFemale: {
-            SC: formData.schoolDropoutsFemaleSC || 0,
-            ST: formData.schoolDropoutsFemaleST || 0,
-            OBC: formData.schoolDropoutsFemaleOBC || 0,
-            Others: formData.schoolDropoutsFemaleOthers || 0,
-            Total: formData.schoolDropoutsFemaleTotal || 0,
-            Minorities: formData.schoolDropoutsFemaleMinorities || 0
-          }
+        
+        // PART-G: IV. HOUSING STATUS
+        housingStatus: {
+          dwellingUnitsPucca: formData.dwellingUnitsPucca || 0,
+          dwellingUnitsSemiPucca: formData.dwellingUnitsSemiPucca || 0,
+          dwellingUnitsKatcha: formData.dwellingUnitsKatcha || 0,
+          dwellingUnitsTotal: formData.dwellingUnitsTotal || 0,
+          dwellingUnitsWithElectricityPucca: formData.dwellingUnitsWithElectricityPucca || 0,
+          dwellingUnitsWithElectricitySemiPucca: formData.dwellingUnitsWithElectricitySemiPucca || 0,
+          dwellingUnitsWithElectricityKatcha: formData.dwellingUnitsWithElectricityKatcha || 0,
+          dwellingUnitsWithElectricityTotal: formData.dwellingUnitsWithElectricityTotal || 0,
+          landTenureWithPatta: formData.landTenureWithPatta || 0,
+          landTenurePossessionCertificate: formData.landTenurePossessionCertificate || 0,
+          landTenureEncroachedPrivate: formData.landTenureEncroachedPrivate || 0,
+          landTenureEncroachedPublic: formData.landTenureEncroachedPublic || 0,
+          landTenureOnRent: formData.landTenureOnRent || 0,
+          landTenureOther: formData.landTenureOther || 0,
+          landTenureTotal: formData.landTenureTotal || 0
         },
-        // PART-I: V. ECONOMIC STATUS OF HOUSEHOLDS
+        
+        // PART-H: V. ECONOMIC STATUS OF HOUSEHOLDS
         economicStatus: {
           economicStatusData: {
             lessThan500: formData.economicStatus?.lessThan500 || 0,
@@ -1581,7 +1693,7 @@ export default function SlumSurveyPage() {
           }
         },
         
-        // PART-J: VI. OCCUPATION STATUS OF HOUSEHOLDS
+        // PART-I: VI. OCCUPATION STATUS OF HOUSEHOLDS
         occupationStatus: {
           occupationalStatusData: {
             selfEmployed: formData.occupationalStatus?.selfEmployed || 0,
@@ -1592,7 +1704,7 @@ export default function SlumSurveyPage() {
           }
         },
         
-        // PART-K: VII. ACCESS TO PHYSICAL INFRASTRUCTURE
+        // PART-J: VII. ACCESS TO PHYSICAL INFRASTRUCTURE
         physicalInfrastructure: {
           sourceDrinkingWater: {
             individualTap: formData.sourceDrinkingWater?.individualTap || 0,
@@ -1621,26 +1733,7 @@ export default function SlumSurveyPage() {
           streetLightAvailable: formData.streetLightAvailable || ""
         },
         
-        // PART-H: IV. HOUSING STATUS
-        housingStatus: {
-          dwellingUnitsPucca: formData.dwellingUnitsPucca || 0,
-          dwellingUnitsSemiPucca: formData.dwellingUnitsSemiPucca || 0,
-          dwellingUnitsKatcha: formData.dwellingUnitsKatcha || 0,
-          dwellingUnitsTotal: formData.dwellingUnitsTotal || 0,
-          dwellingUnitsWithElectricityPucca: formData.dwellingUnitsWithElectricityPucca || 0,
-          dwellingUnitsWithElectricitySemiPucca: formData.dwellingUnitsWithElectricitySemiPucca || 0,
-          dwellingUnitsWithElectricityKatcha: formData.dwellingUnitsWithElectricityKatcha || 0,
-          dwellingUnitsWithElectricityTotal: formData.dwellingUnitsWithElectricityTotal || 0,
-          landTenureWithPatta: formData.landTenureWithPatta || 0,
-          landTenurePossessionCertificate: formData.landTenurePossessionCertificate || 0,
-          landTenureEncroachedPrivate: formData.landTenureEncroachedPrivate || 0,
-          landTenureEncroachedPublic: formData.landTenureEncroachedPublic || 0,
-          landTenureOnRent: formData.landTenureOnRent || 0,
-          landTenureOther: formData.landTenureOther || 0,
-          landTenureTotal: formData.landTenureTotal || 0
-        },
-        
-        // PART-L: VIII. Education Facilities
+        // PART-K: VIII. EDUCATION FACILITIES
         educationFacilities: {
           anganwadiUnderIcds: formData.anganwadiUnderIcds || 0,
           municipalPreschool: formData.municipalPreschool || 0,
@@ -1655,7 +1748,7 @@ export default function SlumSurveyPage() {
           nonFormalEducationCentre: formData.nonFormalEducationCentre || 0
         },
         
-        // PART-M: IX. Health Facilities
+        // PART-L: IX. Health Facilities
         healthFacilities: {
           urbanHealthPost: formData.urbanHealthPost || "",
           primaryHealthCentre: formData.primaryHealthCentre || "",
@@ -1666,7 +1759,27 @@ export default function SlumSurveyPage() {
           ayurvedicDoctor: formData.ayurvedicDoctor || ""
         },
         
-        // PART-XII: XI. ADDITIONAL INFRASTRUCTURE REQUIREMENTS
+        // PART-M: X. Social Development/Welfare
+        socialDevelopment: {
+          communityHall: formData.communityHall || 0,
+          livelihoodProductionCentre: formData.livelihoodProductionCentre || 0,
+          vocationalTrainingCentre: formData.vocationalTrainingCentre || 0,
+          streetChildrenRehabilitationCentre: formData.streetChildrenRehabilitationCentre || 0,
+          nightShelter: formData.nightShelter || 0,
+          oldAgeHome: formData.oldAgeHome || 0,
+          oldAgePensionsHolders: formData.oldAgePensionsHolders || 0,
+          widowPensionsHolders: formData.widowPensionsHolders || 0,
+          disabledPensionsHolders: formData.disabledPensionsHolders || 0,
+          generalInsuranceCovered: formData.generalInsuranceCovered || 0,
+          healthInsuranceCovered: formData.healthInsuranceCovered || 0,
+          selfHelpGroups: formData.selfHelpGroups || 0,
+          thriftCreditSocieties: formData.thriftCreditSocieties || 0,
+          slumDwellersAssociation: formData.slumDwellersAssociation || "",
+          youthAssociations: formData.youthAssociations || 0,
+          womensAssociations: formData.womensAssociations || 0
+        },
+        
+        // PART-N: XI. ADDITIONAL INFRASTRUCTURE REQUIREMENTS
         additionalInfrastructure: {
           // Water Supply
           waterSupply: {
@@ -1811,26 +1924,6 @@ export default function SlumSurveyPage() {
               estimatedCost: formData.communityOthersCost || 0
             }
           }
-        },
-        
-        // PART-N: X. Social Development/Welfare
-        socialDevelopment: {
-          communityHall: formData.communityHall || 0,
-          livelihoodProductionCentre: formData.livelihoodProductionCentre || 0,
-          vocationalTrainingCentre: formData.vocationalTrainingCentre || 0,
-          streetChildrenRehabilitationCentre: formData.streetChildrenRehabilitationCentre || 0,
-          nightShelter: formData.nightShelter || 0,
-          oldAgeHome: formData.oldAgeHome || 0,
-          oldAgePensionsHolders: formData.oldAgePensionsHolders || 0,
-          widowPensionsHolders: formData.widowPensionsHolders || 0,
-          disabledPensionsHolders: formData.disabledPensionsHolders || 0,
-          generalInsuranceCovered: formData.generalInsuranceCovered || 0,
-          healthInsuranceCovered: formData.healthInsuranceCovered || 0,
-          selfHelpGroups: formData.selfHelpGroups || 0,
-          thriftCreditSocieties: formData.thriftCreditSocieties || 0,
-          slumDwellersAssociation: formData.slumDwellersAssociation || "",
-          youthAssociations: formData.youthAssociations || 0,
-          womensAssociations: formData.womensAssociations || 0
         }
       };
 
