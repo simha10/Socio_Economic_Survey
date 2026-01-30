@@ -106,7 +106,7 @@ export default function SlumDetailsPage() {
       <SurveyorLayout>
         <Card className="text-center py-8">
           <p className="text-error mb-4">Slum not found</p>
-          <Button onClick={() => router.back()}>Go Back</Button>
+          <Button size="md" onClick={() => router.back()} className="w-full sm:w-auto">Go Back</Button>
         </Card>
       </SurveyorLayout>
     );
@@ -176,9 +176,9 @@ export default function SlumDetailsPage() {
           </div>
 
           <Button 
+            size="md"
             onClick={handleSlumSurveyClick}
-            fullWidth 
-            className="w-full"
+            className="w-full sm:w-auto"
           >
             {slumSurvey ? "Continue Survey" : "Start Survey"}
           </Button>
@@ -226,7 +226,12 @@ export default function SlumDetailsPage() {
           )}
 
           {households.length === 0 && (
-            <Button variant="secondary" fullWidth className="w-full" disabled>
+            <Button 
+              variant="secondary" 
+              size="md"
+              className="w-full sm:w-auto" 
+              disabled
+            >
               No Households Available
             </Button>
           )}

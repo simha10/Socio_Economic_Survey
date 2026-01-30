@@ -1481,10 +1481,10 @@ export default function HouseholdSurveyPage() {
 
       {/* Submit Button */}
       <Button
-        fullWidth
+        size="md"
         loading={submitting}
         onClick={handleSubmit}
-        className="w-full"
+        className="w-full sm:w-auto"
       >
         Submit Household Survey
       </Button>
