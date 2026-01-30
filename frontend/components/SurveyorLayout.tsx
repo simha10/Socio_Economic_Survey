@@ -27,7 +27,7 @@ export default function SurveyorLayout({
   if (fullScreen) {
     return (
       <div className="w-full h-screen bg-slate-950 text-slate-200 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto bg-slate-950 p-4">
+        <main className="flex-1 overflow-y-auto bg-slate-950 p-2 sm:p-4">
           <div className="w-full h-full max-w-7xl mx-auto">{children}</div>
         </main>
       </div>

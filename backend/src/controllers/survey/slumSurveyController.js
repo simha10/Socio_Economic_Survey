@@ -125,19 +125,21 @@ exports.submitSlumSurvey = async (req, res) => {
 
         // Mark all sections as completed when submitting
         const allSections = [
+            'generalInformation',
+            'cityTownSlumProfile',
+            'surveyOperation',
             'basicInformation',
             'landStatus',
-            'populationAndHealth',
-            'literacyAndEducation',
-            'employmentAndOccupation',
-            'waterAndSanitation',
-            'housingConditions',
-            'utilities',
-            'socialInfrastructure',
-            'transportationAndAccessibility',
-            'environmentalConditions',
-            'socialIssuesAndVulnerableGroups',
-            'slumImprovementAndDevelopment'
+            'demographicProfile',
+            'housingStatus',
+            'economicStatus',
+            'occupationStatus',
+            'physicalInfrastructure',
+            'educationFacilities',
+            'healthFacilities',
+            'socialDevelopment',
+            'additionalInfrastructure',
+            'reviewAndSubmit'
         ];
         
         // Add all sections to completed sections if they have meaningful data
@@ -165,7 +167,7 @@ exports.submitSlumSurvey = async (req, res) => {
         });
         
         // Calculate final completion percentage
-        survey.completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 13) * 100));
+        survey.completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 15) * 100));
         
         survey.surveyStatus = 'SUBMITTED';
         survey.submittedBy = userId;
@@ -175,7 +177,7 @@ exports.submitSlumSurvey = async (req, res) => {
 
         await survey.save();
         
-        console.log(`Final completion after submission: ${survey.completedSections.length}/13 = ${survey.completionPercentage}%`);
+        console.log(`Final completion after submission: ${survey.completedSections.length}/16 = ${survey.completionPercentage}%`);
         await survey.populate([
             { path: 'slum', select: 'name location population' },
             { path: 'surveyor', select: 'name email' },
@@ -273,19 +275,21 @@ exports.updateSurveySection = async (req, res) => {
 
         // Define all survey sections
         const surveySections = [
+            'generalInformation',
+            'cityTownSlumProfile',
+            'surveyOperation',
             'basicInformation',
             'landStatus',
-            'populationAndHealth',
-            'literacyAndEducation',
-            'employmentAndOccupation',
-            'waterAndSanitation',
-            'housingConditions',
-            'utilities',
-            'socialInfrastructure',
-            'transportationAndAccessibility',
-            'environmentalConditions',
-            'socialIssuesAndVulnerableGroups',
-            'slumImprovementAndDevelopment'
+            'demographicProfile',
+            'housingStatus',
+            'economicStatus',
+            'occupationStatus',
+            'physicalInfrastructure',
+            'educationFacilities',
+            'healthFacilities',
+            'socialDevelopment',
+            'additionalInfrastructure',
+            'reviewAndSubmit'
         ];
 
         // Update the specific section
@@ -322,9 +326,9 @@ exports.updateSurveySection = async (req, res) => {
         }
         
         // Calculate completion percentage based on explicitly tracked completed sections
-        // Each of the 13 sections contributes ~7.69% to the total completion (100/13)
-        const completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 13) * 100));
-        console.log(`Completion calculation: ${survey.completedSections.length}/13 sections = ${completionPercentage}%`);
+        // Each of the 15 sections contributes ~6.67% to the total completion (100/15)
+        const completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 15) * 100));
+        console.log(`Completion calculation: ${survey.completedSections.length}/15 sections = ${completionPercentage}%`);
         survey.completionPercentage = completionPercentage;
         
         // Update survey status based on completion

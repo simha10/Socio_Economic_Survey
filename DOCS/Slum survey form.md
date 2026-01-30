@@ -276,17 +276,18 @@ Internal Roads - BT (Rmts.)
 Internal Roads - Others (Rmts)
 Approach Roads -CC (Rmts)
 Approach Roads - Others (Rmts)
-Street Lighting
+
+40. ***Street Lighting***
 Street Light Poles (Nos.)
 Street Lights (Nos)
 
-40. ***Sanitation***
+41. ***Sanitation***
 Individual Toilets (Nos)
 Community Toilets (Nos)
 Seats in Community Toilets (Nos.)
 Dumper Bins (Nos)
 
-41. ***Community Facilities***
+42. ***Community Facilities***
 Community Halls (No of Rooms)
 Livelihood / Production Centres (Noof Rooms)
 Anganwadis /Pre-schools (No ofRooms)

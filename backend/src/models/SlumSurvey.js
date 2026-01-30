@@ -320,6 +320,153 @@ const slumSurveySchema = new mongoose.Schema({
     ayurvedicDoctor: String // Ayurvedic Doctor/Vaidya
   },
 
+  // PART-XII: XI. ADDITIONAL INFRASTRUCTURE REQUIREMENTS
+  additionalInfrastructure: {
+    // Water Supply
+    waterSupply: {
+      pipelines: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      individualTaps: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      borewells: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      connectivityToTrunkLines: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      }
+    },
+    // Drainage/Sewerage
+    drainageSewerage: {
+      stormwaterDrainage: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      connectivityToMainDrains: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      sewerLines: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      connectivityToTrunkSewers: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      }
+    },
+    // Roads
+    roads: {
+      internalRoadsCC: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      internalRoadsBT: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      internalRoadsOthers: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      approachRoadsCC: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      approachRoadsOthers: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      }
+    },
+    // Street Lighting
+    streetLighting: {
+      poles: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      lights: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      }
+    },
+    // Sanitation
+    sanitation: {
+      individualToilets: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      communityToilets: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      seatsInCommunityToilets: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      dumperBins: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      }
+    },
+    // Community Facilities
+    communityFacilities: {
+      communityHalls: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      livelihoodCentres: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      anganwadis: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      primarySchools: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      healthCentres: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      },
+      others: {
+        existing: String,
+        additionalRequirement: String,
+        estimatedCost: Number
+      }
+    }
+  },
+
   // PART-N: X. Social Development/Welfare
   socialDevelopment: {
     // 32. Availability of Facilities within Slum

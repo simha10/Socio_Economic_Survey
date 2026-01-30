@@ -42,6 +42,13 @@ export default function Button({
     lg: "px-6 py-3 text-lg",
   };
 
+  // Mobile responsive classes
+  const mobileClasses = {
+    sm: "md:px-3 md:py-1.5 px-2.5 py-1 text-xs",
+    md: "md:px-4 md:py-2.5 px-3 py-2 text-sm",
+    lg: "md:px-6 md:py-3 px-4 py-2.5 text-base",
+  };
+
   const isDisabled = disabled || loading;
 
   return (
@@ -53,9 +60,10 @@ export default function Button({
         ${baseClasses}
         ${variantClasses[variant]}
         ${sizeClasses[size]}
-        ${fullWidth ? "w-full" : ""}
+        ${fullWidth ? "w-full" : "w-auto"}
         ${isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
         ${className}
+        ${!fullWidth ? mobileClasses[size] : ""}
       `}
     >
       {loading ? (

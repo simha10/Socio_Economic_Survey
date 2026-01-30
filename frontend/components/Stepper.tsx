@@ -22,10 +22,7 @@ export default function Stepper({
     <div className="w-full mb-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-3 gap-2">
         <div>
-           <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-            {currentTitle}
-          </h2>
-           <p className="text-sm text-slate-400 mt-1">Section {currentStep + 1} of {steps.length} (13 total)</p>
+           <p className="text-sm text-slate-400 mt-1">Section {currentStep + 1} of {steps.length} (15 total)</p>
         </div>
         <div className="text-right hidden sm:block">
            <span className="text-sm font-medium text-slate-300">{completionPercentage}% Complete</span>

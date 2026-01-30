@@ -46,7 +46,7 @@ export default function SurveyConfirmationDialog({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#111827] border border-slate-700 rounded-xl p-6 max-w-md w-full shadow-xl">
+      <div className="bg-[#111827] border border-slate-700 rounded-xl p-4 sm:p-6 max-w-md w-full sm:mx-4 mx-2 shadow-xl">
         <div className="flex items-center gap-3 mb-4">
           <div className={`bg-${surveyType === "slum" ? "amber" : "blue"}-500/20 p-3 rounded-lg`}>
             <AlertTriangle className={`w-5 h-5 ${getIconColor()}`} />
@@ -56,19 +56,22 @@ export default function SurveyConfirmationDialog({
 
         <p className="text-slate-300 mb-6">{getMessage()}</p>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button
             variant="primary"
+            size="md"
             onClick={onConfirm}
             disabled={loading}
-            className={getButtonColor()}
+            className={`${getButtonColor()} w-full sm:w-auto`}
           >
             {loading ? "Starting..." : "Proceed"}
           </Button>
           <Button 
             variant="secondary" 
+            size="md"
             onClick={onCancel} 
             disabled={loading}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
