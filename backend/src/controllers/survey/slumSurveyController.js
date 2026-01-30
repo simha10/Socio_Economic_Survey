@@ -133,13 +133,12 @@ exports.submitSlumSurvey = async (req, res) => {
             'demographicProfile',
             'housingStatus',
             'economicStatus',
-            'occupationStatus',
+            'employmentAndOccupation',
             'physicalInfrastructure',
             'educationFacilities',
             'healthFacilities',
             'socialDevelopment',
-            'additionalInfrastructure',
-            'reviewAndSubmit'
+            'additionalInfrastructure'
         ];
         
         // Add all sections to completed sections if they have meaningful data
@@ -167,7 +166,7 @@ exports.submitSlumSurvey = async (req, res) => {
         });
         
         // Calculate final completion percentage
-        survey.completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 15) * 100));
+        survey.completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 14) * 100));
         
         survey.surveyStatus = 'SUBMITTED';
         survey.submittedBy = userId;
@@ -283,13 +282,12 @@ exports.updateSurveySection = async (req, res) => {
             'demographicProfile',
             'housingStatus',
             'economicStatus',
-            'occupationStatus',
+            'employmentAndOccupation',
             'physicalInfrastructure',
             'educationFacilities',
             'healthFacilities',
             'socialDevelopment',
-            'additionalInfrastructure',
-            'reviewAndSubmit'
+            'additionalInfrastructure'
         ];
 
         // Update the specific section
@@ -326,9 +324,9 @@ exports.updateSurveySection = async (req, res) => {
         }
         
         // Calculate completion percentage based on explicitly tracked completed sections
-        // Each of the 15 sections contributes ~6.67% to the total completion (100/15)
-        const completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 15) * 100));
-        console.log(`Completion calculation: ${survey.completedSections.length}/15 sections = ${completionPercentage}%`);
+        // Each of the 14 sections contributes ~7.14% to the total completion (100/14)
+        const completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 14) * 100));
+        console.log(`Completion calculation: ${survey.completedSections.length}/14 sections = ${completionPercentage}%`);
         survey.completionPercentage = completionPercentage;
         
         // Update survey status based on completion

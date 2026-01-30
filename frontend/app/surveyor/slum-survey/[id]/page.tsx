@@ -1483,186 +1483,183 @@ export default function SlumSurveyPage() {
           ownershipLandSpecify: formData.ownershipLandSpecify || ""
         },
         
-        // PART-F: III. DEMOGRAPHIC PROFILE - COMBINED SECTION
-        demographicProfile: {
-          // 12. Population & Health
-          populationAndHealth: {
-            totalPopulation: {
-              SC: formData.totalPopulationSlumSC || 0,
-              ST: formData.totalPopulationSlumST || 0,
-              OBC: formData.totalPopulationSlumOBC || 0,
-              Others: formData.totalPopulationSlumOthers || 0,
-              Total: formData.totalPopulationSlum || 0,
-              Minorities: formData.totalPopulationSlumMinorities || 0
-            },
-            bplPopulation: {
-              SC: formData.bplPopulationSlumSC || 0,
-              ST: formData.bplPopulationSlumST || 0,
-              OBC: formData.bplPopulationSlumOBC || 0,
-              Others: formData.bplPopulationSlumOthers || 0,
-              Total: formData.bplPopulationSlum || 0,
-              Minorities: formData.bplPopulationSlumMinorities || 0
-            },
-            numberOfHouseholds: {
-              SC: formData.noHouseholdsSlumSC || 0,
-              ST: formData.noHouseholdsSlumST || 0,
-              OBC: formData.noHouseholdsSlumOBC || 0,
-              Others: formData.noHouseholdsSlumOthers || 0,
-              Total: formData.noHouseholdsSlum || 0,
-              Minorities: formData.noHouseholdsSlumMinorities || 0
-            },
-            numberOfBplHouseholds: {
-              SC: formData.noBplHouseholdsSC || 0,
-              ST: formData.noBplHouseholdsST || 0,
-              OBC: formData.noBplHouseholdsOBC || 0,
-              Others: formData.noBplHouseholdsOthers || 0,
-              Total: formData.noBplHouseholdsTotal || 0,
-              Minorities: formData.noBplHouseholdsMinorities || 0
-            },
-            womenHeadedHouseholds: {
-              SC: formData.noWomenHeadedHouseholdsSC || 0,
-              ST: formData.noWomenHeadedHouseholdsST || 0,
-              OBC: formData.noWomenHeadedHouseholdsOBC || 0,
-              Others: formData.noWomenHeadedHouseholdsOthers || 0,
-              Total: formData.noWomenHeadedHouseholdsTotal || 0,
-              Minorities: formData.noWomenHeadedHouseholdsMinorities || 0
-            },
-            personsOlderThan65Years: {
-              SC: formData.noPersonsOlder65SC || 0,
-              ST: formData.noPersonsOlder65ST || 0,
-              OBC: formData.noPersonsOlder65OBC || 0,
-              Others: formData.noPersonsOlder65Others || 0,
-              Total: formData.noPersonsOlder65Total || 0,
-              Minorities: formData.noPersonsOlder65Minorities || 0
-            },
-            childLabourers: {
-              SC: formData.noChildLabourersSC || 0,
-              ST: formData.noChildLabourersST || 0,
-              OBC: formData.noChildLabourersOBC || 0,
-              Others: formData.noChildLabourersOthers || 0,
-              Total: formData.noChildLabourersTotal || 0,
-              Minorities: formData.noChildLabourersMinorities || 0
-            },
-            physicallyChallengedPersons: {
-              SC: formData.noPhysicallyChallengedSC || 0,
-              ST: formData.noPhysicallyChallengedST || 0,
-              OBC: formData.noPhysicallyChallengedOBC || 0,
-              Others: formData.noPhysicallyChallengedOthers || 0,
-              Total: formData.noPhysicallyChallengedTotal || 0,
-              Minorities: formData.noPhysicallyChallengedMinorities || 0
-            },
-            mentallyChallengedPersons: {
-              SC: formData.noMentallyChallengedSC || 0,
-              ST: formData.noMentallyChallengedST || 0,
-              OBC: formData.noMentallyChallengedOBC || 0,
-              Others: formData.noMentallyChallengedOthers || 0,
-              Total: formData.noMentallyChallengedTotal || 0,
-              Minorities: formData.noMentallyChallengedMinorities || 0
-            },
-            personsWithHivAids: {
-              SC: formData.noPersonsHivaidsSC || 0,
-              ST: formData.noPersonsHivaidsST || 0,
-              OBC: formData.noPersonsHivaidsOBC || 0,
-              Others: formData.noPersonsHivaidsOthers || 0,
-              Total: formData.noPersonsHivaidsTotal || 0,
-              Minorities: formData.noPersonsHivaidsMinorities || 0
-            },
-            personsWithTuberculosis: {
-              SC: formData.noPersonsTuberculosisSC || 0,
-              ST: formData.noPersonsTuberculosisST || 0,
-              OBC: formData.noPersonsTuberculosisOBC || 0,
-              Others: formData.noPersonsTuberculosisOthers || 0,
-              Total: formData.noPersonsTuberculosisTotal || 0,
-              Minorities: formData.noPersonsTuberculosisMinorities || 0
-            },
-            personsWithRespiratoryDiseases: {
-              SC: formData.noPersonsRespiratorySC || 0,
-              ST: formData.noPersonsRespiratoryST || 0,
-              OBC: formData.noPersonsRespiratoryOBC || 0,
-              Others: formData.noPersonsRespiratoryOthers || 0,
-              Total: formData.noPersonsRespiratoryTotal || 0,
-              Minorities: formData.noPersonsRespiratoryMinorities || 0
-            },
-            personsWithOtherChronicDiseases: {
-              SC: formData.noPersonsOtherChronicSC || 0,
-              ST: formData.noPersonsOtherChronicST || 0,
-              OBC: formData.noPersonsOtherChronicOBC || 0,
-              Others: formData.noPersonsOtherChronicOthers || 0,
-              Total: formData.noPersonsOtherChronicTotal || 0,
-              Minorities: formData.noPersonsOtherChronicMinorities || 0
-            }
+        // SECTION 3: Population & Health Demographics (by caste categories)
+        populationAndHealth: {
+          totalPopulation: {
+            SC: formData.totalPopulationSlumSC || 0,
+            ST: formData.totalPopulationSlumST || 0,
+            OBC: formData.totalPopulationSlumOBC || 0,
+            Others: formData.totalPopulationSlumOthers || 0,
+            Total: formData.totalPopulationSlum || 0,
+            Minorities: formData.totalPopulationSlumMinorities || 0
           },
-          
-          // 13. Literacy & Education
-          literacyAndEducation: {
-            totalIlliteratePerson: {
-              SC: formData.totalIlliteratePersonsSC || 0,
-              ST: formData.totalIlliteratePersonsST || 0,
-              OBC: formData.totalIlliteratePersonsOBC || 0,
-              Others: formData.totalIlliteratePersonsOthers || 0,
-              Total: formData.totalIlliteratePersonsTotal || 0,
-              Minorities: formData.totalIlliteratePersonsMinorities || 0
-            },
-            maleIlliterate: {
-              SC: formData.noMaleIlliterateSC || 0,
-              ST: formData.noMaleIlliterateST || 0,
-              OBC: formData.noMaleIlliterateOBC || 0,
-              Others: formData.noMaleIlliterateOthers || 0,
-              Total: formData.noMaleIlliterateTotal || 0,
-              Minorities: formData.noMaleIlliterateMinorities || 0
-            },
-            femaleIlliterate: {
-              SC: formData.noFemaleIlliterateSC || 0,
-              ST: formData.noFemaleIlliterateST || 0,
-              OBC: formData.noFemaleIlliterateOBC || 0,
-              Others: formData.noFemaleIlliterateOthers || 0,
-              Total: formData.noFemaleIlliterateTotal || 0,
-              Minorities: formData.noFemaleIlliterateMinorities || 0
-            },
-            bplIlliteratePerson: {
-              SC: formData.noBplIlliteratePersonsSC || 0,
-              ST: formData.noBplIlliteratePersonsST || 0,
-              OBC: formData.noBplIlliteratePersonsOBC || 0,
-              Others: formData.noBplIlliteratePersonsOthers || 0,
-              Total: formData.noBplIlliteratePersonsTotal || 0,
-              Minorities: formData.noBplIlliteratePersonsMinorities || 0
-            },
-            maleBplIlliterate: {
-              SC: formData.noMaleBplIlliterateSC || 0,
-              ST: formData.noMaleBplIlliterateST || 0,
-              OBC: formData.noMaleBplIlliterateOBC || 0,
-              Others: formData.noMaleBplIlliterateOthers || 0,
-              Total: formData.noMaleBplIlliterateTotal || 0,
-              Minorities: formData.noMaleBplIlliterateMinorities || 0
-            },
-            femaleBplIlliterate: {
-              SC: formData.noFemaleBplIlliterateSC || 0,
-              ST: formData.noFemaleBplIlliterateST || 0,
-              OBC: formData.noFemaleBplIlliterateOBC || 0,
-              Others: formData.noFemaleBplIlliterateOthers || 0,
-              Total: formData.noFemaleBplIlliterateTotal || 0,
-              Minorities: formData.noFemaleBplIlliterateMinorities || 0
-            },
-            schoolDropoutsMale: {
-              SC: formData.schoolDropoutsMaleSC || 0,
-              ST: formData.schoolDropoutsMaleST || 0,
-              OBC: formData.schoolDropoutsMaleOBC || 0,
-              Others: formData.schoolDropoutsMaleOthers || 0,
-              Total: formData.schoolDropoutsMaleTotal || 0,
-              Minorities: formData.schoolDropoutsMaleMinorities || 0
-            },
-            schoolDropoutsFemale: {
-              SC: formData.schoolDropoutsFemaleSC || 0,
-              ST: formData.schoolDropoutsFemaleST || 0,
-              OBC: formData.schoolDropoutsFemaleOBC || 0,
-              Others: formData.schoolDropoutsFemaleOthers || 0,
-              Total: formData.schoolDropoutsFemaleTotal || 0,
-              Minorities: formData.schoolDropoutsFemaleMinorities || 0
-            }
+          bplPopulation: {
+            SC: formData.bplPopulationSlumSC || 0,
+            ST: formData.bplPopulationSlumST || 0,
+            OBC: formData.bplPopulationSlumOBC || 0,
+            Others: formData.bplPopulationSlumOthers || 0,
+            Total: formData.bplPopulationSlum || 0,
+            Minorities: formData.bplPopulationSlumMinorities || 0
+          },
+          numberOfHouseholds: {
+            SC: formData.noHouseholdsSlumSC || 0,
+            ST: formData.noHouseholdsSlumST || 0,
+            OBC: formData.noHouseholdsSlumOBC || 0,
+            Others: formData.noHouseholdsSlumOthers || 0,
+            Total: formData.noHouseholdsSlum || 0,
+            Minorities: formData.noHouseholdsSlumMinorities || 0
+          },
+          numberOfBplHouseholds: {
+            SC: formData.noBplHouseholdsSC || 0,
+            ST: formData.noBplHouseholdsST || 0,
+            OBC: formData.noBplHouseholdsOBC || 0,
+            Others: formData.noBplHouseholdsOthers || 0,
+            Total: formData.noBplHouseholdsTotal || 0,
+            Minorities: formData.noBplHouseholdsMinorities || 0
+          },
+          womenHeadedHouseholds: {
+            SC: formData.noWomenHeadedHouseholdsSC || 0,
+            ST: formData.noWomenHeadedHouseholdsST || 0,
+            OBC: formData.noWomenHeadedHouseholdsOBC || 0,
+            Others: formData.noWomenHeadedHouseholdsOthers || 0,
+            Total: formData.noWomenHeadedHouseholdsTotal || 0,
+            Minorities: formData.noWomenHeadedHouseholdsMinorities || 0
+          },
+          personsOlderThan65Years: {
+            SC: formData.noPersonsOlder65SC || 0,
+            ST: formData.noPersonsOlder65ST || 0,
+            OBC: formData.noPersonsOlder65OBC || 0,
+            Others: formData.noPersonsOlder65Others || 0,
+            Total: formData.noPersonsOlder65Total || 0,
+            Minorities: formData.noPersonsOlder65Minorities || 0
+          },
+          childLabourers: {
+            SC: formData.noChildLabourersSC || 0,
+            ST: formData.noChildLabourersST || 0,
+            OBC: formData.noChildLabourersOBC || 0,
+            Others: formData.noChildLabourersOthers || 0,
+            Total: formData.noChildLabourersTotal || 0,
+            Minorities: formData.noChildLabourersMinorities || 0
+          },
+          physicallyChallengedPersons: {
+            SC: formData.noPhysicallyChallengedSC || 0,
+            ST: formData.noPhysicallyChallengedST || 0,
+            OBC: formData.noPhysicallyChallengedOBC || 0,
+            Others: formData.noPhysicallyChallengedOthers || 0,
+            Total: formData.noPhysicallyChallengedTotal || 0,
+            Minorities: formData.noPhysicallyChallengedMinorities || 0
+          },
+          mentallyChallengedPersons: {
+            SC: formData.noMentallyChallengedSC || 0,
+            ST: formData.noMentallyChallengedST || 0,
+            OBC: formData.noMentallyChallengedOBC || 0,
+            Others: formData.noMentallyChallengedOthers || 0,
+            Total: formData.noMentallyChallengedTotal || 0,
+            Minorities: formData.noMentallyChallengedMinorities || 0
+          },
+          personsWithHivAids: {
+            SC: formData.noPersonsHivaidsSC || 0,
+            ST: formData.noPersonsHivaidsST || 0,
+            OBC: formData.noPersonsHivaidsOBC || 0,
+            Others: formData.noPersonsHivaidsOthers || 0,
+            Total: formData.noPersonsHivaidsTotal || 0,
+            Minorities: formData.noPersonsHivaidsMinorities || 0
+          },
+          personsWithTuberculosis: {
+            SC: formData.noPersonsTuberculosisSC || 0,
+            ST: formData.noPersonsTuberculosisST || 0,
+            OBC: formData.noPersonsTuberculosisOBC || 0,
+            Others: formData.noPersonsTuberculosisOthers || 0,
+            Total: formData.noPersonsTuberculosisTotal || 0,
+            Minorities: formData.noPersonsTuberculosisMinorities || 0
+          },
+          personsWithRespiratoryDiseases: {
+            SC: formData.noPersonsRespiratorySC || 0,
+            ST: formData.noPersonsRespiratoryST || 0,
+            OBC: formData.noPersonsRespiratoryOBC || 0,
+            Others: formData.noPersonsRespiratoryOthers || 0,
+            Total: formData.noPersonsRespiratoryTotal || 0,
+            Minorities: formData.noPersonsRespiratoryMinorities || 0
+          },
+          personsWithOtherChronicDiseases: {
+            SC: formData.noPersonsOtherChronicSC || 0,
+            ST: formData.noPersonsOtherChronicST || 0,
+            OBC: formData.noPersonsOtherChronicOBC || 0,
+            Others: formData.noPersonsOtherChronicOthers || 0,
+            Total: formData.noPersonsOtherChronicTotal || 0,
+            Minorities: formData.noPersonsOtherChronicMinorities || 0
           }
         },
         
-        // PART-G: IV. HOUSING STATUS
+        // SECTION 4: Literacy & Education (by caste categories)
+        literacyAndEducation: {
+          totalIlliteratePerson: {
+            SC: formData.totalIlliteratePersonsSC || 0,
+            ST: formData.totalIlliteratePersonsST || 0,
+            OBC: formData.totalIlliteratePersonsOBC || 0,
+            Others: formData.totalIlliteratePersonsOthers || 0,
+            Total: formData.totalIlliteratePersonsTotal || 0,
+            Minorities: formData.totalIlliteratePersonsMinorities || 0
+          },
+          maleIlliterate: {
+            SC: formData.noMaleIlliterateSC || 0,
+            ST: formData.noMaleIlliterateST || 0,
+            OBC: formData.noMaleIlliterateOBC || 0,
+            Others: formData.noMaleIlliterateOthers || 0,
+            Total: formData.noMaleIlliterateTotal || 0,
+            Minorities: formData.noMaleIlliterateMinorities || 0
+          },
+          femaleIlliterate: {
+            SC: formData.noFemaleIlliterateSC || 0,
+            ST: formData.noFemaleIlliterateST || 0,
+            OBC: formData.noFemaleIlliterateOBC || 0,
+            Others: formData.noFemaleIlliterateOthers || 0,
+            Total: formData.noFemaleIlliterateTotal || 0,
+            Minorities: formData.noFemaleIlliterateMinorities || 0
+          },
+          bplIlliteratePerson: {
+            SC: formData.noBplIlliteratePersonsSC || 0,
+            ST: formData.noBplIlliteratePersonsST || 0,
+            OBC: formData.noBplIlliteratePersonsOBC || 0,
+            Others: formData.noBplIlliteratePersonsOthers || 0,
+            Total: formData.noBplIlliteratePersonsTotal || 0,
+            Minorities: formData.noBplIlliteratePersonsMinorities || 0
+          },
+          maleBplIlliterate: {
+            SC: formData.noMaleBplIlliterateSC || 0,
+            ST: formData.noMaleBplIlliterateST || 0,
+            OBC: formData.noMaleBplIlliterateOBC || 0,
+            Others: formData.noMaleBplIlliterateOthers || 0,
+            Total: formData.noMaleBplIlliterateTotal || 0,
+            Minorities: formData.noMaleBplIlliterateMinorities || 0
+          },
+          femaleBplIlliterate: {
+            SC: formData.noFemaleBplIlliterateSC || 0,
+            ST: formData.noFemaleBplIlliterateST || 0,
+            OBC: formData.noFemaleBplIlliterateOBC || 0,
+            Others: formData.noFemaleBplIlliterateOthers || 0,
+            Total: formData.noFemaleBplIlliterateTotal || 0,
+            Minorities: formData.noFemaleBplIlliterateMinorities || 0
+          },
+          schoolDropoutsMale: {
+            SC: formData.schoolDropoutsMaleSC || 0,
+            ST: formData.schoolDropoutsMaleST || 0,
+            OBC: formData.schoolDropoutsMaleOBC || 0,
+            Others: formData.schoolDropoutsMaleOthers || 0,
+            Total: formData.schoolDropoutsMaleTotal || 0,
+            Minorities: formData.schoolDropoutsMaleMinorities || 0
+          },
+          schoolDropoutsFemale: {
+            SC: formData.schoolDropoutsFemaleSC || 0,
+            ST: formData.schoolDropoutsFemaleST || 0,
+            OBC: formData.schoolDropoutsFemaleOBC || 0,
+            Others: formData.schoolDropoutsFemaleOthers || 0,
+            Total: formData.schoolDropoutsFemaleTotal || 0,
+            Minorities: formData.schoolDropoutsFemaleMinorities || 0
+          }
+        },
+        
+        // PART-H: IV. HOUSING STATUS
         housingStatus: {
           dwellingUnitsPucca: formData.dwellingUnitsPucca || 0,
           dwellingUnitsSemiPucca: formData.dwellingUnitsSemiPucca || 0,
@@ -1681,7 +1678,7 @@ export default function SlumSurveyPage() {
           landTenureTotal: formData.landTenureTotal || 0
         },
         
-        // PART-H: V. ECONOMIC STATUS OF HOUSEHOLDS
+        // PART-I: V. ECONOMIC STATUS OF HOUSEHOLDS
         economicStatus: {
           economicStatusData: {
             lessThan500: formData.economicStatus?.lessThan500 || 0,
@@ -1693,15 +1690,29 @@ export default function SlumSurveyPage() {
           }
         },
         
-        // PART-I: VI. OCCUPATION STATUS OF HOUSEHOLDS
-        occupationStatus: {
-          occupationalStatusData: {
-            selfEmployed: formData.occupationalStatus?.selfEmployed || 0,
-            salaried: formData.occupationalStatus?.salaried || 0,
-            regularWage: formData.occupationalStatus?.regularWage || 0,
-            casualLabour: formData.occupationalStatus?.casualLabour || 0,
-            others: formData.occupationalStatus?.others || 0
-          }
+        // Employment and Occupation Status
+        employmentAndOccupation: {
+          majorIndustriesPresent: [] // Will be populated from form data if available
+        },
+        
+        // Transportation and Accessibility
+        transportationAndAccessibility: {
+          mainTransportMode: [] // Will be populated from form data if available
+        },
+        
+        // Environmental Conditions
+        environmentalConditions: {},
+        
+        // Social Issues and Vulnerable Groups
+        socialIssuesAndVulnerableGroups: {
+          majorChallenges: [],
+          slumDwellersAssociation: formData.slumDwellersAssociation || "NO"
+        },
+        
+        // Slum Improvement and Development
+        slumImprovementAndDevelopment: {
+          existingDevelopmentProjects: [],
+          plannedImprovements: []
         },
         
         // PART-J: VII. ACCESS TO PHYSICAL INFRASTRUCTURE
@@ -1981,10 +1992,10 @@ export default function SlumSurveyPage() {
         2: 'surveyOperation',
         3: 'basicInformation',
         4: 'landStatus',
-        5: 'demographicProfile',
+        5: 'populationAndHealth',
         6: 'housingStatus',
         7: 'economicStatus',
-        8: 'occupationStatus',
+        8: 'employmentAndOccupation',
         9: 'physicalInfrastructure',
         10: 'educationFacilities',
         11: 'healthFacilities',
@@ -2051,7 +2062,7 @@ export default function SlumSurveyPage() {
             data.ownershipLandDetail = formData.ownershipLandDetail;
             data.ownershipLandSpecify = formData.ownershipLandSpecify;
             break;
-          case 'demographicProfile':
+          case 'populationAndHealth':
             // Population & Health (Questions 12a-12m)
             data.totalPopulationSlumSC = formData.totalPopulationSlumSC;
             data.totalPopulationSlumST = formData.totalPopulationSlumST;
@@ -2207,12 +2218,8 @@ export default function SlumSurveyPage() {
             data.rs2000to3000 = formData.economicStatus?.rs2000to3000;
             data.moreThan3000 = formData.economicStatus?.moreThan3000;
             break;
-          case 'occupationStatus':
-            data.selfEmployed = formData.occupationalStatus?.selfEmployed;
-            data.salaried = formData.occupationalStatus?.salaried;
-            data.regularWage = formData.occupationalStatus?.regularWage;
-            data.casualLabour = formData.occupationalStatus?.casualLabour;
-            data.others = formData.occupationalStatus?.others;
+          case 'employmentAndOccupation':
+            data.majorIndustriesPresent = []; // Will be populated from form data if available
             break;
           case 'physicalInfrastructure':
             data.sourceDrinkingWater = formData.sourceDrinkingWater;
@@ -5509,7 +5516,7 @@ export default function SlumSurveyPage() {
                 
                 {/* Population & Health */}
                 <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">6. Demographic Profile</h3>
+                    <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">6. Population & Health Demographics</h3>
                     <h3 className="text-lg font-medium mb-3 p-2 bg-blue-500 rounded text-black-800">Population & Health</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-2 bg-slate-800 rounded"><strong>Total Population SC:</strong> {formData.totalPopulationSlumSC || 'N/A'}</div>
@@ -5680,9 +5687,9 @@ export default function SlumSurveyPage() {
                     </div>
                 </div>
                 
-                {/* Occupation Status */}
+                {/* Employment and Occupation Status */}
                 <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">9. Occupation Status of Households</h3>
+                    <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">9. Employment and Occupation Status</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-2 bg-slate-800 rounded"><strong>Self Employed:</strong> {formData.occupationalStatus?.selfEmployed || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Salaried:</strong> {formData.occupationalStatus?.salaried || 'N/A'}</div>
