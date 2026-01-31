@@ -65,7 +65,7 @@ router.delete('/slum-surveys/:surveyId', auth, deleteSlumSurvey);
 
 // ===== HOUSEHOLD SURVEY ROUTES =====
 // Create or get household survey
-router.post('/household-surveys/:householdId', auth, authorize('SURVEYOR'), createOrGetHouseholdSurvey);
+router.post('/household-surveys', auth, authorize('SURVEYOR'), createOrGetHouseholdSurvey);
 // Get specific household survey
 router.get('/household-surveys/:surveyId', auth, getHouseholdSurvey);
 // Get survey for a specific household

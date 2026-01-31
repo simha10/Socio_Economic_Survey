@@ -544,12 +544,12 @@ class ApiService {
     }
   }
 
-  public async createOrGetHouseholdSurvey(householdId: string): Promise<ApiResponse> {
+  public async createOrGetHouseholdSurvey(slumId: string, houseDoorNo: string): Promise<ApiResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/surveys/household-surveys/${householdId}`, {
+      const response = await fetch(`${this.baseUrl}/surveys/household-surveys`, {
         method: 'POST',
         headers: this.getHeaders(),
-        body: JSON.stringify({}),
+        body: JSON.stringify({ slumId, houseDoorNo }),
       });
 
       return await this.handleResponse(response);
@@ -564,7 +564,7 @@ class ApiService {
 
   public async getHouseholdSurvey(id: string): Promise<ApiResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/surveys/household/${id}`, {
+      const response = await fetch(`${this.baseUrl}/surveys/household-surveys/${id}`, {
         method: 'GET',
         headers: this.getHeaders(),
       });
@@ -581,8 +581,8 @@ class ApiService {
 
   public async updateHouseholdSurvey(id: string, data: any): Promise<ApiResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/surveys/household/${id}`, {
-        method: 'PATCH',
+      const response = await fetch(`${this.baseUrl}/surveys/household-surveys/${id}`, {
+        method: 'PUT',
         headers: this.getHeaders(),
         body: JSON.stringify(data),
       });

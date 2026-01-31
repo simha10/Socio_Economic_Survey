@@ -6,7 +6,6 @@ const path = require('path');
 const SlumSurvey = require('../models/SlumSurvey');
 const HouseholdSurvey = require('../models/HouseholdSurvey');
 const Slum = require('../models/Slum');
-const Household = require('../models/Household');
 
 const router = express.Router();
 
@@ -131,13 +130,8 @@ router.get('/household-surveys/:slumId', auth, authorize('ADMIN', 'SUPERVISOR'),
       });
     }
 
-    // Get all households in this slum
-    const households = await Household.find({ slum: slumId });
-    const householdIds = households.map(h => h._id);
-
-    // Get all surveys for these households
-    const surveys = await HouseholdSurvey.find({ household: { $in: householdIds } })
-      .populate('household', 'doorNo headName')
+    // Get all surveys for this slum (direct slum reference)
+    const surveys = await HouseholdSurvey.find({ slum: slumId })
       .populate('surveyor', 'name username')
       .sort({ createdAt: -1 });
 
@@ -202,8 +196,8 @@ router.get('/household-surveys/:slumId', auth, authorize('ADMIN', 'SUPERVISOR'),
     // Prepare data for CSV
     const csvData = surveys.map(survey => ({
       slumName: slum.name,
-      doorNo: survey.household?.doorNo || '',
-      headName: survey.household?.headName || '',
+      doorNo: survey.houseDoorNo || '',
+      headName: survey.headOfFamily?.name || '',
       surveyor: survey.surveyor?.name || '',
       headNameField: survey.headOfFamily?.name || '',
       fatherName: survey.headOfFamily?.fatherName || '',

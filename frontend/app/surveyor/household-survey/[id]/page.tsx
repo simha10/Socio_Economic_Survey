@@ -165,8 +165,8 @@ export default function HouseholdSurveyPage() {
   const assignmentId = params.id as string;
   const { showToast } = useToast();
 
-  const [slum, setSlum] = useState<{ name: string } | null>(null);
-  const [assignment, setAssignment] = useState(null);
+  const [slum, setSlum] = useState<{ name: string; ward?: string } | null>(null);
+  const [assignment, setAssignment] = useState<any>(null);
   const [households, setHouseholds] = useState([]);
   const [selectedHousehold, setSelectedHousehold] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -186,6 +186,9 @@ export default function HouseholdSurveyPage() {
   // Back navigation confirmation
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [backDestination, setBackDestination] = useState<string>("");
+  
+  // Submit confirmation
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   const loadHouseholdsForSlum = useCallback(
     async (slumId: string) => {
@@ -746,8 +749,6 @@ export default function HouseholdSurveyPage() {
 
   const handleSubmit = async () => {
     try {
-      setSubmitting(true);
-
       // Validate form
       const validationErrors = validateForm();
       setErrors(validationErrors);
@@ -758,12 +759,26 @@ export default function HouseholdSurveyPage() {
         return;
       }
 
+      // Show confirmation dialog
+      setShowSubmitConfirm(true);
+    } catch (error) {
+      console.error("Error preparing submission:", error);
+      showToast("Failed to prepare submission", "error");
+    }
+  };
+
+  const handleConfirmSubmit = async () => {
+    try {
+      setSubmitting(true);
+      setShowSubmitConfirm(false);
+
       // Clear previous errors
       setErrors([]);
 
       // Create or get household survey
       const surveyResponse = await apiService.createOrGetHouseholdSurvey(
-        formData.householdId,
+        assignment?.slum?._id,
+        formData.houseDoorNo || "",
       );
 
       if (!surveyResponse.success) {
@@ -784,7 +799,89 @@ export default function HouseholdSurveyPage() {
 
       if (response.success) {
         showToast("Household survey submitted successfully", "success");
-        router.push(`/surveyor/dashboard`);
+        
+        // Reset form for next household
+        setFormData({
+          householdId: "",
+          houseDoorNo: "",
+          slumName: slum?.name || "",
+          locationWard: slum?.ward || "",
+          // Reset all other fields to empty/default values
+          headName: "",
+          fatherName: "",
+          sex: "",
+          caste: "",
+          religion: "",
+          minorityStatus: "",
+          femaleHeadStatus: "",
+          familyMembersMale: undefined,
+          familyMembersFemale: undefined,
+          familyMembersTotal: undefined,
+          illiterateAdultMale: undefined,
+          illiterateAdultFemale: undefined,
+          illiterateAdultTotal: undefined,
+          childrenNotAttendingMale: undefined,
+          childrenNotAttendingFemale: undefined,
+          childrenNotAttendingTotal: undefined,
+          handicappedPhysically: undefined,
+          handicappedMentally: undefined,
+          handicappedTotal: undefined,
+          femaleEarningStatus: "",
+          belowPovertyLine: "",
+          bplCard: "",
+          landTenureStatus: "",
+          houseStructure: "",
+          roofType: "",
+          flooringType: "",
+          houseLighting: "",
+          cookingFuel: "",
+          waterSource: "",
+          waterSupplyDuration: "",
+          waterSourceDistance: "",
+          toiletFacility: "",
+          bathroomFacility: "",
+          roadFrontType: "",
+          preschoolType: "",
+          primarySchoolType: "",
+          highSchoolType: "",
+          healthFacilityType: "",
+          welfareBenefits: [],
+          consumerDurables: [],
+          livestock: [],
+          yearsInTown: "",
+          migrated: "",
+          migratedFrom: "",
+          migrationType: "",
+          migrationReasons: [],
+          earningAdultMale: undefined,
+          earningAdultFemale: undefined,
+          earningAdultTotal: undefined,
+          earningNonAdultMale: undefined,
+          earningNonAdultFemale: undefined,
+          earningNonAdultTotal: undefined,
+          monthlyIncome: undefined,
+          monthlyExpenditure: undefined,
+          debtOutstanding: undefined,
+          notes: ""
+        });
+        
+        // Reset expanded sections
+        setExpandedSections(new Set(["general", "household"]));
+        
+        // Show success message with option to continue
+        setTimeout(() => {
+          const continueSurveying = confirm(
+            `Survey submitted successfully for House No: ${formData.houseDoorNo || 'N/A'}!
+
+Do you want to continue surveying other households in ${slum?.name || 'this slum'}?
+
+Click OK to continue, Cancel to return to dashboard.`
+          );
+          
+          if (!continueSurveying) {
+            router.push(`/surveyor/dashboard`);
+          }
+        }, 1500);
       } else {
         showToast(response.message || "Failed to submit survey", "error");
       }
@@ -2045,6 +2142,40 @@ export default function HouseholdSurveyPage() {
           }}
           onCancel={() => setShowBackConfirm(false)}
         />
+
+        {/* Submit Confirmation Dialog */}
+        {showSubmitConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 rounded-lg max-w-md w-full p-6 border border-slate-700">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                  <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">Confirm Submission</h3>
+                <p className="text-slate-300 mb-6">
+                  Are you sure you want to submit this household survey? Once submitted, you won't be able to edit it.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowSubmitConfirm(false)}
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmSubmit}
+                    loading={submitting}
+                  >
+                    {submitting ? "Submitting..." : "Submit Survey"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </SurveyorLayout>
   );

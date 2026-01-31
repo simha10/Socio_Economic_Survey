@@ -1,9 +1,146 @@
 const mongoose = require('mongoose');
 
+// Define enums for all select fields
+const SEX_ENUM = ['MALE', 'FEMALE'];
+const CASTE_ENUM = ['GENERAL', 'SC', 'ST', 'OBC'];
+const RELIGION_ENUM = ['HINDU', 'MUSLIM', 'CHRISTIAN', 'SIKH', 'JAINISM', 'BUDDHISM', 'ZOROASTRIANISM', 'OTHERS'];
+const MINORITY_STATUS_ENUM = ['NON_MINORITY', 'MINORITY'];
+const FEMALE_HEAD_STATUS_ENUM = ['MARRIED', 'WIDOWED', 'ABANDONED_SINGLE', 'DIVORCED', 'UNWED_MOTHER', 'OTHER'];
+const BELOW_POVERTY_LINE_ENUM = ['YES', 'NO', 'DONT_KNOW'];
+const BPL_CARD_ENUM = ['YES', 'NO'];
+const LAND_TENURE_STATUS_ENUM = ['PATTA', 'POSSESSION_CERTIFICATE', 'PRIVATE_LAND_ENCROACHED', 'PUBLIC_LAND_ENCROACHED', 'TENTED', 'OTHER'];
+const HOUSE_STRUCTURE_ENUM = ['PUCCA', 'SEMI_PUCCA', 'KATCHA'];
+const ROOF_TYPE_ENUM = ['GRASS_THATCHED', 'TARPAULIN', 'WOODEN', 'ASBESTOS', 'TILED', 'CEMENT_SLAB', 'OTHER'];
+const FLOORING_TYPE_ENUM = ['MUD', 'BRICK', 'STONE', 'CEMENT', 'TILES', 'OTHER'];
+const HOUSE_LIGHTING_ENUM = ['ELECTRICITY', 'KEROSENE', 'FIREWOOD', 'OTHER'];
+const COOKING_FUEL_ENUM = ['GAS', 'ELECTRICITY', 'KEROSENE', 'CHARCOAL', 'FIREWOOD', 'OTHER'];
+const WATER_SOURCE_ENUM = [
+  'WITHIN_PREMISES_TAP',
+  'WITHIN_PREMISES_TUBEWELL',
+  'WITHIN_PREMISES_OPENWELL',
+  'OUTSIDE_PREMISES_PUBLIC_TAP',
+  'OUTSIDE_PREMISES_TUBE_BORE_WELL',
+  'OUTSIDE_PREMISES_OPENWELL',
+  'OUTSIDE_PREMISES_TANK_POND',
+  'OUTSIDE_PREMISES_RIVER',
+  'WATER_TANKER',
+  'OTHER'
+];
+const WATER_SUPPLY_DURATION_ENUM = [
+  'LESS_THAN_1_HOUR',
+  'ONE_TWO_HOURS',
+  'MORE_THAN_2_HOURS',
+  'ONCE_WEEK',
+  'TWICE_WEEK',
+  'NOT_REGULAR',
+  'NO_SUPPLY'
+];
+const WATER_SOURCE_DISTANCE_ENUM = [
+  'LESS_THAN_HALF_KM',
+  'HALF_TO_ONE_KM',
+  'ONE_TO_TWO_KM',
+  'TWO_TO_FIVE_KM',
+  'MORE_THAN_FIVE_KM'
+];
+const TOILET_FACILITY_ENUM = [
+  'OWN_SEPTIC_FLUSH',
+  'OWN_DRY_LATRINE',
+  'SHARED_SEPTIC_FLUSH',
+  'SHARED_DRY_LATRINE',
+  'COMMUNITY_SEPTIC_FLUSH',
+  'COMMUNITY_DRY_LATRINE',
+  'OPEN_DEFECATION'
+];
+const BATHROOM_FACILITY_ENUM = [
+  'WITHIN_PREMISES',
+  'OUTSIDE_PREMISES',
+  'COMMUNITY_BATH',
+  'NO_BATHROOM'
+];
+const ROAD_FRONT_TYPE_ENUM = [
+  'MOTORABLE_PUCCA',
+  'MOTORABLE_KATCHA',
+  'NON_MOTORABLE_PUCCA',
+  'NON_MOTORABLE_KATCHA'
+];
+const SCHOOL_TYPE_ENUM = ['MUNICIPAL', 'GOVERNMENT', 'PRIVATE'];
+const HEALTH_FACILITY_TYPE_ENUM = [
+  'PRIMARY_HEALTH_CENTRE',
+  'GOVT_HOSPITAL',
+  'MATERNITY_CENTRE',
+  'PRIVATE_CLINIC',
+  'RMP',
+  'AYURVEDIC'
+];
+const WELFARE_BENEFITS_ENUM = [
+  'OLD_AGE_PENSION',
+  'WIDOW_PENSION',
+  'DISABLED_PENSION',
+  'HEALTH_INSURANCE',
+  'GENERAL_INSURANCE',
+  'OTHER'
+];
+const CONSUMER_DURABLES_ENUM = [
+  'ELECTRIC_FAN',
+  'REFRIGERATOR',
+  'COOLER',
+  'RESIDENTIAL_PHONE',
+  'MOBILE_PHONE',
+  'BW_TELEVISION',
+  'COLOR_TELEVISION',
+  'SEWING_MACHINE',
+  'FURNITURE',
+  'BICYCLE',
+  'RICKSHAW',
+  'PUSH_CART',
+  'BULLOCK_CART',
+  'TWO_WHEELER',
+  'THREE_WHEELER',
+  'TAXI',
+  'CAR'
+];
+const LIVESTOCK_ENUM = [
+  'BUFFALO',
+  'COW',
+  'SHEEP_GOAT',
+  'PIG',
+  'HEN_COCK',
+  'DONKEY'
+];
+const YEARS_IN_TOWN_ENUM = [
+  'ZERO_TO_ONE_YEAR',
+  'ONE_TO_THREE_YEARS',
+  'THREE_TO_FIVE_YEARS',
+  'MORE_THAN_FIVE_YEARS'
+];
+const MIGRATED_ENUM = ['YES', 'NO'];
+const MIGRATED_FROM_ENUM = ['RURAL_TO_URBAN', 'URBAN_TO_URBAN'];
+const MIGRATION_TYPE_ENUM = ['SEASONAL', 'PERMANENT'];
+const MIGRATION_REASONS_ENUM = [
+  'UNEMPLOYMENT',
+  'LOW_WAGE',
+  'DEBT',
+  'DROUGHT',
+  'CONFLICT',
+  'EDUCATION',
+  'MARRIAGE',
+  'OTHERS'
+];
+
 const householdSurveySchema = new mongoose.Schema({
-  household: {
+  // Core References
+  slum: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Household',
+    ref: 'Slum',
+    required: true
+  },
+  householdId: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  houseDoorNo: {
+    type: String,
     required: true
   },
   surveyor: {
@@ -12,131 +149,187 @@ const householdSurveySchema = new mongoose.Schema({
     required: true
   },
 
-  // SECTION 1: General Information
-  generalInformation: {
-    slumName: String,
-    locationWardNo: String,
-    houseNo: String,
-    dateOfSurvey: Date
+  // SECTION I: General Information
+  slumName: String,
+  locationWard: String,
+
+  // SECTION II: Household Level General Information
+  headName: String,
+  fatherName: String,
+  sex: {
+    type: String,
+    enum: SEX_ENUM
+  },
+  caste: {
+    type: String,
+    enum: CASTE_ENUM
+  },
+  religion: {
+    type: String,
+    enum: RELIGION_ENUM
+  },
+  minorityStatus: {
+    type: String,
+    enum: MINORITY_STATUS_ENUM
+  },
+  femaleHeadStatus: {
+    type: String,
+    enum: FEMALE_HEAD_STATUS_ENUM
   },
 
-  // SECTION 2: Household Level General Information - Head of Family
-  headOfFamily: {
-    name: String,
-    fatherName: String,
-    sex: String, // Male - 01, Female - 02
-    caste: String, // General - 01, SC - 02, ST - 03, OBC - 04
-    religion: String, // Hindu - 01, Muslim - 02, etc.
-    minorityStatus: String, // Non-minority - 01, Minority - 02
-    femaleHeadStatus: String, // If female-headed: Married - 01, Widowed - 02, etc.
-    maleHeadStatus: String // If male earning member is female
+  // Family Members Count
+  familyMembersMale: Number,
+  familyMembersFemale: Number,
+  familyMembersTotal: Number,
+
+  // Illiterate Adult Members
+  illiterateAdultMale: Number,
+  illiterateAdultFemale: Number,
+  illiterateAdultTotal: Number,
+
+  // Children Not Attending School (6-14 years)
+  childrenNotAttendingMale: Number,
+  childrenNotAttendingFemale: Number,
+  childrenNotAttendingTotal: Number,
+
+  // Handicapped Persons
+  handicappedPhysically: Number,
+  handicappedMentally: Number,
+  handicappedTotal: Number,
+
+  // Economic Status
+  femaleEarningStatus: {
+    type: String,
+    enum: FEMALE_HEAD_STATUS_ENUM
+  },
+  belowPovertyLine: {
+    type: String,
+    enum: BELOW_POVERTY_LINE_ENUM
+  },
+  bplCard: {
+    type: String,
+    enum: BPL_CARD_ENUM
   },
 
-  // SECTION 3: Family Composition
-  familyComposition: {
-    totalFamilyMembers: {
-      male: Number,
-      female: Number,
-      total: Number
-    },
-    illiterateAdults: {
-      male: Number,
-      female: Number,
-      total: Number
-    },
-    childrenNotInSchool: {
-      male: Number,
-      female: Number,
-      total: Number
-    },
-    handicappedPersons: {
-      physically: Number,
-      mentally: Number,
-      total: Number
-    },
-    majorEarningMemberIsFemale: String,
-    femaleEarningMemberStatus: String
+  // SECTION III: Housing & Infrastructure
+  landTenureStatus: {
+    type: String,
+    enum: LAND_TENURE_STATUS_ENUM
+  },
+  houseStructure: {
+    type: String,
+    enum: HOUSE_STRUCTURE_ENUM
+  },
+  roofType: {
+    type: String,
+    enum: ROOF_TYPE_ENUM
+  },
+  flooringType: {
+    type: String,
+    enum: FLOORING_TYPE_ENUM
+  },
+  houseLighting: {
+    type: String,
+    enum: HOUSE_LIGHTING_ENUM
+  },
+  cookingFuel: {
+    type: String,
+    enum: COOKING_FUEL_ENUM
   },
 
-  // SECTION 4: Poverty Status
-  povertyStatus: {
-    isBelowPovertyLine: String, // Yes - 01, No - 02, Don't know - 99
-    hasBplCard: String, // Yes - 01, No - 02
-    cardNumber: String
+  // Water & Sanitation
+  waterSource: {
+    type: String,
+    enum: WATER_SOURCE_ENUM
+  },
+  waterSupplyDuration: {
+    type: String,
+    enum: WATER_SUPPLY_DURATION_ENUM
+  },
+  waterSourceDistance: {
+    type: String,
+    enum: WATER_SOURCE_DISTANCE_ENUM
+  },
+  toiletFacility: {
+    type: String,
+    enum: TOILET_FACILITY_ENUM
+  },
+  bathroomFacility: {
+    type: String,
+    enum: BATHROOM_FACILITY_ENUM
+  },
+  roadFrontType: {
+    type: String,
+    enum: ROAD_FRONT_TYPE_ENUM
   },
 
-  // SECTION 5: Housing Details
-  housing: {
-    landTenureStatus: String, // Patta - 01, Possession Certificate - 02, etc.
-    houseStructure: String, // Pucca - 01, Semi-Pucca - 02, Katcha - 03
-    roofType: String, // Grass/thatched - 01, Tarpaulin - 02, etc.
-    flooringType: String, // Mud - 01, Brick - 02, Stone - 03, etc.
-    lightingType: String, // Electricity - 01, Kerosene - 02, etc.
-    cookingFuel: String, // Electricity - 01, Gas - 02, Firewood - 03, etc.
-    numberOfRooms: Number,
-    carpetArea: String,
-    windowsAndVentilation: String
+  // SECTION IV: Education & Health Facilities
+  preschoolType: {
+    type: String,
+    enum: SCHOOL_TYPE_ENUM
   },
-
-  // SECTION 6: Water & Sanitation
-  waterAndSanitation: {
-    sourceOfDrinkingWater: String, // Tap - 01, Well - 02, Tanker - 03, etc.
-    waterSupplyDuration: String, // 24 hours - 01, Some days - 02, etc.
-    distanceToWaterSource: String, // < 100 meters - 01, 100-500 meters - 02, etc.
-    toiletType: String, // Water Closet - 01, Pit Latrine - 02, Open Defecation - 03, etc.
-    toiletAccessibility: String, // Within house - 01, Outside - 02
-    bathroomFacility: String, // Yes - 01, No - 02
-    wasteWaterDisposal: String // Open Channel - 01, Covered Drain - 02, etc.
+  primarySchoolType: {
+    type: String,
+    enum: SCHOOL_TYPE_ENUM
   },
-
-  // SECTION 7: Migration Details
-  migration: {
-    yearsOfStayInCity: String,
-    hasMigrated: String, // Yes - 01, No - 02
-    migratedFrom: String,
-    migrationType: String, // Permanent - 01, Temporary - 02
-    reasonForMigration: String // Employment - 01, Education - 02, etc.
+  highSchoolType: {
+    type: String,
+    enum: SCHOOL_TYPE_ENUM
   },
-
-  // SECTION 8: Economic Activity & Earnings
-  economicActivity: {
-    adultEarningMembers: {
-      male: Number,
-      female: Number,
-      total: Number
-    },
-    nonAdultEarningMembers: {
-      male: Number,
-      female: Number,
-      total: Number
-    },
-    occupationType: String, // Regular - 01, Casual - 02, Self-employed - 03, etc.
-    mainOccupation: String,
-    secondaryOccupation: String
+  healthFacilityType: {
+    type: String,
+    enum: HEALTH_FACILITY_TYPE_ENUM
   },
+  welfareBenefits: [{
+    type: String,
+    enum: WELFARE_BENEFITS_ENUM
+  }],
+  consumerDurables: [{
+    type: String,
+    enum: CONSUMER_DURABLES_ENUM
+  }],
+  livestock: [{
+    type: String,
+    enum: LIVESTOCK_ENUM
+  }],
 
-  // SECTION 9: Financial Details & Assets
-  financialDetails: {
-    averageMonthlyIncome: Number,
-    averageMonthlyExpenditure: Number,
-    mainSourceOfIncome: String,
-    secondarySourceOfIncome: String,
-    debtOutstanding: Number,
-    debtReason: String,
-    hasSavings: String, // Yes - 01, No - 02
-    savingsAmount: Number
+  // SECTION V: Migration Details
+  yearsInTown: {
+    type: String,
+    enum: YEARS_IN_TOWN_ENUM
   },
-
-  // SECTION 10: Assets & Consumer Durables
-  assets: {
-    consumerDurables: [String], // TV, Refrigerator, Mobile, etc.
-    livestock: [String], // Cow, Goat, Buffalo, etc.
-    landOwnership: String,
-    landArea: String,
-    vehicleOwnership: String
+  migrated: {
+    type: String,
+    enum: MIGRATED_ENUM
   },
+  migratedFrom: {
+    type: String,
+    enum: { values: [...MIGRATED_FROM_ENUM, ''], message: '{VALUE} is not a valid migration source' }
+  },
+  migrationType: {
+    type: String,
+    enum: { values: [...MIGRATION_TYPE_ENUM, ''], message: '{VALUE} is not a valid migration type' }
+  },
+  migrationReasons: [{
+    type: String,
+    enum: MIGRATION_REASONS_ENUM
+  }],
 
-  // Survey Metadata
+  // SECTION VI: Income & Expenditure
+  earningAdultMale: Number,
+  earningAdultFemale: Number,
+  earningAdultTotal: Number,
+  earningNonAdultMale: Number,
+  earningNonAdultFemale: Number,
+  earningNonAdultTotal: Number,
+  monthlyIncome: Number,
+  monthlyExpenditure: Number,
+  debtOutstanding: Number,
+
+  // Additional Information
+  notes: String,
+
+  // Survey Status
   surveyStatus: {
     type: String,
     enum: ['DRAFT', 'IN_PROGRESS', 'SUBMITTED', 'COMPLETED'],
@@ -156,5 +349,9 @@ const householdSurveySchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Compound indexes for uniqueness
+householdSurveySchema.index({ slum: 1, householdId: 1 }, { unique: true });
+householdSurveySchema.index({ slum: 1, houseDoorNo: 1 }, { unique: true });
 
 module.exports = mongoose.model('HouseholdSurvey', householdSurveySchema);
