@@ -67,14 +67,14 @@ export default function SlumDetailsPage() {
   }, [slumId]);
 
   const handleSlumSurveyClick = () => {
-    // Check the completion percentage to determine the message
-    const completionPercentage = slumSurvey?.completionPercentage || 0;
+    // Check the survey status to determine the message
+    const surveyStatus = slumSurvey?.surveyStatus || "DRAFT";
     
-    if (completionPercentage === 0) {
-      // Show start confirmation
+    if (surveyStatus === "DRAFT" || surveyStatus === "IN_PROGRESS") {
+      // Show start/continue confirmation
       setShowSlumSurveyConfirm(true);
-    } else {
-      // Show edit confirmation
+    } else if (surveyStatus === "SUBMITTED" || surveyStatus === "COMPLETED") {
+      // Show submitted survey confirmation
       setShowSlumSurveyConfirm(true);
     }
   };
@@ -86,6 +86,18 @@ export default function SlumDetailsPage() {
 
   const handleSlumSurveyCancel = () => {
     setShowSlumSurveyConfirm(false);
+  };
+
+  const handleSlumSurveyPreview = () => {
+    setShowSlumSurveyConfirm(false);
+    router.push(`/surveyor/slum-survey/${slumId}`);
+  };
+
+  const handleSlumSurveyEdit = () => {
+    if (window.confirm(`Are you sure you want to edit the Slum Survey for ${slum?.name}?`)) {
+      setShowSlumSurveyConfirm(false);
+      router.push(`/surveyor/slum-survey/${slumId}`);
+    }
   };
 
   if (loading) {
@@ -187,8 +199,11 @@ export default function SlumDetailsPage() {
             isOpen={showSlumSurveyConfirm}
             surveyType="slum"
             slumName={slum?.name || ""}
+            surveyStatus={slumSurvey?.surveyStatus as "DRAFT" | "IN_PROGRESS" | "SUBMITTED" | "COMPLETED" | undefined}
             onConfirm={handleSlumSurveyConfirm}
             onCancel={handleSlumSurveyCancel}
+            onPreview={handleSlumSurveyPreview}
+            onEdit={handleSlumSurveyEdit}
           />
         </Card>
 

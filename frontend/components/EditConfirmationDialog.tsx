@@ -5,8 +5,8 @@ import Button from "@/components/Button";
 
 interface EditConfirmationDialogProps {
   isOpen: boolean;
-  title: string;
-  message: string;
+  surveyType: "slum" | "household";
+  slumName: string;
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
@@ -14,8 +14,8 @@ interface EditConfirmationDialogProps {
 
 export default function EditConfirmationDialog({
   isOpen,
-  title,
-  message,
+  surveyType,
+  slumName,
   onConfirm,
   onCancel,
   loading = false,
@@ -29,12 +29,24 @@ export default function EditConfirmationDialog({
           <div className="bg-yellow-500/20 p-3 rounded-lg">
             <AlertTriangle className="w-5 h-5 text-yellow-400" />
           </div>
-          <h2 className="text-lg font-bold text-white">{title}</h2>
+          <h2 className="text-lg font-bold text-white">Edit {surveyType === "slum" ? "Slum" : "Household"} Survey</h2>
         </div>
 
-        <p className="text-slate-400 mb-6">{message}</p>
+        <p className="text-slate-400 mb-6">
+          Are you sure you want to edit the {surveyType} survey for &quot;{slumName}&quot;? 
+          This will allow you to modify the submitted survey data.
+        </p>
 
         <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={onCancel}
+            disabled={loading}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
           <Button
             variant="primary"
             size="md"
@@ -43,15 +55,6 @@ export default function EditConfirmationDialog({
             className="bg-yellow-600 hover:bg-yellow-700 w-full sm:w-auto"
           >
             {loading ? "Editing..." : "Edit Survey"}
-          </Button>
-          <Button 
-            variant="secondary" 
-            size="md"
-            onClick={onCancel} 
-            disabled={loading}
-            className="w-full sm:w-auto"
-          >
-            Cancel
           </Button>
         </div>
       </div>

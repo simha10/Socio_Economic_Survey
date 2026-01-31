@@ -7,6 +7,7 @@ import DashboardStats from "@/components/DashboardStats";
 import apiService from "@/services/api";
 import { MapPin, Users, CheckCircle, Clock, ArrowRight, CircleEllipsis, ListTodo } from "lucide-react";
 import SurveyConfirmationDialog from "@/components/SurveyConfirmationDialog";
+import EditConfirmationDialog from "@/components/EditConfirmationDialog";
 
 interface User {
   _id: string;
@@ -48,7 +49,10 @@ export default function SurveyorDashboard() {
     type: 'slum' | 'household';
     assignmentId: string;
     slumName: string;
+    surveyStatus?: "DRAFT" | "IN_PROGRESS" | "SUBMITTED" | "COMPLETED";
   } | null>(null);
+  const [surveyData, setSurveyData] = useState<Record<string, any>>({});
+  const [showEditConfirm, setShowEditConfirm] = useState(false);
 
   useEffect(() => {
     // Verify user is surveyor
@@ -75,7 +79,24 @@ export default function SurveyorDashboard() {
       const response = await apiService.getMyAssignments();
       if (response.success) {
         console.log("Assignments loaded:", response.data);
-        setAssignments(response.data || []);
+        const assignmentsData = response.data || [];
+        setAssignments(assignmentsData);
+        
+        // Load survey data for each assignment
+        const surveyDataMap: Record<string, any> = {};
+        for (const assignment of assignmentsData) {
+          if (assignment.slum?._id) {
+            try {
+              const surveyResponse = await apiService.createOrGetSlumSurvey(assignment.slum._id);
+              if (surveyResponse.success) {
+                surveyDataMap[assignment._id] = surveyResponse.data;
+              }
+            } catch (error) {
+              console.error(`Failed to load survey for assignment ${assignment._id}:`, error);
+            }
+          }
+        }
+        setSurveyData(surveyDataMap);
       } else {
         console.error("Failed to load assignments:", response.error);
         setAssignments([]);
@@ -89,15 +110,21 @@ export default function SurveyorDashboard() {
   };
 
   const handleSlumSurveyClick = (assignmentId: string, slumName: string) => {
+    const survey = surveyData[assignmentId];
+    const surveyStatus = survey?.surveyStatus || "DRAFT";
+    
     setPendingSurvey({
       type: 'slum',
       assignmentId,
-      slumName
+      slumName,
+      surveyStatus: surveyStatus as "DRAFT" | "IN_PROGRESS" | "SUBMITTED" | "COMPLETED"
     });
     setShowConfirmation(true);
   };
 
   const handleHouseholdSurveyClick = (assignmentId: string, slumName: string) => {
+    // For household surveys, we can check if there are any completed household surveys
+    // For now, we'll treat them as always available to start
     setPendingSurvey({
       type: 'household',
       assignmentId,
@@ -118,6 +145,47 @@ export default function SurveyorDashboard() {
     // Reset confirmation state
     setShowConfirmation(false);
     setPendingSurvey(null);
+  };
+
+  const previewSurvey = () => {
+    if (!pendingSurvey) return;
+    
+    if (pendingSurvey.type === 'slum') {
+      router.push(`/surveyor/slum-survey/${pendingSurvey.assignmentId}`);
+    } else {
+      // For household surveys, we might want to show a list of households
+      router.push(`/surveyor/slums/${pendingSurvey.assignmentId}`);
+    }
+    
+    // Reset confirmation state
+    setShowConfirmation(false);
+    setPendingSurvey(null);
+  };
+
+  const editSurvey = () => {
+    if (!pendingSurvey) return;
+    
+    // Show edit confirmation dialog
+    setShowEditConfirm(true);
+  };
+
+  const confirmEditSurvey = () => {
+    if (!pendingSurvey) return;
+    
+    if (pendingSurvey.type === 'slum') {
+      router.push(`/surveyor/slum-survey/${pendingSurvey.assignmentId}?edit=true`);
+    } else {
+      router.push(`/surveyor/household-survey/${pendingSurvey.assignmentId}`);
+    }
+    
+    // Reset confirmation states
+    setShowConfirmation(false);
+    setShowEditConfirm(false);
+    setPendingSurvey(null);
+  };
+
+  const cancelEditSurvey = () => {
+    setShowEditConfirm(false);
   };
 
   const cancelSurvey = () => {
@@ -361,8 +429,20 @@ export default function SurveyorDashboard() {
         isOpen={showConfirmation}
         surveyType={pendingSurvey?.type || 'slum'}
         slumName={pendingSurvey?.slumName || ''}
+        surveyStatus={pendingSurvey?.surveyStatus}
         onConfirm={confirmSurvey}
         onCancel={cancelSurvey}
+        onPreview={previewSurvey}
+        onEdit={editSurvey}
+      />
+      
+      {/* Edit Confirmation Dialog */}
+      <EditConfirmationDialog
+        isOpen={showEditConfirm}
+        surveyType={pendingSurvey?.type || 'slum'}
+        slumName={pendingSurvey?.slumName || ''}
+        onConfirm={confirmEditSurvey}
+        onCancel={cancelEditSurvey}
       />
     </SurveyorLayout>
   );

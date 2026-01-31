@@ -34,7 +34,7 @@ const slumSurveySchema = new mongoose.Schema({
     slumPopulation: Number,
     noSlumHouseholds: Number,
     bplPopulation: Number,
-    noBplHouseholdsCityTown: Number
+    noBplHouseholdsSlum: Number
   },
 
   // SECTION 3: PARTICULARS OF SURVEY OPERATION
@@ -276,7 +276,12 @@ const slumSurveySchema = new mongoose.Schema({
 
   // SECTION 9: EMPLOYMENT AND OCCUPATION STATUS
   employmentAndOccupation: {
-    majorIndustriesPresent: [String]
+    majorIndustriesPresent: [String],
+    selfEmployed: Number,
+    salaried: Number,
+    regularWage: Number,
+    casualLabour: Number,
+    others: Number
   },
 
   // SECTION 10: ACCESS TO PHYSICAL INFRASTRUCTURE

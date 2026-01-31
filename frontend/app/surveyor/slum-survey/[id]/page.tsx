@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import SurveyorLayout from "@/components/SurveyorLayout";
 import Card from "@/components/Card";
 import Button from "@/components/Button";
@@ -395,6 +395,9 @@ interface SlumSurveyForm {
   // 36c. Women's Associations/ Mahila Samithis
   womensAssociations?: number; // Specify Number: 0, 01,02,03
   
+  // Employment and occupation related fields
+  majorIndustriesPresent?: string[];
+  
   // PART-XII: XI. ADDITIONAL INFRASTRUCTURE REQUIREMENTS
   // Water Supply
   waterSupplyPipelinesExisting?: string; // 37 - Water Supply: Pipelines (Rmts) - Existing
@@ -565,6 +568,19 @@ interface SlumSurveyForm {
   otherSchemesBeneficiaries?: number;
   
   // Additional infrastructure
+  // Additional Infrastructure standalone fields
+  electricityExisting?: string;
+  electricityAdditional?: string;
+  electricityCost?: number;
+  
+  healthcareExisting?: string;
+  healthcareAdditional?: string;
+  healthcareCost?: number;
+  
+  toiletsExisting?: string;
+  toiletsAdditional?: string;
+  toiletsCost?: number;
+  
   additionalInfrastructure?: {
     waterSupply?: {
       existing?: string;
@@ -633,7 +649,9 @@ const SANITATION_OPTIONS = [
 export default function SlumSurveyPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const assignmentId = params.id as string;
+  const isEditMode = searchParams.get('edit') === 'true';
   const { showToast } = useToast();
 
   const [slum, setSlum] = useState<any>(null);
@@ -644,6 +662,20 @@ export default function SlumSurveyPage() {
   const [saving, setSaving] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [user, setUser] = useState<any>(null);
+  const [tempFormData, setTempFormData] = useState<Partial<SlumSurveyForm>>({}); // Temporary storage for edit mode changes
+  const [isPreviewMode, setIsPreviewMode] = useState(false); // Track if we're in actual preview mode
+  
+  // Debug logging for state values
+  useEffect(() => {
+    console.log("State values:", {
+      currentStep,
+      isPreviewMode,
+      isEditMode,
+      submitting,
+      saving,
+      slumSurveyId: slumSurvey?._id
+    });
+  }, [currentStep, isPreviewMode, isEditMode, submitting, saving, slumSurvey]);
 
   // Validation state
   interface FieldError {
@@ -789,6 +821,20 @@ export default function SlumSurveyPage() {
     communityOthersExisting: "",
     communityOthersAdditional: "",
     communityOthersCost: undefined,
+    
+    // Standalone infrastructure fields
+    electricityExisting: "",
+    electricityAdditional: "",
+    electricityCost: undefined,
+    
+    healthcareExisting: "",
+    healthcareAdditional: "",
+    healthcareCost: undefined,
+    
+    toiletsExisting: "",
+    toiletsAdditional: "",
+    toiletsCost: undefined,
+    majorIndustriesPresent: [],
   });
 
   const steps = [
@@ -806,7 +852,7 @@ export default function SlumSurveyPage() {
     { title: "Health Facilities", id: "healthFacilities" },
     { title: "Social Development", id: "socialDevelopment" },
     { title: "Additional Infrastructure", id: "additionalInfrastructure" },
-    { title: "Review & Submit", id: "reviewAndSubmit" },
+    { title: isEditMode ? "Edit & Submit" : "Review & Submit", id: "reviewAndSubmit" },
   ];
 
   useEffect(() => {
@@ -869,94 +915,437 @@ export default function SlumSurveyPage() {
               }));
             }
             
-            // Navigate to the correct section based on completion percentage
+            // Navigate to the correct section based on completion percentage and survey status
             if (surveyData.completionPercentage !== undefined) {
-              // Calculate section based on completion percentage
-              // Each section represents ~7.14% (100/14), so we divide by 7.14 and round down
-              // If completion is 100%, we should be on the last section (index 13)
-              let sectionIndex = Math.floor(surveyData.completionPercentage / (100 / 14));
-              // Cap at 13 (the last section index) but if it's 100%, we should be at the review section
-              // If completion is 100%, we're at the end (last section)
-              if (surveyData.completionPercentage >= 100) {
-                sectionIndex = 13; // Last section (Additional Infrastructure)
-              } else if (surveyData.completionPercentage === 0) {
-                sectionIndex = 0; // First section
+              let sectionIndex;
+              let previewMode = false;
+              
+              // If survey is submitted, check if we're in edit mode
+              if (surveyData.surveyStatus === 'SUBMITTED') {
+                if (isEditMode) {
+                  sectionIndex = 0; // Start from first section for editing
+                  previewMode = false;
+                } else {
+                  sectionIndex = 14; // Preview section
+                  previewMode = true;
+                }
               } else {
-                // For intermediate percentages, use the calculated value but cap at 13
-                sectionIndex = Math.min(13, sectionIndex);
+                // Calculate section based on completion percentage
+                // Each section represents ~6.67% (100/15), so we divide by 6.67 and round down
+                sectionIndex = Math.floor(surveyData.completionPercentage / (100 / 15));
+                
+                // Cap at 13 (the last data section index)
+                if (surveyData.completionPercentage >= 100) {
+                  sectionIndex = 13; // Last data section (Additional Infrastructure)
+                } else if (surveyData.completionPercentage === 0) {
+                  sectionIndex = 0; // First section
+                } else {
+                  // For intermediate percentages, use the calculated value but cap at 13
+                  sectionIndex = Math.min(13, sectionIndex);
+                }
+                previewMode = false;
               }
+              
               setCurrentStep(sectionIndex);
+              setIsPreviewMode(previewMode);
             }
             
             // Skip permission check here since it should be handled at the assignment level
             
             // If survey has existing data, populate the form
+            console.log("Loading basicInformation data:", surveyData.basicInformation);
             if (surveyData.basicInformation) {
               setFormData(prev => ({
                 ...prev,
                 slumCode: surveyData.basicInformation.slumCode || "",
-                locationWard: surveyData.basicInformation.locationWardNo || "",
-                ageSlumYears: surveyData.basicInformation.ageOfSlumYears || undefined,
-                areaSlumSqMtrs: surveyData.basicInformation.areaOfSlumSqMeters ? parseFloat(surveyData.basicInformation.areaOfSlumSqMeters) : undefined,
-                locationCoreOrFringe: surveyData.basicInformation.locatedInCoreCityOrFringe || "",
-                typeAreaSurrounding: surveyData.basicInformation.typeOfAreaSurrounding || "",
-                physicalLocationSlum: surveyData.basicInformation.physicalLocationOfSlum || "",
+                locationWard: surveyData.basicInformation.locationWard || "",
+                ageSlumYears: surveyData.basicInformation.ageSlumYears || undefined,
+                areaSlumSqMtrs: surveyData.basicInformation.areaSlumSqMtrs ? parseFloat(surveyData.basicInformation.areaSlumSqMtrs) : undefined,
+                locationCoreOrFringe: surveyData.basicInformation.locationCoreOrFringe || "",
+                typeAreaSurrounding: surveyData.basicInformation.typeAreaSurrounding || "",
+                physicalLocationSlum: surveyData.basicInformation.physicalLocationSlum || "",
                 isSlumNotified: surveyData.basicInformation.isSlumNotified || "",
-                yearOfNotification: surveyData.basicInformation.yearOfNotificationIfYes ? parseInt(surveyData.basicInformation.yearOfNotificationIfYes) : undefined,
+                yearOfNotification: surveyData.basicInformation.yearOfNotification ? parseInt(surveyData.basicInformation.yearOfNotification) : undefined,
               }));
             }
             
             if (surveyData.landStatus) {
               setFormData(prev => ({
                 ...prev,
-                ownershipLandDetail: surveyData.landStatus.ownershipOfLand || "",
-                ownershipLandSpecify: surveyData.landStatus.specifyOwnership || "",
+                ownershipLandDetail: surveyData.landStatus.ownershipLandDetail || "",
+                ownershipLandSpecify: surveyData.landStatus.ownershipLandSpecify || "",
+              }));
+            }
+            
+            // Handle demographic profile data
+            console.log("Loading demographicProfile data:", surveyData.demographicProfile);
+            if (surveyData.demographicProfile) {
+              setFormData(prev => ({
+                ...prev,
+                // Population data
+                totalPopulationSlumSC: surveyData.demographicProfile.totalPopulation?.SC || 0,
+                totalPopulationSlumST: surveyData.demographicProfile.totalPopulation?.ST || 0,
+                totalPopulationSlumOBC: surveyData.demographicProfile.totalPopulation?.OBC || 0,
+                totalPopulationSlumOthers: surveyData.demographicProfile.totalPopulation?.Others || 0,
+                totalPopulationSlum: surveyData.demographicProfile.totalPopulation?.Total || 0,
+                totalPopulationSlumMinorities: surveyData.demographicProfile.totalPopulation?.Minorities || 0,
+                
+                // BPL Population
+                bplPopulationSlumSC: surveyData.demographicProfile.bplPopulation?.SC || 0,
+                bplPopulationSlumST: surveyData.demographicProfile.bplPopulation?.ST || 0,
+                bplPopulationSlumOBC: surveyData.demographicProfile.bplPopulation?.OBC || 0,
+                bplPopulationSlumOthers: surveyData.demographicProfile.bplPopulation?.Others || 0,
+                bplPopulationSlum: surveyData.demographicProfile.bplPopulation?.Total || 0,
+                bplPopulationSlumMinorities: surveyData.demographicProfile.bplPopulation?.Minorities || 0,
+                
+                // Illiteracy data
+                totalIlliteratePersonsSC: surveyData.demographicProfile.totalIlliteratePerson?.SC || 0,
+                totalIlliteratePersonsST: surveyData.demographicProfile.totalIlliteratePerson?.ST || 0,
+                totalIlliteratePersonsOBC: surveyData.demographicProfile.totalIlliteratePerson?.OBC || 0,
+                totalIlliteratePersonsOthers: surveyData.demographicProfile.totalIlliteratePerson?.Others || 0,
+                totalIlliteratePersonsTotal: surveyData.demographicProfile.totalIlliteratePerson?.Total || 0,
+                totalIlliteratePersonsMinorities: surveyData.demographicProfile.totalIlliteratePerson?.Minorities || 0,
               }));
             }
             
             // Handle infrastructure data
-            if (surveyData.waterAndSanitation) {
+            if (surveyData.physicalInfrastructure) {
               setFormData(prev => ({
                 ...prev,
-                connectivityCityWaterSupply: surveyData.waterAndSanitation.connectivityToCityWaterSupply || "",
-                drainageSewerageFacility: surveyData.waterAndSanitation.drainageSewerageFacility || "",
-                connectivityStormWaterDrainage: surveyData.waterAndSanitation.connectivityToStormWaterDrainage || "",
-                connectivitySewerageSystem: surveyData.waterAndSanitation.connectivityToSewerageSystem || "",
-                proneToFlooding: surveyData.waterAndSanitation.proneToFlooding || "",
-                latrineFacility: surveyData.waterAndSanitation.latrineFacility || [],
-                solidWasteManagement: surveyData.waterAndSanitation.solidWasteManagement || "",
-                frequencyGarbageDisposal: surveyData.waterAndSanitation.frequencyGarbageDisposal || "",
-                arrangementGarbageDisposal: surveyData.waterAndSanitation.arrangementGarbageDisposal || "",
-                frequencyClearanceOpenDrains: surveyData.waterAndSanitation.frequencyClearanceOpenDrains || "",
-                streetLightAvailable: surveyData.waterAndSanitation.streetLightAvailable || "",
+                connectivityCityWaterSupply: surveyData.physicalInfrastructure.connectivityCityWaterSupply || "",
+                drainageSewerageFacility: surveyData.physicalInfrastructure.drainageSewerageFacility || "",
+                connectivityStormWaterDrainage: surveyData.physicalInfrastructure.connectivityStormWaterDrainage || "",
+                connectivitySewerageSystem: surveyData.physicalInfrastructure.connectivitySewerageSystem || "",
+                proneToFlooding: surveyData.physicalInfrastructure.proneToFlooding || "",
+                latrineFacility: surveyData.physicalInfrastructure.latrineFacility || "",
+                frequencyOfGarbageDisposal: surveyData.physicalInfrastructure.solidWasteManagement?.frequencyOfGarbageDisposal || "",
+                arrangementForGarbageDisposal: surveyData.physicalInfrastructure.solidWasteManagement?.arrangementForGarbageDisposal || "",
+                frequencyOfClearanceOfOpenDrains: surveyData.physicalInfrastructure.solidWasteManagement?.frequencyOfClearanceOfOpenDrains || "",
+                streetLightAvailable: surveyData.physicalInfrastructure.streetLightAvailable || "",
+                approachRoadType: surveyData.physicalInfrastructure.approachRoadType || "",
+                distanceToNearestMotorableRoad: surveyData.physicalInfrastructure.distanceToNearestMotorableRoad || "",
+                internalRoadType: surveyData.physicalInfrastructure.internalRoadType || "",
               }));
             }
             
             // Handle health facilities data
-            if (surveyData.socialInfrastructure && surveyData.socialInfrastructure.healthFacilities) {
+            if (surveyData.healthFacilities) {
               setFormData(prev => ({
                 ...prev,
-                urbanHealthPost: surveyData.socialInfrastructure.healthFacilities?.healthCenters ? (surveyData.socialInfrastructure.healthFacilities.healthCenters > 0 ? "YES" : "NO") : "",
-                primaryHealthCentre: surveyData.socialInfrastructure.healthFacilities?.primaryHealthCenters ? (surveyData.socialInfrastructure.healthFacilities.primaryHealthCenters > 0 ? "YES" : "NO") : "",
-                governmentHospital: surveyData.socialInfrastructure.healthFacilities?.hospitals ? (surveyData.socialInfrastructure.healthFacilities.hospitals > 0 ? "YES" : "NO") : "",
+                urbanHealthPost: surveyData.healthFacilities.urbanHealthPost || "",
+                primaryHealthCentre: surveyData.healthFacilities.primaryHealthCentre || "",
+                governmentHospital: surveyData.healthFacilities.governmentHospital || "",
+                maternityCentre: surveyData.healthFacilities.maternityCentre || "",
+                privateClinic: surveyData.healthFacilities.privateClinic || "",
+                rmp: surveyData.healthFacilities.rmp || "",
+                ayurvedicDoctor: surveyData.healthFacilities.ayurvedicDoctor || "",
               }));
             }
             
-            // Handle other health facility fields that might be stored separately
-            if (surveyData.maternityCentre !== undefined) {
+            if (surveyData.socialDevelopment) {
               setFormData(prev => ({
                 ...prev,
-                maternityCentre: surveyData.maternityCentre || "",
-                privateClinic: surveyData.privateClinic || "",
-                rmp: surveyData.rmp || "",
-                ayurvedicDoctor: surveyData.ayurvedicDoctor || "",
+                communityHall: surveyData.socialDevelopment.communityHall || 0,
+                livelihoodProductionCentre: surveyData.socialDevelopment.livelihoodProductionCentre || 0,
+                vocationalTrainingCentre: surveyData.socialDevelopment.vocationalTrainingCentre || 0,
+                streetChildrenRehabilitationCentre: surveyData.socialDevelopment.streetChildrenRehabilitationCentre || 0,
+                nightShelter: surveyData.socialDevelopment.nightShelter || 0,
+                oldAgeHome: surveyData.socialDevelopment.oldAgeHome || 0,
+                oldAgePensionsHolders: surveyData.socialDevelopment.oldAgePensionsHolders || 0,
+                widowPensionsHolders: surveyData.socialDevelopment.widowPensionsHolders || 0,
+                disabledPensionsHolders: surveyData.socialDevelopment.disabledPensionsHolders || 0,
+                generalInsuranceCovered: surveyData.socialDevelopment.generalInsuranceCovered || 0,
+                healthInsuranceCovered: surveyData.socialDevelopment.healthInsuranceCovered || 0,
+                selfHelpGroups: surveyData.socialDevelopment.selfHelpGroups || 0,
+                thriftCreditSocieties: surveyData.socialDevelopment.thriftCreditSocieties || 0,
+                slumDwellersAssociation: surveyData.socialDevelopment.slumDwellersAssociation || "",
+                youthAssociations: surveyData.socialDevelopment.youthAssociations || 0,
+                womensAssociations: surveyData.socialDevelopment.womensAssociations || 0,
               }));
             }
             
-            if (surveyData.socialIssuesAndVulnerableGroups) {
+            // Load additional sections that may not have been covered
+            if (surveyData.economicStatus) {
               setFormData(prev => ({
                 ...prev,
-                slumDwellersAssociation: surveyData.socialIssuesAndVulnerableGroups.slumDwellersAssociation || "",
+                economicStatus: surveyData.economicStatus.economicStatusData || {}
+              }));
+            }
+            
+            if (surveyData.housingStatus) {
+              setFormData(prev => ({
+                ...prev,
+                dwellingUnitsPucca: surveyData.housingStatus.dwellingUnitsPucca || 0,
+                dwellingUnitsSemiPucca: surveyData.housingStatus.dwellingUnitsSemiPucca || 0,
+                dwellingUnitsKatcha: surveyData.housingStatus.dwellingUnitsKatcha || 0,
+                dwellingUnitsTotal: surveyData.housingStatus.dwellingUnitsTotal || 0,
+                dwellingUnitsWithElectricityPucca: surveyData.housingStatus.dwellingUnitsWithElectricityPucca || 0,
+                dwellingUnitsWithElectricitySemiPucca: surveyData.housingStatus.dwellingUnitsWithElectricitySemiPucca || 0,
+                dwellingUnitsWithElectricityKatcha: surveyData.housingStatus.dwellingUnitsWithElectricityKatcha || 0,
+                dwellingUnitsWithElectricityTotal: surveyData.housingStatus.dwellingUnitsWithElectricityTotal || 0,
+                landTenureWithPatta: surveyData.housingStatus.landTenureWithPatta || 0,
+                landTenurePossessionCertificate: surveyData.housingStatus.landTenurePossessionCertificate || 0,
+                landTenureEncroachedPrivate: surveyData.housingStatus.landTenureEncroachedPrivate || 0,
+                landTenureEncroachedPublic: surveyData.housingStatus.landTenureEncroachedPublic || 0,
+                landTenureOnRent: surveyData.housingStatus.landTenureOnRent || 0,
+                landTenureOther: surveyData.housingStatus.landTenureOther || 0,
+                landTenureTotal: surveyData.housingStatus.landTenureTotal || 0,
+              }));
+            }
+            
+            if (surveyData.educationFacilities) {
+              setFormData(prev => ({
+                ...prev,
+                anganwadiUnderIcds: surveyData.educationFacilities.anganwadiUnderIcds || 0,
+                municipalPreschool: surveyData.educationFacilities.municipalPreschool || 0,
+                privatePreschool: surveyData.educationFacilities.privatePreschool || 0,
+                municipalPrimarySchool: surveyData.educationFacilities.municipalPrimarySchool || 0,
+                stateGovtPrimarySchool: surveyData.educationFacilities.stateGovtPrimarySchool || 0,
+                privatePrimarySchool: surveyData.educationFacilities.privatePrimarySchool || 0,
+                municipalHighSchool: surveyData.educationFacilities.municipalHighSchool || 0,
+                stateGovtHighSchool: surveyData.educationFacilities.stateGovtHighSchool || 0,
+                privateHighSchool: surveyData.educationFacilities.privateHighSchool || 0,
+                adultEducationCentre: surveyData.educationFacilities.adultEducationCentre || 0,
+                nonFormalEducationCentre: surveyData.educationFacilities.nonFormalEducationCentre || 0,
+              }));
+            }
+            
+            // Handle literacy and education data (embedded within demographicProfile)
+            if (surveyData.demographicProfile) {
+              // Load literacy data from demographicProfile section
+              setFormData(prev => ({
+                ...prev,
+                // Total Illiterate Persons
+                totalIlliteratePersonsSC: surveyData.demographicProfile.totalIlliteratePerson?.SC || 0,
+                totalIlliteratePersonsST: surveyData.demographicProfile.totalIlliteratePerson?.ST || 0,
+                totalIlliteratePersonsOBC: surveyData.demographicProfile.totalIlliteratePerson?.OBC || 0,
+                totalIlliteratePersonsOthers: surveyData.demographicProfile.totalIlliteratePerson?.Others || 0,
+                totalIlliteratePersonsTotal: surveyData.demographicProfile.totalIlliteratePerson?.Total || 0,
+                totalIlliteratePersonsMinorities: surveyData.demographicProfile.totalIlliteratePerson?.Minorities || 0,
+                
+                // Male Illiterate
+                noMaleIlliterateSC: surveyData.demographicProfile.maleIlliterate?.SC || 0,
+                noMaleIlliterateST: surveyData.demographicProfile.maleIlliterate?.ST || 0,
+                noMaleIlliterateOBC: surveyData.demographicProfile.maleIlliterate?.OBC || 0,
+                noMaleIlliterateOthers: surveyData.demographicProfile.maleIlliterate?.Others || 0,
+                noMaleIlliterateTotal: surveyData.demographicProfile.maleIlliterate?.Total || 0,
+                noMaleIlliterateMinorities: surveyData.demographicProfile.maleIlliterate?.Minorities || 0,
+                
+                // Female Illiterate
+                noFemaleIlliterateSC: surveyData.demographicProfile.femaleIlliterate?.SC || 0,
+                noFemaleIlliterateST: surveyData.demographicProfile.femaleIlliterate?.ST || 0,
+                noFemaleIlliterateOBC: surveyData.demographicProfile.femaleIlliterate?.OBC || 0,
+                noFemaleIlliterateOthers: surveyData.demographicProfile.femaleIlliterate?.Others || 0,
+                noFemaleIlliterateTotal: surveyData.demographicProfile.femaleIlliterate?.Total || 0,
+                noFemaleIlliterateMinorities: surveyData.demographicProfile.femaleIlliterate?.Minorities || 0,
+                
+                // BPL Illiterate Persons
+                noBplIlliteratePersonsSC: surveyData.demographicProfile.bplIlliteratePerson?.SC || 0,
+                noBplIlliteratePersonsST: surveyData.demographicProfile.bplIlliteratePerson?.ST || 0,
+                noBplIlliteratePersonsOBC: surveyData.demographicProfile.bplIlliteratePerson?.OBC || 0,
+                noBplIlliteratePersonsOthers: surveyData.demographicProfile.bplIlliteratePerson?.Others || 0,
+                noBplIlliteratePersonsTotal: surveyData.demographicProfile.bplIlliteratePerson?.Total || 0,
+                noBplIlliteratePersonsMinorities: surveyData.demographicProfile.bplIlliteratePerson?.Minorities || 0,
+                
+                // Male BPL Illiterate
+                noMaleBplIlliterateSC: surveyData.demographicProfile.maleBplIlliterate?.SC || 0,
+                noMaleBplIlliterateST: surveyData.demographicProfile.maleBplIlliterate?.ST || 0,
+                noMaleBplIlliterateOBC: surveyData.demographicProfile.maleBplIlliterate?.OBC || 0,
+                noMaleBplIlliterateOthers: surveyData.demographicProfile.maleBplIlliterate?.Others || 0,
+                noMaleBplIlliterateTotal: surveyData.demographicProfile.maleBplIlliterate?.Total || 0,
+                noMaleBplIlliterateMinorities: surveyData.demographicProfile.maleBplIlliterate?.Minorities || 0,
+                
+                // Female BPL Illiterate
+                noFemaleBplIlliterateSC: surveyData.demographicProfile.femaleBplIlliterate?.SC || 0,
+                noFemaleBplIlliterateST: surveyData.demographicProfile.femaleBplIlliterate?.ST || 0,
+                noFemaleBplIlliterateOBC: surveyData.demographicProfile.femaleBplIlliterate?.OBC || 0,
+                noFemaleBplIlliterateOthers: surveyData.demographicProfile.femaleBplIlliterate?.Others || 0,
+                noFemaleBplIlliterateTotal: surveyData.demographicProfile.femaleBplIlliterate?.Total || 0,
+                noFemaleBplIlliterateMinorities: surveyData.demographicProfile.femaleBplIlliterate?.Minorities || 0,
+                
+                // School Dropouts Male
+                schoolDropoutsMaleSC: surveyData.demographicProfile.schoolDropoutsMale?.SC || 0,
+                schoolDropoutsMaleST: surveyData.demographicProfile.schoolDropoutsMale?.ST || 0,
+                schoolDropoutsMaleOBC: surveyData.demographicProfile.schoolDropoutsMale?.OBC || 0,
+                schoolDropoutsMaleOthers: surveyData.demographicProfile.schoolDropoutsMale?.Others || 0,
+                schoolDropoutsMaleTotal: surveyData.demographicProfile.schoolDropoutsMale?.Total || 0,
+                schoolDropoutsMaleMinorities: surveyData.demographicProfile.schoolDropoutsMale?.Minorities || 0,
+                
+                // School Dropouts Female
+                schoolDropoutsFemaleSC: surveyData.demographicProfile.schoolDropoutsFemale?.SC || 0,
+                schoolDropoutsFemaleST: surveyData.demographicProfile.schoolDropoutsFemale?.ST || 0,
+                schoolDropoutsFemaleOBC: surveyData.demographicProfile.schoolDropoutsFemale?.OBC || 0,
+                schoolDropoutsFemaleOthers: surveyData.demographicProfile.schoolDropoutsFemale?.Others || 0,
+                schoolDropoutsFemaleTotal: surveyData.demographicProfile.schoolDropoutsFemale?.Total || 0,
+                schoolDropoutsFemaleMinorities: surveyData.demographicProfile.schoolDropoutsFemale?.Minorities || 0,
+              }));
+            }
+            
+            // Load employment and occupation data
+            if (surveyData.employmentAndOccupation) {
+              setFormData(prev => ({
+                ...prev,
+                occupationalStatus: {
+                  selfEmployed: surveyData.employmentAndOccupation.selfEmployed || 0,
+                  salaried: surveyData.employmentAndOccupation.salaried || 0,
+                  regularWage: surveyData.employmentAndOccupation.regularWage || 0,
+                  casualLabour: surveyData.employmentAndOccupation.casualLabour || 0,
+                  others: surveyData.employmentAndOccupation.others || 0,
+                },
+                majorIndustriesPresent: surveyData.employmentAndOccupation.majorIndustriesPresent || [],
+              }));
+            }
+            
+            if (surveyData.additionalInfrastructure) {
+              setFormData(prev => ({
+                ...prev,
+                // Water Supply
+                waterSupplyPipelinesExisting: surveyData.additionalInfrastructure.waterSupply?.pipelines?.existing || "",
+                waterSupplyPipelinesAdditional: surveyData.additionalInfrastructure.waterSupply?.pipelines?.additionalRequirement || "",
+                waterSupplyPipelinesCost: surveyData.additionalInfrastructure.waterSupply?.pipelines?.estimatedCost || 0,
+                
+                waterSupplyIndividualTapsExisting: surveyData.additionalInfrastructure.waterSupply?.individualTaps?.existing || "",
+                waterSupplyIndividualTapsAdditional: surveyData.additionalInfrastructure.waterSupply?.individualTaps?.additionalRequirement || "",
+                waterSupplyIndividualTapsCost: surveyData.additionalInfrastructure.waterSupply?.individualTaps?.estimatedCost || 0,
+                
+                waterSupplyBorewellsExisting: surveyData.additionalInfrastructure.waterSupply?.borewells?.existing || "",
+                waterSupplyBorewellsAdditional: surveyData.additionalInfrastructure.waterSupply?.borewells?.additionalRequirement || "",
+                waterSupplyBorewellsCost: surveyData.additionalInfrastructure.waterSupply?.borewells?.estimatedCost || 0,
+                
+                waterSupplyConnectivityTrunkLinesExisting: surveyData.additionalInfrastructure.waterSupply?.connectivityToTrunkLines?.existing || "",
+                waterSupplyConnectivityTrunkLinesAdditional: surveyData.additionalInfrastructure.waterSupply?.connectivityToTrunkLines?.additionalRequirement || "",
+                waterSupplyConnectivityTrunkLinesCost: surveyData.additionalInfrastructure.waterSupply?.connectivityToTrunkLines?.estimatedCost || 0,
+                
+                // Drainage/Sewerage
+                drainageStormwaterDrainageExisting: surveyData.additionalInfrastructure.drainageSewerage?.stormwaterDrainage?.existing || "",
+                drainageStormwaterDrainageAdditional: surveyData.additionalInfrastructure.drainageSewerage?.stormwaterDrainage?.additionalRequirement || "",
+                drainageStormwaterDrainageCost: surveyData.additionalInfrastructure.drainageSewerage?.stormwaterDrainage?.estimatedCost || 0,
+                
+                drainageConnectivityMainDrainsExisting: surveyData.additionalInfrastructure.drainageSewerage?.connectivityToMainDrains?.existing || "",
+                drainageConnectivityMainDrainsAdditional: surveyData.additionalInfrastructure.drainageSewerage?.connectivityToMainDrains?.additionalRequirement || "",
+                drainageConnectivityMainDrainsCost: surveyData.additionalInfrastructure.drainageSewerage?.connectivityToMainDrains?.estimatedCost || 0,
+                
+                drainageSewerLinesExisting: surveyData.additionalInfrastructure.drainageSewerage?.sewerLines?.existing || "",
+                drainageSewerLinesAdditional: surveyData.additionalInfrastructure.drainageSewerage?.sewerLines?.additionalRequirement || "",
+                drainageSewerLinesCost: surveyData.additionalInfrastructure.drainageSewerage?.sewerLines?.estimatedCost || 0,
+                
+                drainageConnectivityTrunkSewersExisting: surveyData.additionalInfrastructure.drainageSewerage?.connectivityToTrunkSewers?.existing || "",
+                drainageConnectivityTrunkSewersAdditional: surveyData.additionalInfrastructure.drainageSewerage?.connectivityToTrunkSewers?.additionalRequirement || "",
+                drainageConnectivityTrunkSewersCost: surveyData.additionalInfrastructure.drainageSewerage?.connectivityToTrunkSewers?.estimatedCost || 0,
+                
+                // Roads
+                roadsInternalRoadsCCExisting: surveyData.additionalInfrastructure.roads?.internalRoadsCC?.existing || "",
+                roadsInternalRoadsCCAdditional: surveyData.additionalInfrastructure.roads?.internalRoadsCC?.additionalRequirement || "",
+                roadsInternalRoadsCCCost: surveyData.additionalInfrastructure.roads?.internalRoadsCC?.estimatedCost || 0,
+                
+                roadsInternalRoadsBTExisting: surveyData.additionalInfrastructure.roads?.internalRoadsBT?.existing || "",
+                roadsInternalRoadsBTAdditional: surveyData.additionalInfrastructure.roads?.internalRoadsBT?.additionalRequirement || "",
+                roadsInternalRoadsBTCost: surveyData.additionalInfrastructure.roads?.internalRoadsBT?.estimatedCost || 0,
+                
+                roadsInternalRoadsOthersExisting: surveyData.additionalInfrastructure.roads?.internalRoadsOthers?.existing || "",
+                roadsInternalRoadsOthersAdditional: surveyData.additionalInfrastructure.roads?.internalRoadsOthers?.additionalRequirement || "",
+                roadsInternalRoadsOthersCost: surveyData.additionalInfrastructure.roads?.internalRoadsOthers?.estimatedCost || 0,
+                
+                roadsApproachRoadsCCExisting: surveyData.additionalInfrastructure.roads?.approachRoadsCC?.existing || "",
+                roadsApproachRoadsCCAdditional: surveyData.additionalInfrastructure.roads?.approachRoadsCC?.additionalRequirement || "",
+                roadsApproachRoadsCCCost: surveyData.additionalInfrastructure.roads?.approachRoadsCC?.estimatedCost || 0,
+                
+                roadsApproachRoadsOthersExisting: surveyData.additionalInfrastructure.roads?.approachRoadsOthers?.existing || "",
+                roadsApproachRoadsOthersAdditional: surveyData.additionalInfrastructure.roads?.approachRoadsOthers?.additionalRequirement || "",
+                roadsApproachRoadsOthersCost: surveyData.additionalInfrastructure.roads?.approachRoadsOthers?.estimatedCost || 0,
+                
+                // Street Lighting
+                streetLightingPolesExisting: surveyData.additionalInfrastructure.streetLighting?.poles?.existing || "",
+                streetLightingPolesAdditional: surveyData.additionalInfrastructure.streetLighting?.poles?.additionalRequirement || "",
+                streetLightingPolesCost: surveyData.additionalInfrastructure.streetLighting?.poles?.estimatedCost || 0,
+                
+                streetLightingLightsExisting: surveyData.additionalInfrastructure.streetLighting?.lights?.existing || "",
+                streetLightingLightsAdditional: surveyData.additionalInfrastructure.streetLighting?.lights?.additionalRequirement || "",
+                streetLightingLightsCost: surveyData.additionalInfrastructure.streetLighting?.lights?.estimatedCost || 0,
+                
+                // Sanitation
+                sanitationIndividualToiletsExisting: surveyData.additionalInfrastructure.sanitation?.individualToilets?.existing || "",
+                sanitationIndividualToiletsAdditional: surveyData.additionalInfrastructure.sanitation?.individualToilets?.additionalRequirement || "",
+                sanitationIndividualToiletsCost: surveyData.additionalInfrastructure.sanitation?.individualToilets?.estimatedCost || 0,
+                
+                sanitationCommunityToiletsExisting: surveyData.additionalInfrastructure.sanitation?.communityToilets?.existing || "",
+                sanitationCommunityToiletsAdditional: surveyData.additionalInfrastructure.sanitation?.communityToilets?.additionalRequirement || "",
+                sanitationCommunityToiletsCost: surveyData.additionalInfrastructure.sanitation?.communityToilets?.estimatedCost || 0,
+                
+                sanitationSeatsCommunityToiletsExisting: surveyData.additionalInfrastructure.sanitation?.seatsInCommunityToilets?.existing || "",
+                sanitationSeatsCommunityToiletsAdditional: surveyData.additionalInfrastructure.sanitation?.seatsInCommunityToilets?.additionalRequirement || "",
+                sanitationSeatsCommunityToiletsCost: surveyData.additionalInfrastructure.sanitation?.seatsInCommunityToilets?.estimatedCost || 0,
+                
+                sanitationDumperBinsExisting: surveyData.additionalInfrastructure.sanitation?.dumperBins?.existing || "",
+                sanitationDumperBinsAdditional: surveyData.additionalInfrastructure.sanitation?.dumperBins?.additionalRequirement || "",
+                sanitationDumperBinsCost: surveyData.additionalInfrastructure.sanitation?.dumperBins?.estimatedCost || 0,
+                
+                // Community Facilities
+                communityHallsExisting: surveyData.additionalInfrastructure.communityFacilities?.communityHalls?.existing || "",
+                communityHallsAdditional: surveyData.additionalInfrastructure.communityFacilities?.communityHalls?.additionalRequirement || "",
+                communityHallsCost: surveyData.additionalInfrastructure.communityFacilities?.communityHalls?.estimatedCost || 0,
+                
+                communityLivelihoodCentresExisting: surveyData.additionalInfrastructure.communityFacilities?.livelihoodCentres?.existing || "",
+                communityLivelihoodCentresAdditional: surveyData.additionalInfrastructure.communityFacilities?.livelihoodCentres?.additionalRequirement || "",
+                communityLivelihoodCentresCost: surveyData.additionalInfrastructure.communityFacilities?.livelihoodCentres?.estimatedCost || 0,
+                
+                communityAnganwadisExisting: surveyData.additionalInfrastructure.communityFacilities?.anganwadis?.existing || "",
+                communityAnganwadisAdditional: surveyData.additionalInfrastructure.communityFacilities?.anganwadis?.additionalRequirement || "",
+                communityAnganwadisCost: surveyData.additionalInfrastructure.communityFacilities?.anganwadis?.estimatedCost || 0,
+                
+                communityPrimarySchoolsExisting: surveyData.additionalInfrastructure.communityFacilities?.primarySchools?.existing || "",
+                communityPrimarySchoolsAdditional: surveyData.additionalInfrastructure.communityFacilities?.primarySchools?.additionalRequirement || "",
+                communityPrimarySchoolsCost: surveyData.additionalInfrastructure.communityFacilities?.primarySchools?.estimatedCost || 0,
+                
+                communityHealthCentresExisting: surveyData.additionalInfrastructure.communityFacilities?.healthCentres?.existing || "",
+                communityHealthCentresAdditional: surveyData.additionalInfrastructure.communityFacilities?.healthCentres?.additionalRequirement || "",
+                communityHealthCentresCost: surveyData.additionalInfrastructure.communityFacilities?.healthCentres?.estimatedCost || 0,
+                
+                communityOthersExisting: surveyData.additionalInfrastructure.communityFacilities?.others?.existing || "",
+                communityOthersAdditional: surveyData.additionalInfrastructure.communityFacilities?.others?.additionalRequirement || "",
+                communityOthersCost: surveyData.additionalInfrastructure.communityFacilities?.others?.estimatedCost || 0,
+              }));
+            }
+            
+            if (surveyData.generalInformation) {
+              setFormData(prev => ({
+                ...prev,
+                stateCode: surveyData.generalInformation.stateCode || "",
+                stateName: surveyData.generalInformation.stateName || "",
+                districtCode: surveyData.generalInformation.districtCode || "",
+                districtName: surveyData.generalInformation.districtName || "",
+                cityTownCode: surveyData.generalInformation.cityTownCode || "",
+                cityTownName: surveyData.generalInformation.cityTownName || "",
+                cityTown: surveyData.generalInformation.cityTown || "",
+                cityTownNoHouseholds: surveyData.generalInformation.cityTownNoHouseholds || 0,
+              }));
+            }
+            
+            if (surveyData.cityTownSlumProfile) {
+              setFormData(prev => ({
+                ...prev,
+                slumType: surveyData.cityTownSlumProfile.slumType || "",
+                slumIdField: surveyData.cityTownSlumProfile.slumIdField || "",
+                slumName: surveyData.cityTownSlumProfile.slumName || "",
+                ownershipLand: surveyData.cityTownSlumProfile.ownershipLand || "",
+                areaSqMtrs: surveyData.cityTownSlumProfile.areaSqMtrs || 0,
+                slumPopulation: surveyData.cityTownSlumProfile.slumPopulation || 0,
+                noSlumHouseholds: surveyData.cityTownSlumProfile.noSlumHouseholds || 0,
+                bplPopulation: surveyData.cityTownSlumProfile.bplPopulation || 0,
+                noBplHouseholdsCityTown: surveyData.cityTownSlumProfile.noBplHouseholdsCityTown || 0,
+              }));
+            }
+            
+            if (surveyData.surveyOperation) {
+              setFormData(prev => ({
+                ...prev,
+                surveyorName: surveyData.surveyOperation.surveyorName || "",
+                surveyDate: surveyData.surveyOperation.surveyDate || "",
+                receiptQuestionnaireDate: surveyData.surveyOperation.receiptQuestionnaireDate || "",
+                scrutinyDate: surveyData.surveyOperation.scrutinyDate || "",
+                receiptByNodalCellDate: surveyData.surveyOperation.receiptByNodalCellDate || "",
+                remarksInvestigator: surveyData.surveyOperation.remarksInvestigator || "",
+                commentsSupervisor: surveyData.surveyOperation.commentsSupervisor || "",
               }));
             }
           } else {
@@ -1107,6 +1496,64 @@ export default function SlumSurveyPage() {
     }
     if (!formData.ownershipLandSpecify?.trim()) {
       newErrors.push({ field: 'ownershipLandSpecify', message: 'Specify Ownership (if Other) is required' });
+    }
+    
+    // Part F - Demographic Profile
+    if (formData.totalPopulationSlumSC === undefined || formData.totalPopulationSlumSC === null || isNaN(formData.totalPopulationSlumSC) || formData.totalPopulationSlumSC < 0) {
+      newErrors.push({ field: 'totalPopulationSlumSC', message: 'Total Population SC is required' });
+    }
+    if (formData.totalPopulationSlumST === undefined || formData.totalPopulationSlumST === null || isNaN(formData.totalPopulationSlumST) || formData.totalPopulationSlumST < 0) {
+      newErrors.push({ field: 'totalPopulationSlumST', message: 'Total Population ST is required' });
+    }
+    if (formData.totalPopulationSlumOBC === undefined || formData.totalPopulationSlumOBC === null || isNaN(formData.totalPopulationSlumOBC) || formData.totalPopulationSlumOBC < 0) {
+      newErrors.push({ field: 'totalPopulationSlumOBC', message: 'Total Population OBC is required' });
+    }
+    if (formData.totalPopulationSlumOthers === undefined || formData.totalPopulationSlumOthers === null || isNaN(formData.totalPopulationSlumOthers) || formData.totalPopulationSlumOthers < 0) {
+      newErrors.push({ field: 'totalPopulationSlumOthers', message: 'Total Population Others is required' });
+    }
+    if (formData.totalPopulationSlum === undefined || formData.totalPopulationSlum === null || isNaN(formData.totalPopulationSlum) || formData.totalPopulationSlum < 0) {
+      newErrors.push({ field: 'totalPopulationSlum', message: 'Total Population is required' });
+    }
+    if (formData.totalPopulationSlumMinorities === undefined || formData.totalPopulationSlumMinorities === null || isNaN(formData.totalPopulationSlumMinorities) || formData.totalPopulationSlumMinorities < 0) {
+      newErrors.push({ field: 'totalPopulationSlumMinorities', message: 'Total Population Minorities is required' });
+    }
+    
+    if (formData.bplPopulationSlumSC === undefined || formData.bplPopulationSlumSC === null || isNaN(formData.bplPopulationSlumSC) || formData.bplPopulationSlumSC < 0) {
+      newErrors.push({ field: 'bplPopulationSlumSC', message: 'BPL Population SC is required' });
+    }
+    if (formData.bplPopulationSlumST === undefined || formData.bplPopulationSlumST === null || isNaN(formData.bplPopulationSlumST) || formData.bplPopulationSlumST < 0) {
+      newErrors.push({ field: 'bplPopulationSlumST', message: 'BPL Population ST is required' });
+    }
+    if (formData.bplPopulationSlumOBC === undefined || formData.bplPopulationSlumOBC === null || isNaN(formData.bplPopulationSlumOBC) || formData.bplPopulationSlumOBC < 0) {
+      newErrors.push({ field: 'bplPopulationSlumOBC', message: 'BPL Population OBC is required' });
+    }
+    if (formData.bplPopulationSlumOthers === undefined || formData.bplPopulationSlumOthers === null || isNaN(formData.bplPopulationSlumOthers) || formData.bplPopulationSlumOthers < 0) {
+      newErrors.push({ field: 'bplPopulationSlumOthers', message: 'BPL Population Others is required' });
+    }
+    if (formData.bplPopulationSlum === undefined || formData.bplPopulationSlum === null || isNaN(formData.bplPopulationSlum) || formData.bplPopulationSlum < 0) {
+      newErrors.push({ field: 'bplPopulationSlum', message: 'BPL Population is required' });
+    }
+    if (formData.bplPopulationSlumMinorities === undefined || formData.bplPopulationSlumMinorities === null || isNaN(formData.bplPopulationSlumMinorities) || formData.bplPopulationSlumMinorities < 0) {
+      newErrors.push({ field: 'bplPopulationSlumMinorities', message: 'BPL Population Minorities is required' });
+    }
+    
+    if (formData.noHouseholdsSlumSC === undefined || formData.noHouseholdsSlumSC === null || isNaN(formData.noHouseholdsSlumSC) || formData.noHouseholdsSlumSC < 0) {
+      newErrors.push({ field: 'noHouseholdsSlumSC', message: 'No. of Households SC is required' });
+    }
+    if (formData.noHouseholdsSlumST === undefined || formData.noHouseholdsSlumST === null || isNaN(formData.noHouseholdsSlumST) || formData.noHouseholdsSlumST < 0) {
+      newErrors.push({ field: 'noHouseholdsSlumST', message: 'No. of Households ST is required' });
+    }
+    if (formData.noHouseholdsSlumOBC === undefined || formData.noHouseholdsSlumOBC === null || isNaN(formData.noHouseholdsSlumOBC) || formData.noHouseholdsSlumOBC < 0) {
+      newErrors.push({ field: 'noHouseholdsSlumOBC', message: 'No. of Households OBC is required' });
+    }
+    if (formData.noHouseholdsSlumOthers === undefined || formData.noHouseholdsSlumOthers === null || isNaN(formData.noHouseholdsSlumOthers) || formData.noHouseholdsSlumOthers < 0) {
+      newErrors.push({ field: 'noHouseholdsSlumOthers', message: 'No. of Households Others is required' });
+    }
+    if (formData.noHouseholdsSlum === undefined || formData.noHouseholdsSlum === null || isNaN(formData.noHouseholdsSlum) || formData.noHouseholdsSlum < 0) {
+      newErrors.push({ field: 'noHouseholdsSlum', message: 'No. of Households is required' });
+    }
+    if (formData.noHouseholdsSlumMinorities === undefined || formData.noHouseholdsSlumMinorities === null || isNaN(formData.noHouseholdsSlumMinorities) || formData.noHouseholdsSlumMinorities < 0) {
+      newErrors.push({ field: 'noHouseholdsSlumMinorities', message: 'No. of Households Minorities is required' });
     }
     
     // Part H - Housing Status
@@ -1406,11 +1853,17 @@ export default function SlumSurveyPage() {
   };
 
   const handleSubmit = async () => {
-    // Validate the form
+    console.log("handleSubmit called");
+    console.log("Current step:", currentStep);
+    console.log("Is edit mode:", isEditMode);
+    console.log("Slum survey ID:", slumSurvey?._id);
+    
+    // Perform validation
     const validationErrors = validateForm();
     setErrors(validationErrors);
     
     if (validationErrors.length > 0) {
+      console.log("Validation errors:", validationErrors);
       // Scroll to first error
       scrollToFirstError();
       showToast('Please fill in all required fields', 'error');
@@ -1425,274 +1878,282 @@ export default function SlumSurveyPage() {
         return;
       }
       
+      // Merge temporary form data with current form data if in edit mode
+      const finalFormData = isEditMode ? { ...formData, ...tempFormData } : formData;
+      
       // Transform form data to match backend model structure
       const surveyData = {
         // PART-A: I. GENERAL INFORMATION -CITY/TOWN
         generalInformation: {
-          stateCode: formData.stateCode || "",
-          stateName: formData.stateName || "",
-          districtCode: formData.districtCode || "",
-          districtName: formData.districtName || "",
-          cityTownCode: formData.cityTownCode || "",
-          cityTownName: formData.cityTownName || "",
-          cityTown: formData.cityTown || "",
-          cityTownNoHouseholds: formData.cityTownNoHouseholds || 0
+          stateCode: finalFormData.stateCode || "",
+          stateName: finalFormData.stateName || "",
+          districtCode: finalFormData.districtCode || "",
+          districtName: finalFormData.districtName || "",
+          cityTownCode: finalFormData.cityTownCode || "",
+          cityTownName: finalFormData.cityTownName || "",
+          cityTown: finalFormData.cityTown || "",
+          cityTownNoHouseholds: finalFormData.cityTownNoHouseholds || 0
         },
         
         // PART-B: II. CITY/TOWN SLUM PROFILE
         cityTownSlumProfile: {
-          slumType: formData.slumType || "",
-          slumIdField: formData.slumIdField || "",
-          slumName: formData.slumName || "",
-          ownershipLand: formData.ownershipLand || "",
-          areaSqMtrs: formData.areaSqMtrs || 0,
-          slumPopulation: formData.slumPopulation || 0,
-          noSlumHouseholds: formData.noSlumHouseholds || 0,
-          bplPopulation: formData.bplPopulation || 0,
-          noBplHouseholdsCityTown: formData.noBplHouseholdsCityTown || 0
+          slumType: finalFormData.slumType || "",
+          slumIdField: finalFormData.slumIdField || "",
+          slumName: finalFormData.slumName || "",
+          ownershipLand: finalFormData.ownershipLand || "",
+          areaSqMtrs: finalFormData.areaSqMtrs || 0,
+          slumPopulation: finalFormData.slumPopulation || 0,
+          noSlumHouseholds: finalFormData.noSlumHouseholds || 0,
+          bplPopulation: finalFormData.bplPopulation || 0,
+          noBplHouseholdsCityTown: finalFormData.noBplHouseholdsCityTown || 0
         },
         
         // PART-C: III. PARTICULARS OF SURVEY OPERATION
         surveyOperation: {
-          surveyorName: formData.surveyorName || "",
-          surveyDate: formData.surveyDate || "",
-          receiptQuestionnaireDate: formData.receiptQuestionnaireDate || "",
-          scrutinyDate: formData.scrutinyDate || "",
-          receiptByNodalCellDate: formData.receiptByNodalCellDate || "",
-          remarksInvestigator: formData.remarksInvestigator || "",
-          commentsSupervisor: formData.commentsSupervisor || ""
+          surveyorName: finalFormData.surveyorName || "",
+          surveyDate: finalFormData.surveyDate || "",
+          receiptQuestionnaireDate: finalFormData.receiptQuestionnaireDate || "",
+          scrutinyDate: finalFormData.scrutinyDate || "",
+          receiptByNodalCellDate: finalFormData.receiptByNodalCellDate || "",
+          remarksInvestigator: finalFormData.remarksInvestigator || "",
+          commentsSupervisor: finalFormData.commentsSupervisor || ""
         },
         
         // PART-D: I. BASIC INFORMATION ON SLUM
         basicInformation: {
-          slumNameBasicInfo: formData.slumNameBasicInfo || "",
-          slumCode: formData.slumCode || "",
-          locationWard: formData.locationWard || "",
-          ageSlumYears: formData.ageSlumYears || 0,
-          areaSlumSqMtrs: formData.areaSlumSqMtrs || 0,
-          locationCoreOrFringe: formData.locationCoreOrFringe || "",
-          typeAreaSurrounding: formData.typeAreaSurrounding || "",
-          physicalLocationSlum: formData.physicalLocationSlum || "",
-          isSlumNotified: formData.isSlumNotified || "",
-          yearOfNotification: formData.yearOfNotification || 0
+          slumNameBasicInfo: finalFormData.slumNameBasicInfo || "",
+          slumCode: finalFormData.slumCode || "",
+          locationWard: finalFormData.locationWard || "",
+          ageSlumYears: finalFormData.ageSlumYears || 0,
+          areaSlumSqMtrs: finalFormData.areaSlumSqMtrs || 0,
+          locationCoreOrFringe: finalFormData.locationCoreOrFringe || "",
+          typeAreaSurrounding: finalFormData.typeAreaSurrounding || "",
+          physicalLocationSlum: finalFormData.physicalLocationSlum || "",
+          isSlumNotified: finalFormData.isSlumNotified || "",
+          yearOfNotification: finalFormData.yearOfNotification || 0
         },
         
         // PART-E: II. LAND STATUS
         landStatus: {
-          ownershipLandDetail: formData.ownershipLandDetail || "",
-          ownershipLandSpecify: formData.ownershipLandSpecify || ""
+          ownershipLandDetail: finalFormData.ownershipLandDetail || "",
+          ownershipLandSpecify: finalFormData.ownershipLandSpecify || ""
         },
         
         // SECTION 3: Population & Health Demographics (by caste categories)
         populationAndHealth: {
           totalPopulation: {
-            SC: formData.totalPopulationSlumSC || 0,
-            ST: formData.totalPopulationSlumST || 0,
-            OBC: formData.totalPopulationSlumOBC || 0,
-            Others: formData.totalPopulationSlumOthers || 0,
-            Total: formData.totalPopulationSlum || 0,
-            Minorities: formData.totalPopulationSlumMinorities || 0
+            SC: finalFormData.totalPopulationSlumSC || 0,
+            ST: finalFormData.totalPopulationSlumST || 0,
+            OBC: finalFormData.totalPopulationSlumOBC || 0,
+            Others: finalFormData.totalPopulationSlumOthers || 0,
+            Total: finalFormData.totalPopulationSlum || 0,
+            Minorities: finalFormData.totalPopulationSlumMinorities || 0
           },
           bplPopulation: {
-            SC: formData.bplPopulationSlumSC || 0,
-            ST: formData.bplPopulationSlumST || 0,
-            OBC: formData.bplPopulationSlumOBC || 0,
-            Others: formData.bplPopulationSlumOthers || 0,
-            Total: formData.bplPopulationSlum || 0,
-            Minorities: formData.bplPopulationSlumMinorities || 0
+            SC: finalFormData.bplPopulationSlumSC || 0,
+            ST: finalFormData.bplPopulationSlumST || 0,
+            OBC: finalFormData.bplPopulationSlumOBC || 0,
+            Others: finalFormData.bplPopulationSlumOthers || 0,
+            Total: finalFormData.bplPopulationSlum || 0,
+            Minorities: finalFormData.bplPopulationSlumMinorities || 0
           },
           numberOfHouseholds: {
-            SC: formData.noHouseholdsSlumSC || 0,
-            ST: formData.noHouseholdsSlumST || 0,
-            OBC: formData.noHouseholdsSlumOBC || 0,
-            Others: formData.noHouseholdsSlumOthers || 0,
-            Total: formData.noHouseholdsSlum || 0,
-            Minorities: formData.noHouseholdsSlumMinorities || 0
+            SC: finalFormData.noHouseholdsSlumSC || 0,
+            ST: finalFormData.noHouseholdsSlumST || 0,
+            OBC: finalFormData.noHouseholdsSlumOBC || 0,
+            Others: finalFormData.noHouseholdsSlumOthers || 0,
+            Total: finalFormData.noHouseholdsSlum || 0,
+            Minorities: finalFormData.noHouseholdsSlumMinorities || 0
           },
           numberOfBplHouseholds: {
-            SC: formData.noBplHouseholdsSC || 0,
-            ST: formData.noBplHouseholdsST || 0,
-            OBC: formData.noBplHouseholdsOBC || 0,
-            Others: formData.noBplHouseholdsOthers || 0,
-            Total: formData.noBplHouseholdsTotal || 0,
-            Minorities: formData.noBplHouseholdsMinorities || 0
+            SC: finalFormData.noBplHouseholdsSC || 0,
+            ST: finalFormData.noBplHouseholdsST || 0,
+            OBC: finalFormData.noBplHouseholdsOBC || 0,
+            Others: finalFormData.noBplHouseholdsOthers || 0,
+            Total: finalFormData.noBplHouseholdsTotal || 0,
+            Minorities: finalFormData.noBplHouseholdsMinorities || 0
           },
           womenHeadedHouseholds: {
-            SC: formData.noWomenHeadedHouseholdsSC || 0,
-            ST: formData.noWomenHeadedHouseholdsST || 0,
-            OBC: formData.noWomenHeadedHouseholdsOBC || 0,
-            Others: formData.noWomenHeadedHouseholdsOthers || 0,
-            Total: formData.noWomenHeadedHouseholdsTotal || 0,
-            Minorities: formData.noWomenHeadedHouseholdsMinorities || 0
+            SC: finalFormData.noWomenHeadedHouseholdsSC || 0,
+            ST: finalFormData.noWomenHeadedHouseholdsST || 0,
+            OBC: finalFormData.noWomenHeadedHouseholdsOBC || 0,
+            Others: finalFormData.noWomenHeadedHouseholdsOthers || 0,
+            Total: finalFormData.noWomenHeadedHouseholdsTotal || 0,
+            Minorities: finalFormData.noWomenHeadedHouseholdsMinorities || 0
           },
           personsOlderThan65Years: {
-            SC: formData.noPersonsOlder65SC || 0,
-            ST: formData.noPersonsOlder65ST || 0,
-            OBC: formData.noPersonsOlder65OBC || 0,
-            Others: formData.noPersonsOlder65Others || 0,
-            Total: formData.noPersonsOlder65Total || 0,
-            Minorities: formData.noPersonsOlder65Minorities || 0
+            SC: finalFormData.noPersonsOlder65SC || 0,
+            ST: finalFormData.noPersonsOlder65ST || 0,
+            OBC: finalFormData.noPersonsOlder65OBC || 0,
+            Others: finalFormData.noPersonsOlder65Others || 0,
+            Total: finalFormData.noPersonsOlder65Total || 0,
+            Minorities: finalFormData.noPersonsOlder65Minorities || 0
           },
           childLabourers: {
-            SC: formData.noChildLabourersSC || 0,
-            ST: formData.noChildLabourersST || 0,
-            OBC: formData.noChildLabourersOBC || 0,
-            Others: formData.noChildLabourersOthers || 0,
-            Total: formData.noChildLabourersTotal || 0,
-            Minorities: formData.noChildLabourersMinorities || 0
+            SC: finalFormData.noChildLabourersSC || 0,
+            ST: finalFormData.noChildLabourersST || 0,
+            OBC: finalFormData.noChildLabourersOBC || 0,
+            Others: finalFormData.noChildLabourersOthers || 0,
+            Total: finalFormData.noChildLabourersTotal || 0,
+            Minorities: finalFormData.noChildLabourersMinorities || 0
           },
           physicallyChallengedPersons: {
-            SC: formData.noPhysicallyChallengedSC || 0,
-            ST: formData.noPhysicallyChallengedST || 0,
-            OBC: formData.noPhysicallyChallengedOBC || 0,
-            Others: formData.noPhysicallyChallengedOthers || 0,
-            Total: formData.noPhysicallyChallengedTotal || 0,
-            Minorities: formData.noPhysicallyChallengedMinorities || 0
+            SC: finalFormData.noPhysicallyChallengedSC || 0,
+            ST: finalFormData.noPhysicallyChallengedST || 0,
+            OBC: finalFormData.noPhysicallyChallengedOBC || 0,
+            Others: finalFormData.noPhysicallyChallengedOthers || 0,
+            Total: finalFormData.noPhysicallyChallengedTotal || 0,
+            Minorities: finalFormData.noPhysicallyChallengedMinorities || 0
           },
           mentallyChallengedPersons: {
-            SC: formData.noMentallyChallengedSC || 0,
-            ST: formData.noMentallyChallengedST || 0,
-            OBC: formData.noMentallyChallengedOBC || 0,
-            Others: formData.noMentallyChallengedOthers || 0,
-            Total: formData.noMentallyChallengedTotal || 0,
-            Minorities: formData.noMentallyChallengedMinorities || 0
+            SC: finalFormData.noMentallyChallengedSC || 0,
+            ST: finalFormData.noMentallyChallengedST || 0,
+            OBC: finalFormData.noMentallyChallengedOBC || 0,
+            Others: finalFormData.noMentallyChallengedOthers || 0,
+            Total: finalFormData.noMentallyChallengedTotal || 0,
+            Minorities: finalFormData.noMentallyChallengedMinorities || 0
           },
           personsWithHivAids: {
-            SC: formData.noPersonsHivaidsSC || 0,
-            ST: formData.noPersonsHivaidsST || 0,
-            OBC: formData.noPersonsHivaidsOBC || 0,
-            Others: formData.noPersonsHivaidsOthers || 0,
-            Total: formData.noPersonsHivaidsTotal || 0,
-            Minorities: formData.noPersonsHivaidsMinorities || 0
+            SC: finalFormData.noPersonsHivaidsSC || 0,
+            ST: finalFormData.noPersonsHivaidsST || 0,
+            OBC: finalFormData.noPersonsHivaidsOBC || 0,
+            Others: finalFormData.noPersonsHivaidsOthers || 0,
+            Total: finalFormData.noPersonsHivaidsTotal || 0,
+            Minorities: finalFormData.noPersonsHivaidsMinorities || 0
           },
           personsWithTuberculosis: {
-            SC: formData.noPersonsTuberculosisSC || 0,
-            ST: formData.noPersonsTuberculosisST || 0,
-            OBC: formData.noPersonsTuberculosisOBC || 0,
-            Others: formData.noPersonsTuberculosisOthers || 0,
-            Total: formData.noPersonsTuberculosisTotal || 0,
-            Minorities: formData.noPersonsTuberculosisMinorities || 0
+            SC: finalFormData.noPersonsTuberculosisSC || 0,
+            ST: finalFormData.noPersonsTuberculosisST || 0,
+            OBC: finalFormData.noPersonsTuberculosisOBC || 0,
+            Others: finalFormData.noPersonsTuberculosisOthers || 0,
+            Total: finalFormData.noPersonsTuberculosisTotal || 0,
+            Minorities: finalFormData.noPersonsTuberculosisMinorities || 0
           },
           personsWithRespiratoryDiseases: {
-            SC: formData.noPersonsRespiratorySC || 0,
-            ST: formData.noPersonsRespiratoryST || 0,
-            OBC: formData.noPersonsRespiratoryOBC || 0,
-            Others: formData.noPersonsRespiratoryOthers || 0,
-            Total: formData.noPersonsRespiratoryTotal || 0,
-            Minorities: formData.noPersonsRespiratoryMinorities || 0
+            SC: finalFormData.noPersonsRespiratorySC || 0,
+            ST: finalFormData.noPersonsRespiratoryST || 0,
+            OBC: finalFormData.noPersonsRespiratoryOBC || 0,
+            Others: finalFormData.noPersonsRespiratoryOthers || 0,
+            Total: finalFormData.noPersonsRespiratoryTotal || 0,
+            Minorities: finalFormData.noPersonsRespiratoryMinorities || 0
           },
           personsWithOtherChronicDiseases: {
-            SC: formData.noPersonsOtherChronicSC || 0,
-            ST: formData.noPersonsOtherChronicST || 0,
-            OBC: formData.noPersonsOtherChronicOBC || 0,
-            Others: formData.noPersonsOtherChronicOthers || 0,
-            Total: formData.noPersonsOtherChronicTotal || 0,
-            Minorities: formData.noPersonsOtherChronicMinorities || 0
+            SC: finalFormData.noPersonsOtherChronicSC || 0,
+            ST: finalFormData.noPersonsOtherChronicST || 0,
+            OBC: finalFormData.noPersonsOtherChronicOBC || 0,
+            Others: finalFormData.noPersonsOtherChronicOthers || 0,
+            Total: finalFormData.noPersonsOtherChronicTotal || 0,
+            Minorities: finalFormData.noPersonsOtherChronicMinorities || 0
           }
         },
         
         // SECTION 4: Literacy & Education (by caste categories)
         literacyAndEducation: {
           totalIlliteratePerson: {
-            SC: formData.totalIlliteratePersonsSC || 0,
-            ST: formData.totalIlliteratePersonsST || 0,
-            OBC: formData.totalIlliteratePersonsOBC || 0,
-            Others: formData.totalIlliteratePersonsOthers || 0,
-            Total: formData.totalIlliteratePersonsTotal || 0,
-            Minorities: formData.totalIlliteratePersonsMinorities || 0
+            SC: finalFormData.totalIlliteratePersonsSC || 0,
+            ST: finalFormData.totalIlliteratePersonsST || 0,
+            OBC: finalFormData.totalIlliteratePersonsOBC || 0,
+            Others: finalFormData.totalIlliteratePersonsOthers || 0,
+            Total: finalFormData.totalIlliteratePersonsTotal || 0,
+            Minorities: finalFormData.totalIlliteratePersonsMinorities || 0
           },
           maleIlliterate: {
-            SC: formData.noMaleIlliterateSC || 0,
-            ST: formData.noMaleIlliterateST || 0,
-            OBC: formData.noMaleIlliterateOBC || 0,
-            Others: formData.noMaleIlliterateOthers || 0,
-            Total: formData.noMaleIlliterateTotal || 0,
-            Minorities: formData.noMaleIlliterateMinorities || 0
+            SC: finalFormData.noMaleIlliterateSC || 0,
+            ST: finalFormData.noMaleIlliterateST || 0,
+            OBC: finalFormData.noMaleIlliterateOBC || 0,
+            Others: finalFormData.noMaleIlliterateOthers || 0,
+            Total: finalFormData.noMaleIlliterateTotal || 0,
+            Minorities: finalFormData.noMaleIlliterateMinorities || 0
           },
           femaleIlliterate: {
-            SC: formData.noFemaleIlliterateSC || 0,
-            ST: formData.noFemaleIlliterateST || 0,
-            OBC: formData.noFemaleIlliterateOBC || 0,
-            Others: formData.noFemaleIlliterateOthers || 0,
-            Total: formData.noFemaleIlliterateTotal || 0,
-            Minorities: formData.noFemaleIlliterateMinorities || 0
+            SC: finalFormData.noFemaleIlliterateSC || 0,
+            ST: finalFormData.noFemaleIlliterateST || 0,
+            OBC: finalFormData.noFemaleIlliterateOBC || 0,
+            Others: finalFormData.noFemaleIlliterateOthers || 0,
+            Total: finalFormData.noFemaleIlliterateTotal || 0,
+            Minorities: finalFormData.noFemaleIlliterateMinorities || 0
           },
           bplIlliteratePerson: {
-            SC: formData.noBplIlliteratePersonsSC || 0,
-            ST: formData.noBplIlliteratePersonsST || 0,
-            OBC: formData.noBplIlliteratePersonsOBC || 0,
-            Others: formData.noBplIlliteratePersonsOthers || 0,
-            Total: formData.noBplIlliteratePersonsTotal || 0,
-            Minorities: formData.noBplIlliteratePersonsMinorities || 0
+            SC: finalFormData.noBplIlliteratePersonsSC || 0,
+            ST: finalFormData.noBplIlliteratePersonsST || 0,
+            OBC: finalFormData.noBplIlliteratePersonsOBC || 0,
+            Others: finalFormData.noBplIlliteratePersonsOthers || 0,
+            Total: finalFormData.noBplIlliteratePersonsTotal || 0,
+            Minorities: finalFormData.noBplIlliteratePersonsMinorities || 0
           },
           maleBplIlliterate: {
-            SC: formData.noMaleBplIlliterateSC || 0,
-            ST: formData.noMaleBplIlliterateST || 0,
-            OBC: formData.noMaleBplIlliterateOBC || 0,
-            Others: formData.noMaleBplIlliterateOthers || 0,
-            Total: formData.noMaleBplIlliterateTotal || 0,
-            Minorities: formData.noMaleBplIlliterateMinorities || 0
+            SC: finalFormData.noMaleBplIlliterateSC || 0,
+            ST: finalFormData.noMaleBplIlliterateST || 0,
+            OBC: finalFormData.noMaleBplIlliterateOBC || 0,
+            Others: finalFormData.noMaleBplIlliterateOthers || 0,
+            Total: finalFormData.noMaleBplIlliterateTotal || 0,
+            Minorities: finalFormData.noMaleBplIlliterateMinorities || 0
           },
           femaleBplIlliterate: {
-            SC: formData.noFemaleBplIlliterateSC || 0,
-            ST: formData.noFemaleBplIlliterateST || 0,
-            OBC: formData.noFemaleBplIlliterateOBC || 0,
-            Others: formData.noFemaleBplIlliterateOthers || 0,
-            Total: formData.noFemaleBplIlliterateTotal || 0,
-            Minorities: formData.noFemaleBplIlliterateMinorities || 0
+            SC: finalFormData.noFemaleBplIlliterateSC || 0,
+            ST: finalFormData.noFemaleBplIlliterateST || 0,
+            OBC: finalFormData.noFemaleBplIlliterateOBC || 0,
+            Others: finalFormData.noFemaleBplIlliterateOthers || 0,
+            Total: finalFormData.noFemaleBplIlliterateTotal || 0,
+            Minorities: finalFormData.noFemaleBplIlliterateMinorities || 0
           },
           schoolDropoutsMale: {
-            SC: formData.schoolDropoutsMaleSC || 0,
-            ST: formData.schoolDropoutsMaleST || 0,
-            OBC: formData.schoolDropoutsMaleOBC || 0,
-            Others: formData.schoolDropoutsMaleOthers || 0,
-            Total: formData.schoolDropoutsMaleTotal || 0,
-            Minorities: formData.schoolDropoutsMaleMinorities || 0
+            SC: finalFormData.schoolDropoutsMaleSC || 0,
+            ST: finalFormData.schoolDropoutsMaleST || 0,
+            OBC: finalFormData.schoolDropoutsMaleOBC || 0,
+            Others: finalFormData.schoolDropoutsMaleOthers || 0,
+            Total: finalFormData.schoolDropoutsMaleTotal || 0,
+            Minorities: finalFormData.schoolDropoutsMaleMinorities || 0
           },
           schoolDropoutsFemale: {
-            SC: formData.schoolDropoutsFemaleSC || 0,
-            ST: formData.schoolDropoutsFemaleST || 0,
-            OBC: formData.schoolDropoutsFemaleOBC || 0,
-            Others: formData.schoolDropoutsFemaleOthers || 0,
-            Total: formData.schoolDropoutsFemaleTotal || 0,
-            Minorities: formData.schoolDropoutsFemaleMinorities || 0
+            SC: finalFormData.schoolDropoutsFemaleSC || 0,
+            ST: finalFormData.schoolDropoutsFemaleST || 0,
+            OBC: finalFormData.schoolDropoutsFemaleOBC || 0,
+            Others: finalFormData.schoolDropoutsFemaleOthers || 0,
+            Total: finalFormData.schoolDropoutsFemaleTotal || 0,
+            Minorities: finalFormData.schoolDropoutsFemaleMinorities || 0
           }
         },
         
         // PART-H: IV. HOUSING STATUS
         housingStatus: {
-          dwellingUnitsPucca: formData.dwellingUnitsPucca || 0,
-          dwellingUnitsSemiPucca: formData.dwellingUnitsSemiPucca || 0,
-          dwellingUnitsKatcha: formData.dwellingUnitsKatcha || 0,
-          dwellingUnitsTotal: formData.dwellingUnitsTotal || 0,
-          dwellingUnitsWithElectricityPucca: formData.dwellingUnitsWithElectricityPucca || 0,
-          dwellingUnitsWithElectricitySemiPucca: formData.dwellingUnitsWithElectricitySemiPucca || 0,
-          dwellingUnitsWithElectricityKatcha: formData.dwellingUnitsWithElectricityKatcha || 0,
-          dwellingUnitsWithElectricityTotal: formData.dwellingUnitsWithElectricityTotal || 0,
-          landTenureWithPatta: formData.landTenureWithPatta || 0,
-          landTenurePossessionCertificate: formData.landTenurePossessionCertificate || 0,
-          landTenureEncroachedPrivate: formData.landTenureEncroachedPrivate || 0,
-          landTenureEncroachedPublic: formData.landTenureEncroachedPublic || 0,
-          landTenureOnRent: formData.landTenureOnRent || 0,
-          landTenureOther: formData.landTenureOther || 0,
-          landTenureTotal: formData.landTenureTotal || 0
+          dwellingUnitsPucca: finalFormData.dwellingUnitsPucca || 0,
+          dwellingUnitsSemiPucca: finalFormData.dwellingUnitsSemiPucca || 0,
+          dwellingUnitsKatcha: finalFormData.dwellingUnitsKatcha || 0,
+          dwellingUnitsTotal: finalFormData.dwellingUnitsTotal || 0,
+          dwellingUnitsWithElectricityPucca: finalFormData.dwellingUnitsWithElectricityPucca || 0,
+          dwellingUnitsWithElectricitySemiPucca: finalFormData.dwellingUnitsWithElectricitySemiPucca || 0,
+          dwellingUnitsWithElectricityKatcha: finalFormData.dwellingUnitsWithElectricityKatcha || 0,
+          dwellingUnitsWithElectricityTotal: finalFormData.dwellingUnitsWithElectricityTotal || 0,
+          landTenureWithPatta: finalFormData.landTenureWithPatta || 0,
+          landTenurePossessionCertificate: finalFormData.landTenurePossessionCertificate || 0,
+          landTenureEncroachedPrivate: finalFormData.landTenureEncroachedPrivate || 0,
+          landTenureEncroachedPublic: finalFormData.landTenureEncroachedPublic || 0,
+          landTenureOnRent: finalFormData.landTenureOnRent || 0,
+          landTenureOther: finalFormData.landTenureOther || 0,
+          landTenureTotal: finalFormData.landTenureTotal || 0
         },
         
         // PART-I: V. ECONOMIC STATUS OF HOUSEHOLDS
         economicStatus: {
           economicStatusData: {
-            lessThan500: formData.economicStatus?.lessThan500 || 0,
-            rs500to1000: formData.economicStatus?.rs500to1000 || 0,
-            rs1000to1500: formData.economicStatus?.rs1000to1500 || 0,
-            rs1500to2000: formData.economicStatus?.rs1500to2000 || 0,
-            rs2000to3000: formData.economicStatus?.rs2000to3000 || 0,
-            moreThan3000: formData.economicStatus?.moreThan3000 || 0
+            lessThan500: finalFormData.economicStatus?.lessThan500 || 0,
+            rs500to1000: finalFormData.economicStatus?.rs500to1000 || 0,
+            rs1000to1500: finalFormData.economicStatus?.rs1000to1500 || 0,
+            rs1500to2000: finalFormData.economicStatus?.rs1500to2000 || 0,
+            rs2000to3000: finalFormData.economicStatus?.rs2000to3000 || 0,
+            moreThan3000: finalFormData.economicStatus?.moreThan3000 || 0
           }
         },
         
         // Employment and Occupation Status
         employmentAndOccupation: {
-          majorIndustriesPresent: [] // Will be populated from form data if available
+          majorIndustriesPresent: finalFormData.majorIndustriesPresent || [],
+          selfEmployed: finalFormData.occupationalStatus?.selfEmployed || 0,
+          salaried: finalFormData.occupationalStatus?.salaried || 0,
+          regularWage: finalFormData.occupationalStatus?.regularWage || 0,
+          casualLabour: finalFormData.occupationalStatus?.casualLabour || 0,
+          others: finalFormData.occupationalStatus?.others || 0
         },
         
         // Transportation and Accessibility
@@ -1706,7 +2167,7 @@ export default function SlumSurveyPage() {
         // Social Issues and Vulnerable Groups
         socialIssuesAndVulnerableGroups: {
           majorChallenges: [],
-          slumDwellersAssociation: formData.slumDwellersAssociation || "NO"
+          slumDwellersAssociation: finalFormData.slumDwellersAssociation || "NO"
         },
         
         // Slum Improvement and Development
@@ -1718,76 +2179,76 @@ export default function SlumSurveyPage() {
         // PART-J: VII. ACCESS TO PHYSICAL INFRASTRUCTURE
         physicalInfrastructure: {
           sourceDrinkingWater: {
-            individualTap: formData.sourceDrinkingWater?.individualTap || 0,
-            tubewellBorewellHandpump: formData.sourceDrinkingWater?.tubewellBorewellHandpump || 0,
-            publicTap: formData.sourceDrinkingWater?.publicTap || 0,
-            openwell: formData.sourceDrinkingWater?.openwell || 0,
-            tankPond: formData.sourceDrinkingWater?.tankPond || 0,
-            riverCanalLakeSpring: formData.sourceDrinkingWater?.riverCanalLakeSpring || 0,
-            waterTanker: formData.sourceDrinkingWater?.waterTanker || 0,
-            others: formData.sourceDrinkingWater?.others || 0
+            individualTap: finalFormData.sourceDrinkingWater?.individualTap || 0,
+            tubewellBorewellHandpump: finalFormData.sourceDrinkingWater?.tubewellBorewellHandpump || 0,
+            publicTap: finalFormData.sourceDrinkingWater?.publicTap || 0,
+            openwell: finalFormData.sourceDrinkingWater?.openwell || 0,
+            tankPond: finalFormData.sourceDrinkingWater?.tankPond || 0,
+            riverCanalLakeSpring: finalFormData.sourceDrinkingWater?.riverCanalLakeSpring || 0,
+            waterTanker: finalFormData.sourceDrinkingWater?.waterTanker || 0,
+            others: finalFormData.sourceDrinkingWater?.others || 0
           },
-          connectivityCityWaterSupply: formData.connectivityCityWaterSupply || "",
-          drainageSewerageFacility: formData.drainageSewerageFacility || "",
-          connectivityStormWaterDrainage: formData.connectivityStormWaterDrainage || "",
-          connectivitySewerageSystem: formData.connectivitySewerageSystem || "",
-          proneToFlooding: formData.proneToFlooding || "",
-          latrineFacility: formData.latrineFacility || "",
+          connectivityCityWaterSupply: finalFormData.connectivityCityWaterSupply || "",
+          drainageSewerageFacility: finalFormData.drainageSewerageFacility || "",
+          connectivityStormWaterDrainage: finalFormData.connectivityStormWaterDrainage || "",
+          connectivitySewerageSystem: finalFormData.connectivitySewerageSystem || "",
+          proneToFlooding: finalFormData.proneToFlooding || "",
+          latrineFacility: finalFormData.latrineFacility || "",
           solidWasteManagement: {
-            frequencyOfGarbageDisposal: formData.frequencyOfGarbageDisposal || "",
-            arrangementForGarbageDisposal: formData.arrangementForGarbageDisposal || "",
-            frequencyOfClearanceOfOpenDrains: formData.frequencyOfClearanceOfOpenDrains || ""
+            frequencyOfGarbageDisposal: finalFormData.frequencyOfGarbageDisposal || "",
+            arrangementForGarbageDisposal: finalFormData.arrangementForGarbageDisposal || "",
+            frequencyOfClearanceOfOpenDrains: finalFormData.frequencyOfClearanceOfOpenDrains || ""
           },
-          approachRoadType: formData.approachRoadType || "",
-          distanceToNearestMotorableRoad: formData.distanceToNearestMotorableRoad || "",
-          internalRoadType: formData.internalRoadType || "",
-          streetLightAvailable: formData.streetLightAvailable || ""
+          approachRoadType: finalFormData.approachRoadType || "",
+          distanceToNearestMotorableRoad: finalFormData.distanceToNearestMotorableRoad || "",
+          internalRoadType: finalFormData.internalRoadType || "",
+          streetLightAvailable: finalFormData.streetLightAvailable || ""
         },
         
         // PART-K: VIII. EDUCATION FACILITIES
         educationFacilities: {
-          anganwadiUnderIcds: formData.anganwadiUnderIcds || 0,
-          municipalPreschool: formData.municipalPreschool || 0,
-          privatePreschool: formData.privatePreschool || 0,
-          municipalPrimarySchool: formData.municipalPrimarySchool || 0,
-          stateGovtPrimarySchool: formData.stateGovtPrimarySchool || 0,
-          privatePrimarySchool: formData.privatePrimarySchool || 0,
-          municipalHighSchool: formData.municipalHighSchool || 0,
-          stateGovtHighSchool: formData.stateGovtHighSchool || 0,
-          privateHighSchool: formData.privateHighSchool || 0,
-          adultEducationCentre: formData.adultEducationCentre || 0,
-          nonFormalEducationCentre: formData.nonFormalEducationCentre || 0
+          anganwadiUnderIcds: finalFormData.anganwadiUnderIcds || 0,
+          municipalPreschool: finalFormData.municipalPreschool || 0,
+          privatePreschool: finalFormData.privatePreschool || 0,
+          municipalPrimarySchool: finalFormData.municipalPrimarySchool || 0,
+          stateGovtPrimarySchool: finalFormData.stateGovtPrimarySchool || 0,
+          privatePrimarySchool: finalFormData.privatePrimarySchool || 0,
+          municipalHighSchool: finalFormData.municipalHighSchool || 0,
+          stateGovtHighSchool: finalFormData.stateGovtHighSchool || 0,
+          privateHighSchool: finalFormData.privateHighSchool || 0,
+          adultEducationCentre: finalFormData.adultEducationCentre || 0,
+          nonFormalEducationCentre: finalFormData.nonFormalEducationCentre || 0
         },
         
         // PART-L: IX. Health Facilities
         healthFacilities: {
-          urbanHealthPost: formData.urbanHealthPost || "",
-          primaryHealthCentre: formData.primaryHealthCentre || "",
-          governmentHospital: formData.governmentHospital || "",
-          maternityCentre: formData.maternityCentre || "",
-          privateClinic: formData.privateClinic || "",
-          rmp: formData.rmp || "",
-          ayurvedicDoctor: formData.ayurvedicDoctor || ""
+          urbanHealthPost: finalFormData.urbanHealthPost || "",
+          primaryHealthCentre: finalFormData.primaryHealthCentre || "",
+          governmentHospital: finalFormData.governmentHospital || "",
+          maternityCentre: finalFormData.maternityCentre || "",
+          privateClinic: finalFormData.privateClinic || "",
+          rmp: finalFormData.rmp || "",
+          ayurvedicDoctor: finalFormData.ayurvedicDoctor || ""
         },
         
         // PART-M: X. Social Development/Welfare
         socialDevelopment: {
-          communityHall: formData.communityHall || 0,
-          livelihoodProductionCentre: formData.livelihoodProductionCentre || 0,
-          vocationalTrainingCentre: formData.vocationalTrainingCentre || 0,
-          streetChildrenRehabilitationCentre: formData.streetChildrenRehabilitationCentre || 0,
-          nightShelter: formData.nightShelter || 0,
-          oldAgeHome: formData.oldAgeHome || 0,
-          oldAgePensionsHolders: formData.oldAgePensionsHolders || 0,
-          widowPensionsHolders: formData.widowPensionsHolders || 0,
-          disabledPensionsHolders: formData.disabledPensionsHolders || 0,
-          generalInsuranceCovered: formData.generalInsuranceCovered || 0,
-          healthInsuranceCovered: formData.healthInsuranceCovered || 0,
-          selfHelpGroups: formData.selfHelpGroups || 0,
-          thriftCreditSocieties: formData.thriftCreditSocieties || 0,
-          slumDwellersAssociation: formData.slumDwellersAssociation || "",
-          youthAssociations: formData.youthAssociations || 0,
-          womensAssociations: formData.womensAssociations || 0
+          communityHall: finalFormData.communityHall || 0,
+          livelihoodProductionCentre: finalFormData.livelihoodProductionCentre || 0,
+          vocationalTrainingCentre: finalFormData.vocationalTrainingCentre || 0,
+          streetChildrenRehabilitationCentre: finalFormData.streetChildrenRehabilitationCentre || 0,
+          nightShelter: finalFormData.nightShelter || 0,
+          oldAgeHome: finalFormData.oldAgeHome || 0,
+          oldAgePensionsHolders: finalFormData.oldAgePensionsHolders || 0,
+          widowPensionsHolders: finalFormData.widowPensionsHolders || 0,
+          disabledPensionsHolders: finalFormData.disabledPensionsHolders || 0,
+          generalInsuranceCovered: finalFormData.generalInsuranceCovered || 0,
+          healthInsuranceCovered: finalFormData.healthInsuranceCovered || 0,
+          selfHelpGroups: finalFormData.selfHelpGroups || 0,
+          thriftCreditSocieties: finalFormData.thriftCreditSocieties || 0,
+          slumDwellersAssociation: finalFormData.slumDwellersAssociation || "",
+          youthAssociations: finalFormData.youthAssociations || 0,
+          womensAssociations: finalFormData.womensAssociations || 0
         },
         
         // PART-N: XI. ADDITIONAL INFRASTRUCTURE REQUIREMENTS
@@ -1795,151 +2256,154 @@ export default function SlumSurveyPage() {
           // Water Supply
           waterSupply: {
             pipelines: {
-              existing: formData.waterSupplyPipelinesExisting || "",
-              additionalRequirement: formData.waterSupplyPipelinesAdditional || "",
-              estimatedCost: formData.waterSupplyPipelinesCost || 0
+              existing: finalFormData.waterSupplyPipelinesExisting || "",
+              additionalRequirement: finalFormData.waterSupplyPipelinesAdditional || "",
+              estimatedCost: finalFormData.waterSupplyPipelinesCost || 0
             },
             individualTaps: {
-              existing: formData.waterSupplyIndividualTapsExisting || "",
-              additionalRequirement: formData.waterSupplyIndividualTapsAdditional || "",
-              estimatedCost: formData.waterSupplyIndividualTapsCost || 0
+              existing: finalFormData.waterSupplyIndividualTapsExisting || "",
+              additionalRequirement: finalFormData.waterSupplyIndividualTapsAdditional || "",
+              estimatedCost: finalFormData.waterSupplyIndividualTapsCost || 0
             },
             borewells: {
-              existing: formData.waterSupplyBorewellsExisting || "",
-              additionalRequirement: formData.waterSupplyBorewellsAdditional || "",
-              estimatedCost: formData.waterSupplyBorewellsCost || 0
+              existing: finalFormData.waterSupplyBorewellsExisting || "",
+              additionalRequirement: finalFormData.waterSupplyBorewellsAdditional || "",
+              estimatedCost: finalFormData.waterSupplyBorewellsCost || 0
             },
             connectivityToTrunkLines: {
-              existing: formData.waterSupplyConnectivityTrunkLinesExisting || "",
-              additionalRequirement: formData.waterSupplyConnectivityTrunkLinesAdditional || "",
-              estimatedCost: formData.waterSupplyConnectivityTrunkLinesCost || 0
+              existing: finalFormData.waterSupplyConnectivityTrunkLinesExisting || "",
+              additionalRequirement: finalFormData.waterSupplyConnectivityTrunkLinesAdditional || "",
+              estimatedCost: finalFormData.waterSupplyConnectivityTrunkLinesCost || 0
             }
           },
           // Drainage/Sewerage
           drainageSewerage: {
             stormwaterDrainage: {
-              existing: formData.drainageStormwaterDrainageExisting || "",
-              additionalRequirement: formData.drainageStormwaterDrainageAdditional || "",
-              estimatedCost: formData.drainageStormwaterDrainageCost || 0
+              existing: finalFormData.drainageStormwaterDrainageExisting || "",
+              additionalRequirement: finalFormData.drainageStormwaterDrainageAdditional || "",
+              estimatedCost: finalFormData.drainageStormwaterDrainageCost || 0
             },
             connectivityToMainDrains: {
-              existing: formData.drainageConnectivityMainDrainsExisting || "",
-              additionalRequirement: formData.drainageConnectivityMainDrainsAdditional || "",
-              estimatedCost: formData.drainageConnectivityMainDrainsCost || 0
+              existing: finalFormData.drainageConnectivityMainDrainsExisting || "",
+              additionalRequirement: finalFormData.drainageConnectivityMainDrainsAdditional || "",
+              estimatedCost: finalFormData.drainageConnectivityMainDrainsCost || 0
             },
             sewerLines: {
-              existing: formData.drainageSewerLinesExisting || "",
-              additionalRequirement: formData.drainageSewerLinesAdditional || "",
-              estimatedCost: formData.drainageSewerLinesCost || 0
+              existing: finalFormData.drainageSewerLinesExisting || "",
+              additionalRequirement: finalFormData.drainageSewerLinesAdditional || "",
+              estimatedCost: finalFormData.drainageSewerLinesCost || 0
             },
             connectivityToTrunkSewers: {
-              existing: formData.drainageConnectivityTrunkSewersExisting || "",
-              additionalRequirement: formData.drainageConnectivityTrunkSewersAdditional || "",
-              estimatedCost: formData.drainageConnectivityTrunkSewersCost || 0
+              existing: finalFormData.drainageConnectivityTrunkSewersExisting || "",
+              additionalRequirement: finalFormData.drainageConnectivityTrunkSewersAdditional || "",
+              estimatedCost: finalFormData.drainageConnectivityTrunkSewersCost || 0
             }
           },
           // Roads
           roads: {
             internalRoadsCC: {
-              existing: formData.roadsInternalRoadsCCExisting || "",
-              additionalRequirement: formData.roadsInternalRoadsCCAdditional || "",
-              estimatedCost: formData.roadsInternalRoadsCCCost || 0
+              existing: finalFormData.roadsInternalRoadsCCExisting || "",
+              additionalRequirement: finalFormData.roadsInternalRoadsCCAdditional || "",
+              estimatedCost: finalFormData.roadsInternalRoadsCCCost || 0
             },
             internalRoadsBT: {
-              existing: formData.roadsInternalRoadsBTExisting || "",
-              additionalRequirement: formData.roadsInternalRoadsBTAdditional || "",
-              estimatedCost: formData.roadsInternalRoadsBTCost || 0
+              existing: finalFormData.roadsInternalRoadsBTExisting || "",
+              additionalRequirement: finalFormData.roadsInternalRoadsBTAdditional || "",
+              estimatedCost: finalFormData.roadsInternalRoadsBTCost || 0
             },
             internalRoadsOthers: {
-              existing: formData.roadsInternalRoadsOthersExisting || "",
-              additionalRequirement: formData.roadsInternalRoadsOthersAdditional || "",
-              estimatedCost: formData.roadsInternalRoadsOthersCost || 0
+              existing: finalFormData.roadsInternalRoadsOthersExisting || "",
+              additionalRequirement: finalFormData.roadsInternalRoadsOthersAdditional || "",
+              estimatedCost: finalFormData.roadsInternalRoadsOthersCost || 0
             },
             approachRoadsCC: {
-              existing: formData.roadsApproachRoadsCCExisting || "",
-              additionalRequirement: formData.roadsApproachRoadsCCAdditional || "",
-              estimatedCost: formData.roadsApproachRoadsCCCost || 0
+              existing: finalFormData.roadsApproachRoadsCCExisting || "",
+              additionalRequirement: finalFormData.roadsApproachRoadsCCAdditional || "",
+              estimatedCost: finalFormData.roadsApproachRoadsCCCost || 0
             },
             approachRoadsOthers: {
-              existing: formData.roadsApproachRoadsOthersExisting || "",
-              additionalRequirement: formData.roadsApproachRoadsOthersAdditional || "",
-              estimatedCost: formData.roadsApproachRoadsOthersCost || 0
+              existing: finalFormData.roadsApproachRoadsOthersExisting || "",
+              additionalRequirement: finalFormData.roadsApproachRoadsOthersAdditional || "",
+              estimatedCost: finalFormData.roadsApproachRoadsOthersCost || 0
             }
           },
           // Street Lighting
           streetLighting: {
             poles: {
-              existing: formData.streetLightingPolesExisting || "",
-              additionalRequirement: formData.streetLightingPolesAdditional || "",
-              estimatedCost: formData.streetLightingPolesCost || 0
+              existing: finalFormData.streetLightingPolesExisting || "",
+              additionalRequirement: finalFormData.streetLightingPolesAdditional || "",
+              estimatedCost: finalFormData.streetLightingPolesCost || 0
             },
             lights: {
-              existing: formData.streetLightingLightsExisting || "",
-              additionalRequirement: formData.streetLightingLightsAdditional || "",
-              estimatedCost: formData.streetLightingLightsCost || 0
+              existing: finalFormData.streetLightingLightsExisting || "",
+              additionalRequirement: finalFormData.streetLightingLightsAdditional || "",
+              estimatedCost: finalFormData.streetLightingLightsCost || 0
             }
           },
           // Sanitation
           sanitation: {
             individualToilets: {
-              existing: formData.sanitationIndividualToiletsExisting || "",
-              additionalRequirement: formData.sanitationIndividualToiletsAdditional || "",
-              estimatedCost: formData.sanitationIndividualToiletsCost || 0
+              existing: finalFormData.sanitationIndividualToiletsExisting || "",
+              additionalRequirement: finalFormData.sanitationIndividualToiletsAdditional || "",
+              estimatedCost: finalFormData.sanitationIndividualToiletsCost || 0
             },
             communityToilets: {
-              existing: formData.sanitationCommunityToiletsExisting || "",
-              additionalRequirement: formData.sanitationCommunityToiletsAdditional || "",
-              estimatedCost: formData.sanitationCommunityToiletsCost || 0
+              existing: finalFormData.sanitationCommunityToiletsExisting || "",
+              additionalRequirement: finalFormData.sanitationCommunityToiletsAdditional || "",
+              estimatedCost: finalFormData.sanitationCommunityToiletsCost || 0
             },
             seatsInCommunityToilets: {
-              existing: formData.sanitationSeatsCommunityToiletsExisting || "",
-              additionalRequirement: formData.sanitationSeatsCommunityToiletsAdditional || "",
-              estimatedCost: formData.sanitationSeatsCommunityToiletsCost || 0
+              existing: finalFormData.sanitationSeatsCommunityToiletsExisting || "",
+              additionalRequirement: finalFormData.sanitationSeatsCommunityToiletsAdditional || "",
+              estimatedCost: finalFormData.sanitationSeatsCommunityToiletsCost || 0
             },
             dumperBins: {
-              existing: formData.sanitationDumperBinsExisting || "",
-              additionalRequirement: formData.sanitationDumperBinsAdditional || "",
-              estimatedCost: formData.sanitationDumperBinsCost || 0
+              existing: finalFormData.sanitationDumperBinsExisting || "",
+              additionalRequirement: finalFormData.sanitationDumperBinsAdditional || "",
+              estimatedCost: finalFormData.sanitationDumperBinsCost || 0
             }
           },
           // Community Facilities
           communityFacilities: {
             communityHalls: {
-              existing: formData.communityHallsExisting || "",
-              additionalRequirement: formData.communityHallsAdditional || "",
-              estimatedCost: formData.communityHallsCost || 0
+              existing: finalFormData.communityHallsExisting || "",
+              additionalRequirement: finalFormData.communityHallsAdditional || "",
+              estimatedCost: finalFormData.communityHallsCost || 0
             },
             livelihoodCentres: {
-              existing: formData.communityLivelihoodCentresExisting || "",
-              additionalRequirement: formData.communityLivelihoodCentresAdditional || "",
-              estimatedCost: formData.communityLivelihoodCentresCost || 0
+              existing: finalFormData.communityLivelihoodCentresExisting || "",
+              additionalRequirement: finalFormData.communityLivelihoodCentresAdditional || "",
+              estimatedCost: finalFormData.communityLivelihoodCentresCost || 0
             },
             anganwadis: {
-              existing: formData.communityAnganwadisExisting || "",
-              additionalRequirement: formData.communityAnganwadisAdditional || "",
-              estimatedCost: formData.communityAnganwadisCost || 0
+              existing: finalFormData.communityAnganwadisExisting || "",
+              additionalRequirement: finalFormData.communityAnganwadisAdditional || "",
+              estimatedCost: finalFormData.communityAnganwadisCost || 0
             },
             primarySchools: {
-              existing: formData.communityPrimarySchoolsExisting || "",
-              additionalRequirement: formData.communityPrimarySchoolsAdditional || "",
-              estimatedCost: formData.communityPrimarySchoolsCost || 0
+              existing: finalFormData.communityPrimarySchoolsExisting || "",
+              additionalRequirement: finalFormData.communityPrimarySchoolsAdditional || "",
+              estimatedCost: finalFormData.communityPrimarySchoolsCost || 0
             },
             healthCentres: {
-              existing: formData.communityHealthCentresExisting || "",
-              additionalRequirement: formData.communityHealthCentresAdditional || "",
-              estimatedCost: formData.communityHealthCentresCost || 0
+              existing: finalFormData.communityHealthCentresExisting || "",
+              additionalRequirement: finalFormData.communityHealthCentresAdditional || "",
+              estimatedCost: finalFormData.communityHealthCentresCost || 0
             },
             others: {
-              existing: formData.communityOthersExisting || "",
-              additionalRequirement: formData.communityOthersAdditional || "",
-              estimatedCost: formData.communityOthersCost || 0
+              existing: finalFormData.communityOthersExisting || "",
+              additionalRequirement: finalFormData.communityOthersAdditional || "",
+              estimatedCost: finalFormData.communityOthersCost || 0
             }
           }
         }
       };
 
-      // First, save the current section to ensure completion percentage is accurate
-      await saveSection();
+      // In edit mode, we don't need to save the current section separately
+      // as the data is already captured in tempFormData
+      if (!isEditMode) {
+        await saveSection();
+      }
       
       const response = await apiService.submitSlumSurvey(slumSurvey._id, surveyData);
 
@@ -1985,14 +2449,16 @@ export default function SlumSurveyPage() {
     try {
       setSaving(true);
       
-      // Map current step to section name (15 sections total)
+      // Map current step to section name (14 data sections + 1 review section)
+      // Only steps 0-13 correspond to actual data sections that get saved
+      // Step 14 (review) is just a summary view and doesn't need to be saved
       const sectionMap: Record<number, string> = {
         0: 'generalInformation',
         1: 'cityTownSlumProfile',
         2: 'surveyOperation',
         3: 'basicInformation',
         4: 'landStatus',
-        5: 'populationAndHealth',
+        5: 'demographicProfile',
         6: 'housingStatus',
         7: 'economicStatus',
         8: 'employmentAndOccupation',
@@ -2000,11 +2466,20 @@ export default function SlumSurveyPage() {
         10: 'educationFacilities',
         11: 'healthFacilities',
         12: 'socialDevelopment',
-        13: 'additionalInfrastructure',
-        14: 'reviewAndSubmit'
+        13: 'additionalInfrastructure'
+        // Note: Step 14 (reviewAndSubmit) is just a summary view, not a data section
       };
       
       // Extract data for current section
+      // If we're at step 14 (review section), there's no data to save
+      if (currentStep >= 14) {
+        // No need to save the review section
+        showToast("Review section does not require saving", "info");
+        // Move to next step (which would wrap around or stay at 14)
+        setCurrentStep((prev) => Math.min(steps.length - 1, prev + 1));
+        return;
+      }
+      
       const sectionName = sectionMap[currentStep];
       if (!sectionName) {
         showToast("Invalid section", "error");
@@ -2035,7 +2510,7 @@ export default function SlumSurveyPage() {
             data.slumPopulation = formData.slumPopulation;
             data.noSlumHouseholds = formData.noSlumHouseholds;
             data.bplPopulation = formData.bplPopulation;
-            data.noBplHouseholdsCityTown = formData.noBplHouseholdsCityTown;
+            data.noBplHouseholdsCityTown = formData.noBplHouseholdsSlum;
             break;
           case 'surveyOperation':
             data.surveyorName = formData.surveyorName;
@@ -2062,136 +2537,178 @@ export default function SlumSurveyPage() {
             data.ownershipLandDetail = formData.ownershipLandDetail;
             data.ownershipLandSpecify = formData.ownershipLandSpecify;
             break;
-          case 'populationAndHealth':
-            // Population & Health (Questions 12a-12m)
-            data.totalPopulationSlumSC = formData.totalPopulationSlumSC;
-            data.totalPopulationSlumST = formData.totalPopulationSlumST;
-            data.totalPopulationSlumOBC = formData.totalPopulationSlumOBC;
-            data.totalPopulationSlumOthers = formData.totalPopulationSlumOthers;
-            data.totalPopulationSlum = formData.totalPopulationSlum;
-            data.totalPopulationSlumMinorities = formData.totalPopulationSlumMinorities;
-            data.bplPopulationSlumSC = formData.bplPopulationSlumSC;
-            data.bplPopulationSlumST = formData.bplPopulationSlumST;
-            data.bplPopulationSlumOBC = formData.bplPopulationSlumOBC;
-            data.bplPopulationSlumOthers = formData.bplPopulationSlumOthers;
-            data.bplPopulationSlum = formData.bplPopulationSlum;
-            data.bplPopulationSlumMinorities = formData.bplPopulationSlumMinorities;
-            data.noHouseholdsSlumSC = formData.noHouseholdsSlumSC;
-            data.noHouseholdsSlumST = formData.noHouseholdsSlumST;
-            data.noHouseholdsSlumOBC = formData.noHouseholdsSlumOBC;
-            data.noHouseholdsSlumOthers = formData.noHouseholdsSlumOthers;
-            data.noHouseholdsSlum = formData.noHouseholdsSlum;
-            data.noHouseholdsSlumMinorities = formData.noHouseholdsSlumMinorities;
-            data.noBplHouseholdsSC = formData.noBplHouseholdsSC;
-            data.noBplHouseholdsST = formData.noBplHouseholdsST;
-            data.noBplHouseholdsOBC = formData.noBplHouseholdsOBC;
-            data.noBplHouseholdsOthers = formData.noBplHouseholdsOthers;
-            data.noBplHouseholdsTotal = formData.noBplHouseholdsTotal;
-            data.noBplHouseholdsMinorities = formData.noBplHouseholdsMinorities;
-            data.noWomenHeadedHouseholdsSC = formData.noWomenHeadedHouseholdsSC;
-            data.noWomenHeadedHouseholdsST = formData.noWomenHeadedHouseholdsST;
-            data.noWomenHeadedHouseholdsOBC = formData.noWomenHeadedHouseholdsOBC;
-            data.noWomenHeadedHouseholdsOthers = formData.noWomenHeadedHouseholdsOthers;
-            data.noWomenHeadedHouseholdsTotal = formData.noWomenHeadedHouseholdsTotal;
-            data.noWomenHeadedHouseholdsMinorities = formData.noWomenHeadedHouseholdsMinorities;
-            data.noPersonsOlder65SC = formData.noPersonsOlder65SC;
-            data.noPersonsOlder65ST = formData.noPersonsOlder65ST;
-            data.noPersonsOlder65OBC = formData.noPersonsOlder65OBC;
-            data.noPersonsOlder65Others = formData.noPersonsOlder65Others;
-            data.noPersonsOlder65Total = formData.noPersonsOlder65Total;
-            data.noPersonsOlder65Minorities = formData.noPersonsOlder65Minorities;
-            data.noChildLabourersSC = formData.noChildLabourersSC;
-            data.noChildLabourersST = formData.noChildLabourersST;
-            data.noChildLabourersOBC = formData.noChildLabourersOBC;
-            data.noChildLabourersOthers = formData.noChildLabourersOthers;
-            data.noChildLabourersTotal = formData.noChildLabourersTotal;
-            data.noChildLabourersMinorities = formData.noChildLabourersMinorities;
-            data.noPhysicallyChallengedSC = formData.noPhysicallyChallengedSC;
-            data.noPhysicallyChallengedST = formData.noPhysicallyChallengedST;
-            data.noPhysicallyChallengedOBC = formData.noPhysicallyChallengedOBC;
-            data.noPhysicallyChallengedOthers = formData.noPhysicallyChallengedOthers;
-            data.noPhysicallyChallengedTotal = formData.noPhysicallyChallengedTotal;
-            data.noPhysicallyChallengedMinorities = formData.noPhysicallyChallengedMinorities;
-            data.noMentallyChallengedSC = formData.noMentallyChallengedSC;
-            data.noMentallyChallengedST = formData.noMentallyChallengedST;
-            data.noMentallyChallengedOBC = formData.noMentallyChallengedOBC;
-            data.noMentallyChallengedOthers = formData.noMentallyChallengedOthers;
-            data.noMentallyChallengedTotal = formData.noMentallyChallengedTotal;
-            data.noMentallyChallengedMinorities = formData.noMentallyChallengedMinorities;
-            data.noPersonsHivaidsSC = formData.noPersonsHivaidsSC;
-            data.noPersonsHivaidsST = formData.noPersonsHivaidsST;
-            data.noPersonsHivaidsOBC = formData.noPersonsHivaidsOBC;
-            data.noPersonsHivaidsOthers = formData.noPersonsHivaidsOthers;
-            data.noPersonsHivaidsTotal = formData.noPersonsHivaidsTotal;
-            data.noPersonsHivaidsMinorities = formData.noPersonsHivaidsMinorities;
-            data.noPersonsTuberculosisSC = formData.noPersonsTuberculosisSC;
-            data.noPersonsTuberculosisST = formData.noPersonsTuberculosisST;
-            data.noPersonsTuberculosisOBC = formData.noPersonsTuberculosisOBC;
-            data.noPersonsTuberculosisOthers = formData.noPersonsTuberculosisOthers;
-            data.noPersonsTuberculosisTotal = formData.noPersonsTuberculosisTotal;
-            data.noPersonsTuberculosisMinorities = formData.noPersonsTuberculosisMinorities;
-            data.noPersonsRespiratorySC = formData.noPersonsRespiratorySC;
-            data.noPersonsRespiratoryST = formData.noPersonsRespiratoryST;
-            data.noPersonsRespiratoryOBC = formData.noPersonsRespiratoryOBC;
-            data.noPersonsRespiratoryOthers = formData.noPersonsRespiratoryOthers;
-            data.noPersonsRespiratoryTotal = formData.noPersonsRespiratoryTotal;
-            data.noPersonsRespiratoryMinorities = formData.noPersonsRespiratoryMinorities;
-            data.noPersonsOtherChronicSC = formData.noPersonsOtherChronicSC;
-            data.noPersonsOtherChronicST = formData.noPersonsOtherChronicST;
-            data.noPersonsOtherChronicOBC = formData.noPersonsOtherChronicOBC;
-            data.noPersonsOtherChronicOthers = formData.noPersonsOtherChronicOthers;
-            data.noPersonsOtherChronicTotal = formData.noPersonsOtherChronicTotal;
-            data.noPersonsOtherChronicMinorities = formData.noPersonsOtherChronicMinorities;
+          case 'demographicProfile':
+            // Population & Health Demographics (by caste categories)
+            data.totalPopulation = {
+              SC: formData.totalPopulationSlumSC || 0,
+              ST: formData.totalPopulationSlumST || 0,
+              OBC: formData.totalPopulationSlumOBC || 0,
+              Others: formData.totalPopulationSlumOthers || 0,
+              Total: formData.totalPopulationSlum || 0,
+              Minorities: formData.totalPopulationSlumMinorities || 0
+            };
+            data.bplPopulation = {
+              SC: formData.bplPopulationSlumSC || 0,
+              ST: formData.bplPopulationSlumST || 0,
+              OBC: formData.bplPopulationSlumOBC || 0,
+              Others: formData.bplPopulationSlumOthers || 0,
+              Total: formData.bplPopulationSlum || 0,
+              Minorities: formData.bplPopulationSlumMinorities || 0
+            };
+            data.numberOfHouseholds = {
+              SC: formData.noHouseholdsSlumSC || 0,
+              ST: formData.noHouseholdsSlumST || 0,
+              OBC: formData.noHouseholdsSlumOBC || 0,
+              Others: formData.noHouseholdsSlumOthers || 0,
+              Total: formData.noHouseholdsSlum || 0,
+              Minorities: formData.noHouseholdsSlumMinorities || 0
+            };
+            data.numberOfBplHouseholds = {
+              SC: formData.noBplHouseholdsSC || 0,
+              ST: formData.noBplHouseholdsST || 0,
+              OBC: formData.noBplHouseholdsOBC || 0,
+              Others: formData.noBplHouseholdsOthers || 0,
+              Total: formData.noBplHouseholdsTotal || 0,
+              Minorities: formData.noBplHouseholdsMinorities || 0
+            };
+            data.womenHeadedHouseholds = {
+              SC: formData.noWomenHeadedHouseholdsSC || 0,
+              ST: formData.noWomenHeadedHouseholdsST || 0,
+              OBC: formData.noWomenHeadedHouseholdsOBC || 0,
+              Others: formData.noWomenHeadedHouseholdsOthers || 0,
+              Total: formData.noWomenHeadedHouseholdsTotal || 0,
+              Minorities: formData.noWomenHeadedHouseholdsMinorities || 0
+            };
+            data.personsOlderThan65Years = {
+              SC: formData.noPersonsOlder65SC || 0,
+              ST: formData.noPersonsOlder65ST || 0,
+              OBC: formData.noPersonsOlder65OBC || 0,
+              Others: formData.noPersonsOlder65Others || 0,
+              Total: formData.noPersonsOlder65Total || 0,
+              Minorities: formData.noPersonsOlder65Minorities || 0
+            };
+            data.childLabourers = {
+              SC: formData.noChildLabourersSC || 0,
+              ST: formData.noChildLabourersST || 0,
+              OBC: formData.noChildLabourersOBC || 0,
+              Others: formData.noChildLabourersOthers || 0,
+              Total: formData.noChildLabourersTotal || 0,
+              Minorities: formData.noChildLabourersMinorities || 0
+            };
+            data.physicallyChallengedPersons = {
+              SC: formData.noPhysicallyChallengedSC || 0,
+              ST: formData.noPhysicallyChallengedST || 0,
+              OBC: formData.noPhysicallyChallengedOBC || 0,
+              Others: formData.noPhysicallyChallengedOthers || 0,
+              Total: formData.noPhysicallyChallengedTotal || 0,
+              Minorities: formData.noPhysicallyChallengedMinorities || 0
+            };
+            data.mentallyChallengedPersons = {
+              SC: formData.noMentallyChallengedSC || 0,
+              ST: formData.noMentallyChallengedST || 0,
+              OBC: formData.noMentallyChallengedOBC || 0,
+              Others: formData.noMentallyChallengedOthers || 0,
+              Total: formData.noMentallyChallengedTotal || 0,
+              Minorities: formData.noMentallyChallengedMinorities || 0
+            };
+            data.personsWithHivAids = {
+              SC: formData.noPersonsHivaidsSC || 0,
+              ST: formData.noPersonsHivaidsST || 0,
+              OBC: formData.noPersonsHivaidsOBC || 0,
+              Others: formData.noPersonsHivaidsOthers || 0,
+              Total: formData.noPersonsHivaidsTotal || 0,
+              Minorities: formData.noPersonsHivaidsMinorities || 0
+            };
+            data.personsWithTuberculosis = {
+              SC: formData.noPersonsTuberculosisSC || 0,
+              ST: formData.noPersonsTuberculosisST || 0,
+              OBC: formData.noPersonsTuberculosisOBC || 0,
+              Others: formData.noPersonsTuberculosisOthers || 0,
+              Total: formData.noPersonsTuberculosisTotal || 0,
+              Minorities: formData.noPersonsTuberculosisMinorities || 0
+            };
+            data.personsWithRespiratoryDiseases = {
+              SC: formData.noPersonsRespiratorySC || 0,
+              ST: formData.noPersonsRespiratoryST || 0,
+              OBC: formData.noPersonsRespiratoryOBC || 0,
+              Others: formData.noPersonsRespiratoryOthers || 0,
+              Total: formData.noPersonsRespiratoryTotal || 0,
+              Minorities: formData.noPersonsRespiratoryMinorities || 0
+            };
+            data.personsWithOtherChronicDiseases = {
+              SC: formData.noPersonsOtherChronicSC || 0,
+              ST: formData.noPersonsOtherChronicST || 0,
+              OBC: formData.noPersonsOtherChronicOBC || 0,
+              Others: formData.noPersonsOtherChronicOthers || 0,
+              Total: formData.noPersonsOtherChronicTotal || 0,
+              Minorities: formData.noPersonsOtherChronicMinorities || 0
+            };
             
-            // Literacy & Education (Questions 13a-13h)
-            data.totalIlliteratePersonsSC = formData.totalIlliteratePersonsSC;
-            data.totalIlliteratePersonsST = formData.totalIlliteratePersonsST;
-            data.totalIlliteratePersonsOBC = formData.totalIlliteratePersonsOBC;
-            data.totalIlliteratePersonsOthers = formData.totalIlliteratePersonsOthers;
-            data.totalIlliteratePersonsTotal = formData.totalIlliteratePersonsTotal;
-            data.totalIlliteratePersonsMinorities = formData.totalIlliteratePersonsMinorities;
-            data.noMaleIlliterateSC = formData.noMaleIlliterateSC;
-            data.noMaleIlliterateST = formData.noMaleIlliterateST;
-            data.noMaleIlliterateOBC = formData.noMaleIlliterateOBC;
-            data.noMaleIlliterateOthers = formData.noMaleIlliterateOthers;
-            data.noMaleIlliterateTotal = formData.noMaleIlliterateTotal;
-            data.noMaleIlliterateMinorities = formData.noMaleIlliterateMinorities;
-            data.noFemaleIlliterateSC = formData.noFemaleIlliterateSC;
-            data.noFemaleIlliterateST = formData.noFemaleIlliterateST;
-            data.noFemaleIlliterateOBC = formData.noFemaleIlliterateOBC;
-            data.noFemaleIlliterateOthers = formData.noFemaleIlliterateOthers;
-            data.noFemaleIlliterateTotal = formData.noFemaleIlliterateTotal;
-            data.noFemaleIlliterateMinorities = formData.noFemaleIlliterateMinorities;
-            data.noBplIlliteratePersonsSC = formData.noBplIlliteratePersonsSC;
-            data.noBplIlliteratePersonsST = formData.noBplIlliteratePersonsST;
-            data.noBplIlliteratePersonsOBC = formData.noBplIlliteratePersonsOBC;
-            data.noBplIlliteratePersonsOthers = formData.noBplIlliteratePersonsOthers;
-            data.noBplIlliteratePersonsTotal = formData.noBplIlliteratePersonsTotal;
-            data.noBplIlliteratePersonsMinorities = formData.noBplIlliteratePersonsMinorities;
-            data.noMaleBplIlliterateSC = formData.noMaleBplIlliterateSC;
-            data.noMaleBplIlliterateST = formData.noMaleBplIlliterateST;
-            data.noMaleBplIlliterateOBC = formData.noMaleBplIlliterateOBC;
-            data.noMaleBplIlliterateOthers = formData.noMaleBplIlliterateOthers;
-            data.noMaleBplIlliterateTotal = formData.noMaleBplIlliterateTotal;
-            data.noMaleBplIlliterateMinorities = formData.noMaleBplIlliterateMinorities;
-            data.noFemaleBplIlliterateSC = formData.noFemaleBplIlliterateSC;
-            data.noFemaleBplIlliterateST = formData.noFemaleBplIlliterateST;
-            data.noFemaleBplIlliterateOBC = formData.noFemaleBplIlliterateOBC;
-            data.noFemaleBplIlliterateOthers = formData.noFemaleBplIlliterateOthers;
-            data.noFemaleBplIlliterateTotal = formData.noFemaleBplIlliterateTotal;
-            data.noFemaleBplIlliterateMinorities = formData.noFemaleBplIlliterateMinorities;
-            data.schoolDropoutsMaleSC = formData.schoolDropoutsMaleSC;
-            data.schoolDropoutsMaleST = formData.schoolDropoutsMaleST;
-            data.schoolDropoutsMaleOBC = formData.schoolDropoutsMaleOBC;
-            data.schoolDropoutsMaleOthers = formData.schoolDropoutsMaleOthers;
-            data.schoolDropoutsMaleTotal = formData.schoolDropoutsMaleTotal;
-            data.schoolDropoutsMaleMinorities = formData.schoolDropoutsMaleMinorities;
-            data.schoolDropoutsFemaleSC = formData.schoolDropoutsFemaleSC;
-            data.schoolDropoutsFemaleST = formData.schoolDropoutsFemaleST;
-            data.schoolDropoutsFemaleOBC = formData.schoolDropoutsFemaleOBC;
-            data.schoolDropoutsFemaleOthers = formData.schoolDropoutsFemaleOthers;
-            data.schoolDropoutsFemaleTotal = formData.schoolDropoutsFemaleTotal;
-            data.schoolDropoutsFemaleMinorities = formData.schoolDropoutsFemaleMinorities;
+            // Literacy & Education (by caste categories)
+            data.totalIlliteratePerson = {
+              SC: formData.totalIlliteratePersonsSC || 0,
+              ST: formData.totalIlliteratePersonsST || 0,
+              OBC: formData.totalIlliteratePersonsOBC || 0,
+              Others: formData.totalIlliteratePersonsOthers || 0,
+              Total: formData.totalIlliteratePersonsTotal || 0,
+              Minorities: formData.totalIlliteratePersonsMinorities || 0
+            };
+            data.maleIlliterate = {
+              SC: formData.noMaleIlliterateSC || 0,
+              ST: formData.noMaleIlliterateST || 0,
+              OBC: formData.noMaleIlliterateOBC || 0,
+              Others: formData.noMaleIlliterateOthers || 0,
+              Total: formData.noMaleIlliterateTotal || 0,
+              Minorities: formData.noMaleIlliterateMinorities || 0
+            };
+            data.femaleIlliterate = {
+              SC: formData.noFemaleIlliterateSC || 0,
+              ST: formData.noFemaleIlliterateST || 0,
+              OBC: formData.noFemaleIlliterateOBC || 0,
+              Others: formData.noFemaleIlliterateOthers || 0,
+              Total: formData.noFemaleIlliterateTotal || 0,
+              Minorities: formData.noFemaleIlliterateMinorities || 0
+            };
+            data.bplIlliteratePerson = {
+              SC: formData.noBplIlliteratePersonsSC || 0,
+              ST: formData.noBplIlliteratePersonsST || 0,
+              OBC: formData.noBplIlliteratePersonsOBC || 0,
+              Others: formData.noBplIlliteratePersonsOthers || 0,
+              Total: formData.noBplIlliteratePersonsTotal || 0,
+              Minorities: formData.noBplIlliteratePersonsMinorities || 0
+            };
+            data.maleBplIlliterate = {
+              SC: formData.noMaleBplIlliterateSC || 0,
+              ST: formData.noMaleBplIlliterateST || 0,
+              OBC: formData.noMaleBplIlliterateOBC || 0,
+              Others: formData.noMaleBplIlliterateOthers || 0,
+              Total: formData.noMaleBplIlliterateTotal || 0,
+              Minorities: formData.noMaleBplIlliterateMinorities || 0
+            };
+            data.femaleBplIlliterate = {
+              SC: formData.noFemaleBplIlliterateSC || 0,
+              ST: formData.noFemaleBplIlliterateST || 0,
+              OBC: formData.noFemaleBplIlliterateOBC || 0,
+              Others: formData.noFemaleBplIlliterateOthers || 0,
+              Total: formData.noFemaleBplIlliterateTotal || 0,
+              Minorities: formData.noFemaleBplIlliterateMinorities || 0
+            };
+            data.schoolDropoutsMale = {
+              SC: formData.schoolDropoutsMaleSC || 0,
+              ST: formData.schoolDropoutsMaleST || 0,
+              OBC: formData.schoolDropoutsMaleOBC || 0,
+              Others: formData.schoolDropoutsMaleOthers || 0,
+              Total: formData.schoolDropoutsMaleTotal || 0,
+              Minorities: formData.schoolDropoutsMaleMinorities || 0
+            };
+            data.schoolDropoutsFemale = {
+              SC: formData.schoolDropoutsFemaleSC || 0,
+              ST: formData.schoolDropoutsFemaleST || 0,
+              OBC: formData.schoolDropoutsFemaleOBC || 0,
+              Others: formData.schoolDropoutsFemaleOthers || 0,
+              Total: formData.schoolDropoutsFemaleTotal || 0,
+              Minorities: formData.schoolDropoutsFemaleMinorities || 0
+            };
             break;
           case 'housingStatus':
             data.dwellingUnitsPucca = formData.dwellingUnitsPucca;
@@ -2219,7 +2736,14 @@ export default function SlumSurveyPage() {
             data.moreThan3000 = formData.economicStatus?.moreThan3000;
             break;
           case 'employmentAndOccupation':
-            data.majorIndustriesPresent = []; // Will be populated from form data if available
+            data.employmentAndOccupation = {
+              majorIndustriesPresent: formData.majorIndustriesPresent || [],
+              selfEmployed: formData.occupationalStatus?.selfEmployed || 0,
+              salaried: formData.occupationalStatus?.salaried || 0,
+              regularWage: formData.occupationalStatus?.regularWage || 0,
+              casualLabour: formData.occupationalStatus?.casualLabour || 0,
+              others: formData.occupationalStatus?.others || 0
+            };
             break;
           case 'physicalInfrastructure':
             data.sourceDrinkingWater = formData.sourceDrinkingWater;
@@ -2279,86 +2803,175 @@ export default function SlumSurveyPage() {
             break;
           case 'additionalInfrastructure':
             // Water Supply
-            data.waterSupplyPipelinesExisting = formData.waterSupplyPipelinesExisting;
-            data.waterSupplyPipelinesAdditional = formData.waterSupplyPipelinesAdditional;
-            data.waterSupplyPipelinesCost = formData.waterSupplyPipelinesCost;
-            data.waterSupplyIndividualTapsExisting = formData.waterSupplyIndividualTapsExisting;
-            data.waterSupplyIndividualTapsAdditional = formData.waterSupplyIndividualTapsAdditional;
-            data.waterSupplyIndividualTapsCost = formData.waterSupplyIndividualTapsCost;
-            data.waterSupplyBorewellsExisting = formData.waterSupplyBorewellsExisting;
-            data.waterSupplyBorewellsAdditional = formData.waterSupplyBorewellsAdditional;
-            data.waterSupplyBorewellsCost = formData.waterSupplyBorewellsCost;
-            data.waterSupplyConnectivityTrunkLinesExisting = formData.waterSupplyConnectivityTrunkLinesExisting;
-            data.waterSupplyConnectivityTrunkLinesAdditional = formData.waterSupplyConnectivityTrunkLinesAdditional;
-            data.waterSupplyConnectivityTrunkLinesCost = formData.waterSupplyConnectivityTrunkLinesCost;
+            data.waterSupply = {
+              pipelines: {
+                existing: formData.waterSupplyPipelinesExisting || '',
+                additionalRequirement: formData.waterSupplyPipelinesAdditional || '',
+                estimatedCost: formData.waterSupplyPipelinesCost || 0
+              },
+              individualTaps: {
+                existing: formData.waterSupplyIndividualTapsExisting || '',
+                additionalRequirement: formData.waterSupplyIndividualTapsAdditional || '',
+                estimatedCost: formData.waterSupplyIndividualTapsCost || 0
+              },
+              borewells: {
+                existing: formData.waterSupplyBorewellsExisting || '',
+                additionalRequirement: formData.waterSupplyBorewellsAdditional || '',
+                estimatedCost: formData.waterSupplyBorewellsCost || 0
+              },
+              connectivityToTrunkLines: {
+                existing: formData.waterSupplyConnectivityTrunkLinesExisting || '',
+                additionalRequirement: formData.waterSupplyConnectivityTrunkLinesAdditional || '',
+                estimatedCost: formData.waterSupplyConnectivityTrunkLinesCost || 0
+              }
+            };
+            
             // Drainage/Sewerage
-            data.drainageStormwaterDrainageExisting = formData.drainageStormwaterDrainageExisting;
-            data.drainageStormwaterDrainageAdditional = formData.drainageStormwaterDrainageAdditional;
-            data.drainageStormwaterDrainageCost = formData.drainageStormwaterDrainageCost;
-            data.drainageConnectivityMainDrainsExisting = formData.drainageConnectivityMainDrainsExisting;
-            data.drainageConnectivityMainDrainsAdditional = formData.drainageConnectivityMainDrainsAdditional;
-            data.drainageConnectivityMainDrainsCost = formData.drainageConnectivityMainDrainsCost;
-            data.drainageSewerLinesExisting = formData.drainageSewerLinesExisting;
-            data.drainageSewerLinesAdditional = formData.drainageSewerLinesAdditional;
-            data.drainageSewerLinesCost = formData.drainageSewerLinesCost;
-            data.drainageConnectivityTrunkSewersExisting = formData.drainageConnectivityTrunkSewersExisting;
-            data.drainageConnectivityTrunkSewersAdditional = formData.drainageConnectivityTrunkSewersAdditional;
-            data.drainageConnectivityTrunkSewersCost = formData.drainageConnectivityTrunkSewersCost;
+            data.drainageSewerage = {
+              stormwaterDrainage: {
+                existing: formData.drainageStormwaterDrainageExisting || '',
+                additionalRequirement: formData.drainageStormwaterDrainageAdditional || '',
+                estimatedCost: formData.drainageStormwaterDrainageCost || 0
+              },
+              connectivityToMainDrains: {
+                existing: formData.drainageConnectivityMainDrainsExisting || '',
+                additionalRequirement: formData.drainageConnectivityMainDrainsAdditional || '',
+                estimatedCost: formData.drainageConnectivityMainDrainsCost || 0
+              },
+              sewerLines: {
+                existing: formData.drainageSewerLinesExisting || '',
+                additionalRequirement: formData.drainageSewerLinesAdditional || '',
+                estimatedCost: formData.drainageSewerLinesCost || 0
+              },
+              connectivityToTrunkSewers: {
+                existing: formData.drainageConnectivityTrunkSewersExisting || '',
+                additionalRequirement: formData.drainageConnectivityTrunkSewersAdditional || '',
+                estimatedCost: formData.drainageConnectivityTrunkSewersCost || 0
+              }
+            };
+            
             // Roads
-            data.roadsInternalRoadsCCExisting = formData.roadsInternalRoadsCCExisting;
-            data.roadsInternalRoadsCCAdditional = formData.roadsInternalRoadsCCAdditional;
-            data.roadsInternalRoadsCCCost = formData.roadsInternalRoadsCCCost;
-            data.roadsInternalRoadsBTExisting = formData.roadsInternalRoadsBTExisting;
-            data.roadsInternalRoadsBTAdditional = formData.roadsInternalRoadsBTAdditional;
-            data.roadsInternalRoadsBTCost = formData.roadsInternalRoadsBTCost;
-            data.roadsInternalRoadsOthersExisting = formData.roadsInternalRoadsOthersExisting;
-            data.roadsInternalRoadsOthersAdditional = formData.roadsInternalRoadsOthersAdditional;
-            data.roadsInternalRoadsOthersCost = formData.roadsInternalRoadsOthersCost;
-            data.roadsApproachRoadsCCExisting = formData.roadsApproachRoadsCCExisting;
-            data.roadsApproachRoadsCCAdditional = formData.roadsApproachRoadsCCAdditional;
-            data.roadsApproachRoadsCCCost = formData.roadsApproachRoadsCCCost;
-            data.roadsApproachRoadsOthersExisting = formData.roadsApproachRoadsOthersExisting;
-            data.roadsApproachRoadsOthersAdditional = formData.roadsApproachRoadsOthersAdditional;
-            data.roadsApproachRoadsOthersCost = formData.roadsApproachRoadsOthersCost;
+            data.roads = {
+              internalRoadsCC: {
+                existing: formData.roadsInternalRoadsCCExisting || '',
+                additionalRequirement: formData.roadsInternalRoadsCCAdditional || '',
+                estimatedCost: formData.roadsInternalRoadsCCCost || 0
+              },
+              internalRoadsBT: {
+                existing: formData.roadsInternalRoadsBTExisting || '',
+                additionalRequirement: formData.roadsInternalRoadsBTAdditional || '',
+                estimatedCost: formData.roadsInternalRoadsBTCost || 0
+              },
+              internalRoadsOthers: {
+                existing: formData.roadsInternalRoadsOthersExisting || '',
+                additionalRequirement: formData.roadsInternalRoadsOthersAdditional || '',
+                estimatedCost: formData.roadsInternalRoadsOthersCost || 0
+              },
+              approachRoadsCC: {
+                existing: formData.roadsApproachRoadsCCExisting || '',
+                additionalRequirement: formData.roadsApproachRoadsCCAdditional || '',
+                estimatedCost: formData.roadsApproachRoadsCCCost || 0
+              },
+              approachRoadsOthers: {
+                existing: formData.roadsApproachRoadsOthersExisting || '',
+                additionalRequirement: formData.roadsApproachRoadsOthersAdditional || '',
+                estimatedCost: formData.roadsApproachRoadsOthersCost || 0
+              }
+            };
+            
             // Street Lighting
-            data.streetLightingPolesExisting = formData.streetLightingPolesExisting;
-            data.streetLightingPolesAdditional = formData.streetLightingPolesAdditional;
-            data.streetLightingPolesCost = formData.streetLightingPolesCost;
-            data.streetLightingLightsExisting = formData.streetLightingLightsExisting;
-            data.streetLightingLightsAdditional = formData.streetLightingLightsAdditional;
-            data.streetLightingLightsCost = formData.streetLightingLightsCost;
+            data.streetLighting = {
+              poles: {
+                existing: formData.streetLightingPolesExisting || '',
+                additionalRequirement: formData.streetLightingPolesAdditional || '',
+                estimatedCost: formData.streetLightingPolesCost || 0
+              },
+              lights: {
+                existing: formData.streetLightingLightsExisting || '',
+                additionalRequirement: formData.streetLightingLightsAdditional || '',
+                estimatedCost: formData.streetLightingLightsCost || 0
+              }
+            };
+            
             // Sanitation
-            data.sanitationIndividualToiletsExisting = formData.sanitationIndividualToiletsExisting;
-            data.sanitationIndividualToiletsAdditional = formData.sanitationIndividualToiletsAdditional;
-            data.sanitationIndividualToiletsCost = formData.sanitationIndividualToiletsCost;
-            data.sanitationCommunityToiletsExisting = formData.sanitationCommunityToiletsExisting;
-            data.sanitationCommunityToiletsAdditional = formData.sanitationCommunityToiletsAdditional;
-            data.sanitationCommunityToiletsCost = formData.sanitationCommunityToiletsCost;
-            data.sanitationSeatsCommunityToiletsExisting = formData.sanitationSeatsCommunityToiletsExisting;
-            data.sanitationSeatsCommunityToiletsAdditional = formData.sanitationSeatsCommunityToiletsAdditional;
-            data.sanitationSeatsCommunityToiletsCost = formData.sanitationSeatsCommunityToiletsCost;
-            data.sanitationDumperBinsExisting = formData.sanitationDumperBinsExisting;
-            data.sanitationDumperBinsAdditional = formData.sanitationDumperBinsAdditional;
-            data.sanitationDumperBinsCost = formData.sanitationDumperBinsCost;
+            data.sanitation = {
+              individualToilets: {
+                existing: formData.sanitationIndividualToiletsExisting || '',
+                additionalRequirement: formData.sanitationIndividualToiletsAdditional || '',
+                estimatedCost: formData.sanitationIndividualToiletsCost || 0
+              },
+              communityToilets: {
+                existing: formData.sanitationCommunityToiletsExisting || '',
+                additionalRequirement: formData.sanitationCommunityToiletsAdditional || '',
+                estimatedCost: formData.sanitationCommunityToiletsCost || 0
+              },
+              seatsCommunityToilets: {
+                existing: formData.sanitationSeatsCommunityToiletsExisting || '',
+                additionalRequirement: formData.sanitationSeatsCommunityToiletsAdditional || '',
+                estimatedCost: formData.sanitationSeatsCommunityToiletsCost || 0
+              },
+              dumperBins: {
+                existing: formData.sanitationDumperBinsExisting || '',
+                additionalRequirement: formData.sanitationDumperBinsAdditional || '',
+                estimatedCost: formData.sanitationDumperBinsCost || 0
+              }
+            };
+            
             // Community Facilities
-            data.communityHallsExisting = formData.communityHallsExisting;
-            data.communityHallsAdditional = formData.communityHallsAdditional;
-            data.communityHallsCost = formData.communityHallsCost;
-            data.communityLivelihoodCentresExisting = formData.communityLivelihoodCentresExisting;
-            data.communityLivelihoodCentresAdditional = formData.communityLivelihoodCentresAdditional;
-            data.communityLivelihoodCentresCost = formData.communityLivelihoodCentresCost;
-            data.communityAnganwadisExisting = formData.communityAnganwadisExisting;
-            data.communityAnganwadisAdditional = formData.communityAnganwadisAdditional;
-            data.communityAnganwadisCost = formData.communityAnganwadisCost;
-            data.communityPrimarySchoolsExisting = formData.communityPrimarySchoolsExisting;
-            data.communityPrimarySchoolsAdditional = formData.communityPrimarySchoolsAdditional;
-            data.communityPrimarySchoolsCost = formData.communityPrimarySchoolsCost;
-            data.communityHealthCentresExisting = formData.communityHealthCentresExisting;
-            data.communityHealthCentresAdditional = formData.communityHealthCentresAdditional;
-            data.communityHealthCentresCost = formData.communityHealthCentresCost;
-            data.communityOthersExisting = formData.communityOthersExisting;
-            data.communityOthersAdditional = formData.communityOthersAdditional;
-            data.communityOthersCost = formData.communityOthersCost;
+            data.communityFacilities = {
+              halls: {
+                existing: formData.communityHallsExisting || '',
+                additionalRequirement: formData.communityHallsAdditional || '',
+                estimatedCost: formData.communityHallsCost || 0
+              },
+              livelihoodCentres: {
+                existing: formData.communityLivelihoodCentresExisting || '',
+                additionalRequirement: formData.communityLivelihoodCentresAdditional || '',
+                estimatedCost: formData.communityLivelihoodCentresCost || 0
+              },
+              anganwadis: {
+                existing: formData.communityAnganwadisExisting || '',
+                additionalRequirement: formData.communityAnganwadisAdditional || '',
+                estimatedCost: formData.communityAnganwadisCost || 0
+              },
+              primarySchools: {
+                existing: formData.communityPrimarySchoolsExisting || '',
+                additionalRequirement: formData.communityPrimarySchoolsAdditional || '',
+                estimatedCost: formData.communityPrimarySchoolsCost || 0
+              },
+              healthCentres: {
+                existing: formData.communityHealthCentresExisting || '',
+                additionalRequirement: formData.communityHealthCentresAdditional || '',
+                estimatedCost: formData.communityHealthCentresCost || 0
+              },
+              others: {
+                existing: formData.communityOthersExisting || '',
+                additionalRequirement: formData.communityOthersAdditional || '',
+                estimatedCost: formData.communityOthersCost || 0
+              }
+            };
+            
+            // Electricity (standalone)
+            data.electricity = {
+              existing: formData.electricityExisting || '',
+              additionalRequirement: formData.electricityAdditional || '',
+              estimatedCost: formData.electricityCost || 0
+            };
+            
+            // Healthcare (standalone)
+            data.healthcare = {
+              existing: formData.healthcareExisting || '',
+              additionalRequirement: formData.healthcareAdditional || '',
+              estimatedCost: formData.healthcareCost || 0
+            };
+            
+            // Toilets (standalone)
+            data.toilets = {
+              existing: formData.toiletsExisting || '',
+              additionalRequirement: formData.toiletsAdditional || '',
+              estimatedCost: formData.toiletsCost || 0
+              
+            };
             break;
           case 'reviewAndSubmit':
             // For the review and submit section, we'll include all form data
@@ -2371,14 +2984,7 @@ export default function SlumSurveyPage() {
             });
             break;
           default:
-            // Fallback to send all form data
-            Object.keys(formData).forEach(key => {
-              if (formData[key as keyof SlumSurveyForm] !== undefined && 
-                  formData[key as keyof SlumSurveyForm] !== null && 
-                  formData[key as keyof SlumSurveyForm] !== '') {
-                data[key] = formData[key as keyof SlumSurveyForm];
-              }
-            });
+            // For unknown sections, return empty object
             break;
         }
         return data;
@@ -2386,25 +2992,39 @@ export default function SlumSurveyPage() {
       
       const sectionData = extractSectionData();
       
-      const response = await apiService.updateSurveySection(
-        slumSurvey._id,
-        sectionName,
-        sectionData
-      );
-      
-      if (response.success) {
-        showToast(`Section saved successfully! (${response.data?.completionPercentage || 0}% complete)`, "success");
-        // Update local state with new completion percentage
-        if (response.data?.completionPercentage !== undefined) {
-          setFormData(prev => ({
-            ...prev,
-            completionPercentage: response.data.completionPercentage
-          }));
-        }
+      // If in edit mode, store changes temporarily but don't update DB yet
+      if (isEditMode) {
+        setTempFormData(prev => ({
+          ...prev,
+          [sectionName]: sectionData
+        }));
+        
+        showToast(`${steps[currentStep].title} saved locally`, "info");
+        
         // Move to next step
         setCurrentStep((prev) => Math.min(steps.length - 1, prev + 1));
       } else {
-        showToast(response.error || "Failed to save section", "error");
+        // Original behavior for non-edit mode
+        const response = await apiService.updateSurveySection(
+          slumSurvey._id,
+          sectionName,
+          sectionData
+        );
+        
+        if (response.success) {
+          showToast(`Section saved successfully! (${response.data?.completionPercentage || 0}% complete)`, "success");
+          // Update local state with new completion percentage
+          if (response.data?.completionPercentage !== undefined) {
+            setFormData(prev => ({
+              ...prev,
+              completionPercentage: response.data.completionPercentage
+            }));
+          }
+          // Move to next step
+          setCurrentStep((prev) => Math.min(steps.length - 1, prev + 1));
+        } else {
+          showToast(response.error || "Failed to save section", "error");
+        }
       }
     } catch (error) {
       console.error("Save section error:", error);
@@ -2457,7 +3077,14 @@ export default function SlumSurveyPage() {
               />
               
 
-              <h1 className="text-3xl font-bold text-white tracking-tight">Slum Survey</h1>
+              <h1 className="text-3xl font-bold text-white tracking-tight">
+                              {isEditMode ? "Edit Slum Survey" : "Slum Survey"}
+                              {isEditMode && (
+                                <span className="ml-3 text-sm font-normal bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">
+                                  Edit Mode
+                                </span>
+                              )}
+                            </h1>
               <p className="text-slate-400 mt-1 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                 {slum.name}
@@ -2883,30 +3510,45 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalPopulationSlumST || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlumST", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalPopulationSlumST"
+                            error={getFieldError('totalPopulationSlumST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.totalPopulationSlumOBC || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlumOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalPopulationSlumOBC"
+                            error={getFieldError('totalPopulationSlumOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.totalPopulationSlumOthers || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlumOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalPopulationSlumOthers"
+                            error={getFieldError('totalPopulationSlumOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.totalPopulationSlumMinorities || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlumMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalPopulationSlumMinorities"
+                            error={getFieldError('totalPopulationSlumMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.totalPopulationSlum || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlum", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalPopulationSlum"
+                            error={getFieldError('totalPopulationSlum')}
                             />
                         </div>
                     </div>
@@ -2920,36 +3562,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.bplPopulationSlumSC || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="bplPopulationSlumSC"
+                            error={getFieldError('bplPopulationSlumSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.bplPopulationSlumST || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumST", parseInt(e.target.value) || 0)}
+                            required
+                            name="bplPopulationSlumST"
+                            error={getFieldError('bplPopulationSlumST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.bplPopulationSlumOBC || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="bplPopulationSlumOBC"
+                            error={getFieldError('bplPopulationSlumOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.bplPopulationSlumOthers || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="bplPopulationSlumOthers"
+                            error={getFieldError('bplPopulationSlumOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.bplPopulationSlumMinorities || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="bplPopulationSlumMinorities"
+                            error={getFieldError('bplPopulationSlumMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.bplPopulationSlum || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlum", parseInt(e.target.value) || 0)}
+                            required
+                            name="bplPopulationSlum"
+                            error={getFieldError('bplPopulationSlum')}
                             />
                         </div>
                     </div>
@@ -2963,36 +3623,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noHouseholdsSlumSC || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlumSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noHouseholdsSlumSC"
+                            error={getFieldError('noHouseholdsSlumSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noHouseholdsSlumST || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlumST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noHouseholdsSlumST"
+                            error={getFieldError('noHouseholdsSlumST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noHouseholdsSlumOBC || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlumOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noHouseholdsSlumOBC"
+                            error={getFieldError('noHouseholdsSlumOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noHouseholdsSlumOthers || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlumOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noHouseholdsSlumOthers"
+                            error={getFieldError('noHouseholdsSlumOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noHouseholdsSlumMinorities || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlumMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noHouseholdsSlumMinorities"
+                            error={getFieldError('noHouseholdsSlumMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noHouseholdsSlum || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlum", parseInt(e.target.value) || 0)}
+                            required
+                            name="noHouseholdsSlum"
+                            error={getFieldError('noHouseholdsSlum')}
                             />
                         </div>
                     </div>
@@ -3006,36 +3684,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplHouseholdsSC || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplHouseholdsSC"
+                            error={getFieldError('noBplHouseholdsSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noBplHouseholdsST || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplHouseholdsST"
+                            error={getFieldError('noBplHouseholdsST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noBplHouseholdsOBC || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplHouseholdsOBC"
+                            error={getFieldError('noBplHouseholdsOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noBplHouseholdsOthers || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplHouseholdsOthers"
+                            error={getFieldError('noBplHouseholdsOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noBplHouseholdsMinorities || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplHouseholdsMinorities"
+                            error={getFieldError('noBplHouseholdsMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noBplHouseholdsTotal || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplHouseholdsTotal"
+                            error={getFieldError('noBplHouseholdsTotal')}
                             />
                         </div>
                     </div>
@@ -3049,36 +3745,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noWomenHeadedHouseholdsSC || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noWomenHeadedHouseholdsSC"
+                            error={getFieldError('noWomenHeadedHouseholdsSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noWomenHeadedHouseholdsST || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noWomenHeadedHouseholdsST"
+                            error={getFieldError('noWomenHeadedHouseholdsST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noWomenHeadedHouseholdsOBC || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noWomenHeadedHouseholdsOBC"
+                            error={getFieldError('noWomenHeadedHouseholdsOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noWomenHeadedHouseholdsOthers || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noWomenHeadedHouseholdsOthers"
+                            error={getFieldError('noWomenHeadedHouseholdsOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noWomenHeadedHouseholdsMinorities || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noWomenHeadedHouseholdsMinorities"
+                            error={getFieldError('noWomenHeadedHouseholdsMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noWomenHeadedHouseholdsTotal || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noWomenHeadedHouseholdsTotal"
+                            error={getFieldError('noWomenHeadedHouseholdsTotal')}
                             />
                         </div>
                     </div>
@@ -3092,36 +3806,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOlder65SC || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65SC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOlder65SC"
+                            error={getFieldError('noPersonsOlder65SC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noPersonsOlder65ST || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65ST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOlder65ST"
+                            error={getFieldError('noPersonsOlder65ST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noPersonsOlder65OBC || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65OBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOlder65OBC"
+                            error={getFieldError('noPersonsOlder65OBC')}  
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noPersonsOlder65Others || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65Others", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOlder65Others"
+                            error={getFieldError('noPersonsOlder65Others')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noPersonsOlder65Minorities || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65Minorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOlder65Minorities"
+                            error={getFieldError('noPersonsOlder65Minorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noPersonsOlder65Total || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65Total", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOlder65Total"
+                            error={getFieldError('noPersonsOlder65Total')}
                             />
                         </div>
                     </div>
@@ -3135,36 +3867,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noChildLabourersSC || ""}
                             onChange={(e) => handleInputChange("noChildLabourersSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noChildLabourersSC"
+                            error={getFieldError('noChildLabourersSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noChildLabourersST || ""}
                             onChange={(e) => handleInputChange("noChildLabourersST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noChildLabourersST"
+                            error={getFieldError('noChildLabourersST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noChildLabourersOBC || ""}
                             onChange={(e) => handleInputChange("noChildLabourersOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noChildLabourersOBC"
+                            error={getFieldError('noChildLabourersOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noChildLabourersOthers || ""}
                             onChange={(e) => handleInputChange("noChildLabourersOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noChildLabourersOthers"
+                            error={getFieldError('noChildLabourersOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noChildLabourersMinorities || ""}
                             onChange={(e) => handleInputChange("noChildLabourersMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noChildLabourersMinorities"
+                            error={getFieldError('noChildLabourersMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noChildLabourersTotal || ""}
                             onChange={(e) => handleInputChange("noChildLabourersTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noChildLabourersTotal"
+                            error={getFieldError('noChildLabourersTotal')}
                             />
                         </div>
                     </div>
@@ -3178,36 +3928,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPhysicallyChallengedSC || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPhysicallyChallengedSC"
+                            error={getFieldError('noPhysicallyChallengedSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noPhysicallyChallengedST || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPhysicallyChallengedST"
+                            error={getFieldError('noPhysicallyChallengedST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noPhysicallyChallengedOBC || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPhysicallyChallengedOBC"
+                            error={getFieldError('noPhysicallyChallengedOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noPhysicallyChallengedOthers || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPhysicallyChallengedOthers"
+                            error={getFieldError('noPhysicallyChallengedOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noPhysicallyChallengedMinorities || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPhysicallyChallengedMinorities"
+                            error={getFieldError('noPhysicallyChallengedMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noPhysicallyChallengedTotal || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPhysicallyChallengedTotal"
+                            error={getFieldError('noPhysicallyChallengedTotal')}
                             />
                         </div>
                     </div>
@@ -3221,36 +3989,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMentallyChallengedSC || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMentallyChallengedSC"
+                            error={getFieldError('noMentallyChallengedSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noMentallyChallengedST || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMentallyChallengedST"
+                            error={getFieldError('noMentallyChallengedST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noMentallyChallengedOBC || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMentallyChallengedOBC"
+                            error={getFieldError('noMentallyChallengedOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noMentallyChallengedOthers || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMentallyChallengedOthers"
+                            error={getFieldError('noMentallyChallengedOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noMentallyChallengedMinorities || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMentallyChallengedMinorities"
+                            error={getFieldError('noMentallyChallengedMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noMentallyChallengedTotal || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMentallyChallengedTotal"
+                            error={getFieldError('noMentallyChallengedTotal')}
                             />
                         </div>
                     </div>
@@ -3264,36 +4050,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsHivaidsSC || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsHivaidsSC"
+                            error={getFieldError('noPersonsHivaidsSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noPersonsHivaidsST || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsHivaidsST"
+                            error={getFieldError('noPersonsHivaidsST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noPersonsHivaidsOBC || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsHivaidsOBC"
+                            error={getFieldError('noPersonsHivaidsOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noPersonsHivaidsOthers || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsHivaidsOthers"
+                            error={getFieldError('noPersonsHivaidsOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noPersonsHivaidsMinorities || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsHivaidsMinorities"
+                            error={getFieldError('noPersonsHivaidsMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noPersonsHivaidsTotal || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsHivaidsTotal"
+                            error={getFieldError('noPersonsHivaidsTotal')}
                             />
                         </div>
                     </div>
@@ -3307,36 +4111,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsTuberculosisSC || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsTuberculosisSC"
+                            error={getFieldError('noPersonsTuberculosisSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noPersonsTuberculosisST || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsTuberculosisST"
+                            error={getFieldError('noPersonsTuberculosisST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noPersonsTuberculosisOBC || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsTuberculosisOBC"
+                            error={getFieldError('noPersonsTuberculosisOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noPersonsTuberculosisOthers || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsTuberculosisOthers"
+                            error={getFieldError('noPersonsTuberculosisOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noPersonsTuberculosisMinorities || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsTuberculosisMinorities"
+                            error={getFieldError('noPersonsTuberculosisMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noPersonsTuberculosisTotal || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsTuberculosisTotal"
+                            error={getFieldError('noPersonsTuberculosisTotal')}
                             />
                         </div>
                     </div>
@@ -3350,36 +4172,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsRespiratorySC || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratorySC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsRespiratorySC"
+                            error={getFieldError('noPersonsRespiratorySC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noPersonsRespiratoryST || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratoryST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsRespiratoryST"
+                            error={getFieldError('noPersonsRespiratoryST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noPersonsRespiratoryOBC || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratoryOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsRespiratoryOBC"
+                            error={getFieldError('noPersonsRespiratoryOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noPersonsRespiratoryOthers || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratoryOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsRespiratoryOthers"
+                            error={getFieldError('noPersonsRespiratoryOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noPersonsRespiratoryMinorities || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratoryMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsRespiratoryMinorities"
+                            error={getFieldError('noPersonsRespiratoryMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noPersonsRespiratoryTotal || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratoryTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsRespiratoryTotal"
+                            error={getFieldError('noPersonsRespiratoryTotal')}
                             />
                         </div>
                     </div>
@@ -3393,36 +4233,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOtherChronicSC || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOtherChronicSC"
+                            error={getFieldError('noPersonsOtherChronicSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noPersonsOtherChronicST || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOtherChronicST"
+                            error={getFieldError('noPersonsOtherChronicST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noPersonsOtherChronicOBC || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOtherChronicOBC"
+                            error={getFieldError('noPersonsOtherChronicOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noPersonsOtherChronicOthers || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOtherChronicOthers"
+                            error={getFieldError('noPersonsOtherChronicOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noPersonsOtherChronicMinorities || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOtherChronicMinorities"
+                            error={getFieldError('noPersonsOtherChronicMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noPersonsOtherChronicTotal || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noPersonsOtherChronicTotal"
+                            error={getFieldError('noPersonsOtherChronicTotal')}
                             />
                         </div>
                     </div>
@@ -3440,36 +4298,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalIlliteratePersonsSC || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalIlliteratePersonsSC"
+                            error={getFieldError('totalIlliteratePersonsSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.totalIlliteratePersonsST || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsST", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalIlliteratePersonsST"
+                            error={getFieldError('totalIlliteratePersonsST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.totalIlliteratePersonsOBC || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalIlliteratePersonsOBC"
+                            error={getFieldError('totalIlliteratePersonsOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.totalIlliteratePersonsOthers || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalIlliteratePersonsOthers"
+                            error={getFieldError('totalIlliteratePersonsOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.totalIlliteratePersonsMinorities || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalIlliteratePersonsMinorities"
+                            error={getFieldError('totalIlliteratePersonsMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.totalIlliteratePersonsTotal || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="totalIlliteratePersonsTotal"
+                            error={getFieldError('totalIlliteratePersonsTotal')}
                             />
                         </div>
                     </div>
@@ -3483,36 +4359,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleIlliterateSC || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleIlliterateSC"
+                            error={getFieldError('noMaleIlliterateSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noMaleIlliterateST || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleIlliterateST"
+                            error={getFieldError('noMaleIlliterateST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noMaleIlliterateOBC || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleIlliterateOBC"
+                            error={getFieldError('noMaleIlliterateOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noMaleIlliterateOthers || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleIlliterateOthers"
+                            error={getFieldError('noMaleIlliterateOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noMaleIlliterateMinorities || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleIlliterateMinorities"
+                            error={getFieldError('noMaleIlliterateMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noMaleIlliterateTotal || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleIlliterateTotal"
+                            error={getFieldError('noMaleIlliterateTotal')}
                             />
                         </div>
                     </div>
@@ -3526,36 +4420,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleIlliterateSC || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleIlliterateSC"
+                            error={getFieldError('noFemaleIlliterateSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noFemaleIlliterateST || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleIlliterateST"
+                            error={getFieldError('noFemaleIlliterateST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noFemaleIlliterateOBC || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleIlliterateOBC"
+                            error={getFieldError('noFemaleIlliterateOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noFemaleIlliterateOthers || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleIlliterateOthers"
+                            error={getFieldError('noFemaleIlliterateOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noFemaleIlliterateMinorities || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleIlliterateMinorities"
+                            error={getFieldError('noFemaleIlliterateMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noFemaleIlliterateTotal || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleIlliterateTotal"
+                            error={getFieldError('noFemaleIlliterateTotal')}
                             />
                         </div>
                     </div>
@@ -3569,36 +4481,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplIlliteratePersonsSC || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplIlliteratePersonsSC"
+                            error={getFieldError('noBplIlliteratePersonsSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noBplIlliteratePersonsST || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplIlliteratePersonsST"
+                            error={getFieldError('noBplIlliteratePersonsST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noBplIlliteratePersonsOBC || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplIlliteratePersonsOBC"
+                            error={getFieldError('noBplIlliteratePersonsOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noBplIlliteratePersonsOthers || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplIlliteratePersonsOthers"
+                            error={getFieldError('noBplIlliteratePersonsOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noBplIlliteratePersonsMinorities || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplIlliteratePersonsMinorities"
+                            error={getFieldError('noBplIlliteratePersonsMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noBplIlliteratePersonsTotal || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noBplIlliteratePersonsTotal"
+                            error={getFieldError('noBplIlliteratePersonsTotal')}
                             />
                         </div>
                     </div>
@@ -3612,36 +4542,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleBplIlliterateSC || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleBplIlliterateSC"
+                            error={getFieldError('noMaleBplIlliterateSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noMaleBplIlliterateST || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleBplIlliterateST"
+                            error={getFieldError('noMaleBplIlliterateST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noMaleBplIlliterateOBC || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleBplIlliterateOBC"
+                            error={getFieldError('noMaleBplIlliterateOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noMaleBplIlliterateOthers || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleBplIlliterateOthers"
+                            error={getFieldError('noMaleBplIlliterateOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noMaleBplIlliterateMinorities || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleBplIlliterateMinorities"
+                            error={getFieldError('noMaleBplIlliterateMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noMaleBplIlliterateTotal || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noMaleBplIlliterateTotal"
+                            error={getFieldError('noMaleBplIlliterateTotal')}
                             />
                         </div>
                     </div>
@@ -3655,36 +4603,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleBplIlliterateSC || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleBplIlliterateSC"
+                            error={getFieldError('noFemaleBplIlliterateSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.noFemaleBplIlliterateST || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateST", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleBplIlliterateST"
+                            error={getFieldError('noFemaleBplIlliterateST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.noFemaleBplIlliterateOBC || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleBplIlliterateOBC"
+                            error={getFieldError('noFemaleBplIlliterateOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.noFemaleBplIlliterateOthers || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleBplIlliterateOthers"
+                            error={getFieldError('noFemaleBplIlliterateOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.noFemaleBplIlliterateMinorities || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleBplIlliterateMinorities"
+                            error={getFieldError('noFemaleBplIlliterateMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.noFemaleBplIlliterateTotal || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="noFemaleBplIlliterateTotal"
+                            error={getFieldError('noFemaleBplIlliterateTotal')}
                             />
                         </div>
                     </div>
@@ -3698,36 +4664,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsMaleSC || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsMaleSC"
+                            error={getFieldError('schoolDropoutsMaleSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.schoolDropoutsMaleST || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleST", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsMaleST"
+                            error={getFieldError('schoolDropoutsMaleST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.schoolDropoutsMaleOBC || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsMaleOBC"
+                            error={getFieldError('schoolDropoutsMaleOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.schoolDropoutsMaleOthers || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsMaleOthers"
+                            error={getFieldError('schoolDropoutsMaleOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.schoolDropoutsMaleMinorities || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsMaleMinorities"
+                            error={getFieldError('schoolDropoutsMaleMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.schoolDropoutsMaleTotal || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsMaleTotal"
+                            error={getFieldError('schoolDropoutsMaleTotal')}
                             />
                         </div>
                     </div>
@@ -3741,36 +4725,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsFemaleSC || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleSC", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsFemaleSC"
+                            error={getFieldError('schoolDropoutsFemaleSC')}
                             />
                             <Input
                             label="ST"
                             type="number"
                             value={formData.schoolDropoutsFemaleST || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleST", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsFemaleST"
+                            error={getFieldError('schoolDropoutsFemaleST')}
                             />
                             <Input
                             label="OBC"
                             type="number"
                             value={formData.schoolDropoutsFemaleOBC || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleOBC", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsFemaleOBC"
+                            error={getFieldError('schoolDropoutsFemaleOBC')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.schoolDropoutsFemaleOthers || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleOthers", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsFemaleOthers"
+                            error={getFieldError('schoolDropoutsFemaleOthers')}
                             />
                             <Input
                             label="Minorities"
                             type="number"
                             value={formData.schoolDropoutsFemaleMinorities || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleMinorities", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsFemaleMinorities"
+                            error={getFieldError('schoolDropoutsFemaleMinorities')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.schoolDropoutsFemaleTotal || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="schoolDropoutsFemaleTotal"
+                            error={getFieldError('schoolDropoutsFemaleTotal')}
                             />
                         </div>
                     </div>
@@ -3837,36 +4839,54 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.landTenurePossessionCertificate || ""}
                             onChange={(e) => handleInputChange("landTenurePossessionCertificate", parseInt(e.target.value) || 0)}
+                            required
+                            name="landTenurePossessionCertificate"
+                            error={getFieldError('landTenurePossessionCertificate')}
                             />
                             <Input
                             label="Encroached Private"
                             type="number"
                             value={formData.landTenureEncroachedPrivate || ""}
                             onChange={(e) => handleInputChange("landTenureEncroachedPrivate", parseInt(e.target.value) || 0)}
+                            required
+                            name="landTenureEncroachedPrivate"
+                            error={getFieldError('landTenureEncroachedPrivate')}
                             />
                             <Input
                             label="Encroached Public"
                             type="number"
                             value={formData.landTenureEncroachedPublic || ""}
                             onChange={(e) => handleInputChange("landTenureEncroachedPublic", parseInt(e.target.value) || 0)}
+                            required
+                            name="landTenureEncroachedPublic"
+                            error={getFieldError('landTenureEncroachedPublic')}
                             />
                             <Input
                             label="On Rent"
                             type="number"
                             value={formData.landTenureOnRent || ""}
                             onChange={(e) => handleInputChange("landTenureOnRent", parseInt(e.target.value) || 0)}
+                            required
+                            name="landTenureOnRent"
+                            error={getFieldError('landTenureOnRent')}
                             />
                             <Input
                             label="Other"
                             type="number"
                             value={formData.landTenureOther || ""}
                             onChange={(e) => handleInputChange("landTenureOther", parseInt(e.target.value) || 0)}
+                            required
+                            name="landTenureOther"
+                            error={getFieldError('landTenureOther')}
                             />
                             <Input
                             label="Total"
                             type="number"
                             value={formData.landTenureTotal || ""}
                             onChange={(e) => handleInputChange("landTenureTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="landTenureTotal"
+                            error={getFieldError('landTenureTotal')}
                             />
                         </div>
                     </div>
@@ -3885,36 +4905,54 @@ export default function SlumSurveyPage() {
                     type="number"
                     value={formData.economicStatus?.lessThan500 || ""}
                     onChange={(e) => handleNestedInputChange("economicStatus", "lessThan500", parseInt(e.target.value) || 0)}
+                    required
+                    name="economicStatus.lessThan500"
+                    error={getFieldError('economicStatus.lessThan500')}
                     />
                     <Input
                     label="₹500 to ₹1000"
                     type="number"
                     value={formData.economicStatus?.rs500to1000 || ""}
                     onChange={(e) => handleNestedInputChange("economicStatus", "rs500to1000", parseInt(e.target.value) || 0)}
+                    required
+                    name="economicStatus.rs500to1000"
+                    error={getFieldError('economicStatus.rs500to1000')}
                     />
                     <Input
                     label="₹1000 to ₹1500"
                     type="number"
                     value={formData.economicStatus?.rs1000to1500 || ""}
                     onChange={(e) => handleNestedInputChange("economicStatus", "rs1000to1500", parseInt(e.target.value) || 0)}
+                    required
+                    name="economicStatus.rs1000to1500"
+                    error={getFieldError('economicStatus.rs1000to1500')}
                     />
                     <Input
                     label="₹1500 to ₹2000"
                     type="number"
                     value={formData.economicStatus?.rs1500to2000 || ""}
                     onChange={(e) => handleNestedInputChange("economicStatus", "rs1500to2000", parseInt(e.target.value) || 0)}
+                    required
+                    name="economicStatus.rs1500to2000"
+                    error={getFieldError('economicStatus.rs1500to2000')}
                     />
                     <Input
                     label="₹2000 to ₹3000"
                     type="number"
                     value={formData.economicStatus?.rs2000to3000 || ""}
                     onChange={(e) => handleNestedInputChange("economicStatus", "rs2000to3000", parseInt(e.target.value) || 0)}
+                    required
+                    name="economicStatus.rs2000to3000"
+                    error={getFieldError('economicStatus.rs2000to3000')}
                     />
                     <Input
                     label="More than ₹3000"
                     type="number"
                     value={formData.economicStatus?.moreThan3000 || ""}
                     onChange={(e) => handleNestedInputChange("economicStatus", "moreThan3000", parseInt(e.target.value) || 0)}
+                    required
+                    name="economicStatus.moreThan3000"
+                    error={getFieldError('economicStatus.moreThan3000')}
                     />
                 </div>
             </div>
@@ -3931,30 +4969,45 @@ export default function SlumSurveyPage() {
                     type="number"
                     value={formData.occupationalStatus?.selfEmployed || ""}
                     onChange={(e) => handleNestedInputChange("occupationalStatus", "selfEmployed", parseInt(e.target.value) || 0)}
+                    required
+                    name="occupationalStatus.selfEmployed"
+                    error={getFieldError('occupationalStatus.selfEmployed')}
                     />
                     <Input
                     label="Salaried"
                     type="number"
                     value={formData.occupationalStatus?.salaried || ""}
                     onChange={(e) => handleNestedInputChange("occupationalStatus", "salaried", parseInt(e.target.value) || 0)}
+                    required
+                    name="occupationalStatus.salaried"
+                    error={getFieldError('occupationalStatus.salaried')}
                     />
                     <Input
                     label="Regular Wage"
                     type="number"
                     value={formData.occupationalStatus?.regularWage || ""}
                     onChange={(e) => handleNestedInputChange("occupationalStatus", "regularWage", parseInt(e.target.value) || 0)}
+                    required
+                    name="occupationalStatus.regularWage"
+                    error={getFieldError('occupationalStatus.regularWage')}
                     />
                     <Input
                     label="Casual Labour"
                     type="number"
                     value={formData.occupationalStatus?.casualLabour || ""}
                     onChange={(e) => handleNestedInputChange("occupationalStatus", "casualLabour", parseInt(e.target.value) || 0)}
+                    required
+                    name="occupationalStatus.casualLabour"
+                    error={getFieldError('occupationalStatus.casualLabour')}
                     />
                     <Input
                     label="Others"
                     type="number"
                     value={formData.occupationalStatus?.others || ""}
                     onChange={(e) => handleNestedInputChange("occupationalStatus", "others", parseInt(e.target.value) || 0)}
+                    required
+                    name="occupationalStatus.others"
+                    error={getFieldError('occupationalStatus.others')}
                     />
                 </div>
             </div>
@@ -3974,48 +5027,72 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.sourceDrinkingWater?.individualTap || ""}
                             onChange={(e) => handleNestedInputChange("sourceDrinkingWater", "individualTap", parseInt(e.target.value) || 0)}
+                            required
+                            name="sourceDrinkingWater.individualTap"
+                            error={getFieldError('sourceDrinkingWater.individualTap')}
                             />
                             <Input
                             label="Tube-well/Borewell/Handpump"
                             type="number"
                             value={formData.sourceDrinkingWater?.tubewellBorewellHandpump || ""}
                             onChange={(e) => handleNestedInputChange("sourceDrinkingWater", "tubewellBorewellHandpump", parseInt(e.target.value) || 0)}
+                            required
+                            name="sourceDrinkingWater.tubewellBorewellHandpump"
+                            error={getFieldError('sourceDrinkingWater.tubewellBorewellHandpump')}
                             />
                             <Input
                             label="Public Tap"
                             type="number"
                             value={formData.sourceDrinkingWater?.publicTap || ""}
                             onChange={(e) => handleNestedInputChange("sourceDrinkingWater", "publicTap", parseInt(e.target.value) || 0)}
+                            required
+                            name="sourceDrinkingWater.publicTap"
+                            error={getFieldError('sourceDrinkingWater.publicTap')}
                             />  
                             <Input
                             label="Open-well"
                             type="number"
                             value={formData.sourceDrinkingWater?.openwell || ""}
                             onChange={(e) => handleNestedInputChange("sourceDrinkingWater", "openwell", parseInt(e.target.value) || 0)}
+                            required
+                            name="sourceDrinkingWater.openwell"
+                            error={getFieldError('sourceDrinkingWater.openwell')}
                             />
                             <Input
                             label="Tank/Pond"
                             type="number"
                             value={formData.sourceDrinkingWater?.tankPond || ""}
                             onChange={(e) => handleNestedInputChange("sourceDrinkingWater", "tankPond", parseInt(e.target.value) || 0)}
+                            required
+                            name="sourceDrinkingWater.tankPond"
+                            error={getFieldError('sourceDrinkingWater.tankPond')}
                             />
                             <Input
                             label="River/Canal/Lake/Spring"
                             type="number"
                             value={formData.sourceDrinkingWater?.riverCanalLakeSpring || ""}
                             onChange={(e) => handleNestedInputChange("sourceDrinkingWater", "riverCanalLakeSpring", parseInt(e.target.value) || 0)}
+                            required
+                            name="sourceDrinkingWater.riverCanalLakeSpring"
+                            error={getFieldError('sourceDrinkingWater.riverCanalLakeSpring')}
                             />
                             <Input
                             label="Water Tanker"
                             type="number"
                             value={formData.sourceDrinkingWater?.waterTanker || ""}
                             onChange={(e) => handleNestedInputChange("sourceDrinkingWater", "waterTanker", parseInt(e.target.value) || 0)}
+                            required
+                            name="sourceDrinkingWater.waterTanker"
+                            error={getFieldError('sourceDrinkingWater.waterTanker')}
                             />
                             <Input
                             label="Others"
                             type="number"
                             value={formData.sourceDrinkingWater?.others || ""}
                             onChange={(e) => handleNestedInputChange("sourceDrinkingWater", "others", parseInt(e.target.value) || 0)}
+                            required
+                            name="sourceDrinkingWater.others"
+                            error={getFieldError('sourceDrinkingWater.others')}
                             />
                         </div>
                     </div>
@@ -4025,6 +5102,7 @@ export default function SlumSurveyPage() {
                         label="Connectivity to City Water Supply"
                         value={formData.connectivityCityWaterSupply || ""}
                         onChange={(e) => handleInputChange("connectivityCityWaterSupply", e.target.value)}
+                        required
                         options={[
                             { value: "FULLY_CONNECTED", label: "Fully Connected" },
                             { value: "PARTIALLY_CONNECTED", label: "Partially Connected" },
@@ -4035,6 +5113,7 @@ export default function SlumSurveyPage() {
                         label="Drainage/Sewerage Facility"
                         value={formData.drainageSewerageFacility || ""}
                         onChange={(e) => handleInputChange("drainageSewerageFacility", e.target.value)}
+                        required
                         options={[
                             { value: "YES", label: "Yes" },
                             { value: "NO", label: "No" },
@@ -4044,6 +5123,7 @@ export default function SlumSurveyPage() {
                         label="Connectivity to Storm Water Drainage"
                         value={formData.connectivityStormWaterDrainage || ""}
                         onChange={(e) => handleInputChange("connectivityStormWaterDrainage", e.target.value)}
+                        required
                         options={[
                             { value: "FULLY_CONNECTED", label: "Fully Connected" },
                             { value: "PARTIALLY_CONNECTED", label: "Partially Connected" },
@@ -4054,6 +5134,7 @@ export default function SlumSurveyPage() {
                         label="Connectivity to Sewerage System"
                         value={formData.connectivitySewerageSystem || ""}
                         onChange={(e) => handleInputChange("connectivitySewerageSystem", e.target.value)}
+                        required
                         options={[
                             { value: "FULLY_CONNECTED", label: "Fully Connected" },
                             { value: "PARTIALLY_CONNECTED", label: "Partially Connected" },
@@ -4064,6 +5145,7 @@ export default function SlumSurveyPage() {
                         label="Prone to Flooding"
                         value={formData.proneToFlooding || ""}
                         onChange={(e) => handleInputChange("proneToFlooding", e.target.value)}
+                        required
                         options={[
                             { value: "NOT_PRONE", label: "Not Prone" },
                             { value: "UPTO_15_DAYS", label: "Up to 15 Days" },
@@ -4080,6 +5162,7 @@ export default function SlumSurveyPage() {
                         label="Latrine Facility"
                         value={formData.latrineFacility || ""}
                         onChange={(e) => handleInputChange("latrineFacility", e.target.value)}
+                        required
                         options={[
                             { value: "PUBLIC_LATRINE", label: "Public Latrine" },
                             { value: "SHARED_LATRINE", label: "Shared Latrine" },
@@ -4099,6 +5182,7 @@ export default function SlumSurveyPage() {
                             label="Frequency"
                             value={formData.frequencyOfGarbageDisposal || ""}
                             onChange={(e) => handleInputChange("frequencyOfGarbageDisposal", e.target.value)}
+                            required
                             options={[
                                 { value: "DAILY", label: "Daily" },
                                 { value: "ONCE_IN_2_DAYS", label: "Once in 2 days" },
@@ -4116,6 +5200,7 @@ export default function SlumSurveyPage() {
                             label="Arrangement"
                             value={formData.arrangementForGarbageDisposal || ""}
                             onChange={(e) => handleInputChange("arrangementForGarbageDisposal", e.target.value)}
+                            required
                             options={[
                                 { value: "MUNICIPAL_STAFF", label: "Municipal staff" },
                                 { value: "MUNICIPAL_CONTRACTOR", label: "Municipal Contractor" },
@@ -4133,6 +5218,7 @@ export default function SlumSurveyPage() {
                             label="Frequency"
                             value={formData.frequencyOfClearanceOfOpenDrains || ""}
                             onChange={(e) => handleInputChange("frequencyOfClearanceOfOpenDrains", e.target.value)}
+                            required
                             options={[
                                 { value: "DAILY", label: "Daily" },
                                 { value: "ONCE_IN_2_DAYS", label: "Once in 2 days" },
@@ -4155,6 +5241,7 @@ export default function SlumSurveyPage() {
                             label="Road Type"
                             value={formData.approachRoadType || ""}
                             onChange={(e) => handleInputChange("approachRoadType", e.target.value)}
+                            required
                             options={[
                                 { value: "MOTORABLE_PUCCA", label: "Motorable pucca" },
                                 { value: "MOTORABLE_KATCHA", label: "Motorable katcha" },
@@ -4170,6 +5257,7 @@ export default function SlumSurveyPage() {
                             <Select
                             label="Distance"
                             value={formData.distanceToNearestMotorableRoad || ""}
+                            required
                             onChange={(e) => handleInputChange("distanceToNearestMotorableRoad", e.target.value)}
                             options={[
                                 { value: "LESS_THAN_0_5_KMS", label: "Less than 0.5 kms" },
@@ -4187,6 +5275,7 @@ export default function SlumSurveyPage() {
                             <Select
                             label="Road Type"
                             value={formData.internalRoadType || ""}
+                            required
                             onChange={(e) => handleInputChange("internalRoadType", e.target.value)}
                             options={[
                                 { value: "MOTORABLE_PUCCA", label: "Motorable pucca" },
@@ -4203,6 +5292,7 @@ export default function SlumSurveyPage() {
                             <Select
                             label="Street Light Available"
                             value={formData.streetLightAvailable || ""}
+                            required
                             onChange={(e) => handleInputChange("streetLightAvailable", e.target.value)}
                             options={[
                                 { value: "YES", label: "Yes" },
@@ -4226,66 +5316,77 @@ export default function SlumSurveyPage() {
                     type="number"
                     value={formData.anganwadiUnderIcds || ""}
                     onChange={(e) => handleInputChange("anganwadiUnderIcds", parseInt(e.target.value) || 0)}
+                    required
                     />
                     <Input
                     label="26b. Municipal pre-school"
                     type="number"
                     value={formData.municipalPreschool || ""}
                     onChange={(e) => handleInputChange("municipalPreschool", parseInt(e.target.value) || 0)}
+                    required
                     />
                     <Input
                     label="26c. Private pre-school"
                     type="number"
                     value={formData.privatePreschool || ""}
                     onChange={(e) => handleInputChange("privatePreschool", parseInt(e.target.value) || 0)}
+                    required
                     />
                     <Input
                     label="27a. Municipal"
                     type="number"
                     value={formData.municipalPrimarySchool || ""}
                     onChange={(e) => handleInputChange("municipalPrimarySchool", parseInt(e.target.value) || 0)}
+                    required
                     />
                     <Input
                     label="27b. State Government"
                     type="number"
                     value={formData.stateGovtPrimarySchool || ""}
                     onChange={(e) => handleInputChange("stateGovtPrimarySchool", parseInt(e.target.value) || 0)}
+                    required
                     />
                     <Input
                     label="27c. Private"
                     type="number"
                     value={formData.privatePrimarySchool || ""}
                     onChange={(e) => handleInputChange("privatePrimarySchool", parseInt(e.target.value) || 0)}
+                    required
                     />
                     <Input
                     label="28a. Municipal"
                     type="number"
                     value={formData.municipalHighSchool || ""}
                     onChange={(e) => handleInputChange("municipalHighSchool", parseInt(e.target.value) || 0)}
+                    required
                     />
                     <Input
                     label="28b. State Government"
                     type="number"
                     value={formData.stateGovtHighSchool || ""}
                     onChange={(e) => handleInputChange("stateGovtHighSchool", parseInt(e.target.value) || 0)}
+                    required
                     />
                     <Input
                     label="28c. Private"
                     type="number"
                     value={formData.privateHighSchool || ""}
                     onChange={(e) => handleInputChange("privateHighSchool", parseInt(e.target.value) || 0)}
+                    required
                     />
                     <Input
                     label="29. Adult Education Centre"
                     type="number"
                     value={formData.adultEducationCentre || ""}
                     onChange={(e) => handleInputChange("adultEducationCentre", parseInt(e.target.value) || 0)}
+                    required
                     />
                     <Input
                     label="30. Non-formal Education Centre"
                     type="number"
                     value={formData.nonFormalEducationCentre || ""}
                     onChange={(e) => handleInputChange("nonFormalEducationCentre", parseInt(e.target.value) || 0)}
+                    required
                     />
                 </div>
             </div>
@@ -4300,6 +5401,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="31a. Urban Health Post"
                     value={formData.urbanHealthPost || ""}
+                    required
                     onChange={(e) => handleInputChange("urbanHealthPost", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
@@ -4309,6 +5411,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="31b. Primary Health Centre"
                     value={formData.primaryHealthCentre || ""}
+                    required
                     onChange={(e) => handleInputChange("primaryHealthCentre", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
@@ -4318,6 +5421,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="31c. Government Hospital"
                     value={formData.governmentHospital || ""}
+                    required
                     onChange={(e) => handleInputChange("governmentHospital", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
@@ -4327,6 +5431,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="31d. Maternity Centre"
                     value={formData.maternityCentre || ""}
+                    required
                     onChange={(e) => handleInputChange("maternityCentre", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
@@ -4336,6 +5441,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="31e. Private Clinic"
                     value={formData.privateClinic || ""}
+                    required
                     onChange={(e) => handleInputChange("privateClinic", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
@@ -4345,6 +5451,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="31f. Registered Medical Practitioner (RMP)"
                     value={formData.rmp || ""}
+                    required
                     onChange={(e) => handleInputChange("rmp", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
@@ -4354,6 +5461,7 @@ export default function SlumSurveyPage() {
                     <Select
                     label="31g. Ayurvedic Doctor/Vaidya"
                     value={formData.ayurvedicDoctor || ""}
+                    required
                     onChange={(e) => handleInputChange("ayurvedicDoctor", e.target.value)}
                     options={[
                         { value: "YES", label: "Yes" },
@@ -4377,36 +5485,42 @@ export default function SlumSurveyPage() {
                             label="32a. Community Hall"
                             type="number"
                             value={formData.communityHall || ""}
+                            required
                             onChange={(e) => handleInputChange("communityHall", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="32b. Livelihood/Production Centre"
                             type="number"
                             value={formData.livelihoodProductionCentre || ""}
+                            required
                             onChange={(e) => handleInputChange("livelihoodProductionCentre", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="32c. Vocational training/Training-cum-production Centre"
                             type="number"
                             value={formData.vocationalTrainingCentre || ""}
+                            required
                             onChange={(e) => handleInputChange("vocationalTrainingCentre", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="32d. Street Children Rehabilitation Centre"
                             type="number"
                             value={formData.streetChildrenRehabilitationCentre || ""}
+                            required
                             onChange={(e) => handleInputChange("streetChildrenRehabilitationCentre", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="32e. Night Shelter"
                             type="number"
                             value={formData.nightShelter || ""}
+                            required
                             onChange={(e) => handleInputChange("nightShelter", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="32f. Old Age Home"
                             type="number"
                             value={formData.oldAgeHome || ""}
+                            required
                             onChange={(e) => handleInputChange("oldAgeHome", parseInt(e.target.value) || 0)}
                             />
                         </div>
@@ -4419,30 +5533,35 @@ export default function SlumSurveyPage() {
                             label="33a. Old Age Pension Holders"
                             type="number"
                             value={formData.oldAgePensionsHolders || ""}
+                            required
                             onChange={(e) => handleInputChange("oldAgePensionsHolders", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="33b. Widow Pension Holders"
                             type="number"
                             value={formData.widowPensionsHolders || ""}
+                            required
                             onChange={(e) => handleInputChange("widowPensionsHolders", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="33c. Disabled Pension Holders"
                             type="number"
                             value={formData.disabledPensionsHolders || ""}
+                            required
                             onChange={(e) => handleInputChange("disabledPensionsHolders", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="33d. General Insurance Covered"
                             type="number"
                             value={formData.generalInsuranceCovered || ""}
+                            required
                             onChange={(e) => handleInputChange("generalInsuranceCovered", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="33e. Health Insurance Covered"
                             type="number"
                             value={formData.healthInsuranceCovered || ""}
+                            required
                             onChange={(e) => handleInputChange("healthInsuranceCovered", parseInt(e.target.value) || 0)}
                             />
                         </div>
@@ -4455,17 +5574,20 @@ export default function SlumSurveyPage() {
                             label="34. Self Help Groups"
                             type="number"
                             value={formData.selfHelpGroups || ""}
+                            required
                             onChange={(e) => handleInputChange("selfHelpGroups", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="35. Thrift & Credit Societies"
                             type="number"
                             value={formData.thriftCreditSocieties || ""}
+                            required
                             onChange={(e) => handleInputChange("thriftCreditSocieties", parseInt(e.target.value) || 0)}
                             />
                             <Select
                             label="36a. Slum Dwellers Association"
                             value={formData.slumDwellersAssociation || ""}
+                            required
                             onChange={(e) => handleInputChange("slumDwellersAssociation", e.target.value)}
                             options={[
                                 { value: "YES", label: "Yes" },
@@ -4476,12 +5598,14 @@ export default function SlumSurveyPage() {
                             label="36b. Youth Associations"
                             type="number"
                             value={formData.youthAssociations || ""}
+                            required
                             onChange={(e) => handleInputChange("youthAssociations", parseInt(e.target.value) || 0)}
                             />
                             <Input
                             label="36c. Women's Associations"
                             type="number"
                             value={formData.womensAssociations || ""}
+                            required
                             onChange={(e) => handleInputChange("womensAssociations", parseInt(e.target.value) || 0)}
                             />
                         </div>
@@ -5433,6 +6557,105 @@ export default function SlumSurveyPage() {
                         </div>
                     </div>
                 </div>
+                
+                {/* Standalone Infrastructure Requirements */}
+                <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">43. Standalone Infrastructure Requirements</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Electricity */}
+                        <Select
+                        label="Electricity - Existing"
+                        value={formData.electricityExisting || ""}
+                        onChange={(e) => handleInputChange("electricityExisting", e.target.value)}
+                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
+                        required
+                        name="electricityExisting"
+                        error={getFieldError("electricityExisting")}
+                        />
+                        <Select
+                        label="Electricity - Additional Requirement"
+                        value={formData.electricityAdditional || ""}
+                        onChange={(e) => handleInputChange("electricityAdditional", e.target.value)}
+                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
+                        required
+                        name="electricityAdditional"
+                        error={getFieldError("electricityAdditional")}
+                        />
+                        {formData.electricityAdditional === "Yes" && (
+                        <Input
+                        label="Electricity - Estimated Cost"
+                        type="number"
+                        value={formData.electricityCost || ""}
+                        onChange={(e) => handleInputChange("electricityCost", parseInt(e.target.value) || 0)}
+                        required
+                        name="electricityCost"
+                        error={getFieldError("electricityCost")}
+                        />
+                        )}
+                        
+                        {/* Healthcare */}
+                        <Select
+                        label="Healthcare - Existing"
+                        value={formData.healthcareExisting || ""}
+                        onChange={(e) => handleInputChange("healthcareExisting", e.target.value)}
+                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
+                        required
+                        name="healthcareExisting"
+                        error={getFieldError("healthcareExisting")}
+                        />
+                        <Select
+                        label="Healthcare - Additional Requirement"
+                        value={formData.healthcareAdditional || ""}
+                        onChange={(e) => handleInputChange("healthcareAdditional", e.target.value)}
+                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
+                        required
+                        name="healthcareAdditional"
+                        error={getFieldError("healthcareAdditional")}
+                        />
+                        {formData.healthcareAdditional === "Yes" && (
+                        <Input
+                        label="Healthcare - Estimated Cost"
+                        type="number"
+                        value={formData.healthcareCost || ""}
+                        onChange={(e) => handleInputChange("healthcareCost", parseInt(e.target.value) || 0)}
+                        required
+                        name="healthcareCost"
+                        error={getFieldError("healthcareCost")}
+                        />
+                        )}
+                        
+                        {/* Toilets */}
+                        <Select
+                        label="Toilets - Existing"
+                        value={formData.toiletsExisting || ""}
+                        onChange={(e) => handleInputChange("toiletsExisting", e.target.value)}
+                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
+                        required
+                        name="toiletsExisting"
+                        error={getFieldError("toiletsExisting")}
+                        />
+                        <Select
+                        label="Toilets - Additional Requirement"
+                        value={formData.toiletsAdditional || ""}
+                        onChange={(e) => handleInputChange("toiletsAdditional", e.target.value)}
+                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
+                        required
+                        name="toiletsAdditional"
+                        error={getFieldError("toiletsAdditional")}
+                        />
+                        {formData.toiletsAdditional === "Yes" && (
+                        <Input
+                        label="Toilets - Estimated Cost"
+                        type="number"
+                        value={formData.toiletsCost || ""}
+                        onChange={(e) => handleInputChange("toiletsCost", parseInt(e.target.value) || 0)}
+                        required
+                        name="toiletsCost"
+                        error={getFieldError("toiletsCost")}
+                        />
+                        )}
+                    </div>
+                </div>
             </div>
             )}
 
@@ -5453,7 +6676,7 @@ export default function SlumSurveyPage() {
                         <div className="p-2 bg-slate-800 rounded"><strong>District Name:</strong> {formData.districtName || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>City/Town Code:</strong> {formData.cityTownCode || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>City/Town Name:</strong> {formData.cityTownName || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>City/Town:</strong> {formData.cityTown || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>City/Town:</strong> {formData.cityTownName || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Households in City/Town:</strong> {formData.cityTownNoHouseholds || 'N/A'}</div>
                     </div>
                 </div>
@@ -5470,7 +6693,7 @@ export default function SlumSurveyPage() {
                         <div className="p-2 bg-slate-800 rounded"><strong>Slum Population:</strong> {formData.slumPopulation || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Slum Households:</strong> {formData.noSlumHouseholds || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>BPL Population:</strong> {formData.bplPopulation || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>No. of BPL Households:</strong> {formData.noBplHouseholdsCityTown || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>No. of BPL Households:</strong> {formData.noBplHouseholdsSlum || 'N/A'}</div>
                     </div>
                 </div>
                 
@@ -5492,7 +6715,7 @@ export default function SlumSurveyPage() {
                 <div className="mb-6">
                     <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">4. Basic Information of Slum</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-2 bg-slate-800 rounded"><strong>Slum Name:</strong> {formData.slumNameBasicInfo || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Slum Name:</strong> {formData.slumNameBasicInfo || formData.slumName || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Slum Code:</strong> {formData.slumCode || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Location Ward:</strong> {formData.locationWard || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Age of Slum (years):</strong> {formData.ageSlumYears || 'N/A'}</div>
@@ -5703,20 +6926,20 @@ export default function SlumSurveyPage() {
                 <div className="mb-6">
                     <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">10. Access to Physical Infrastructure</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-2 bg-slate-800 rounded"><strong>Water Supply (hrs/day):</strong> {formData.waterSupplyHours || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Water Supply Source:</strong> {formData.waterSupplySource || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Electricity Connection:</strong> {formData.electricityConnection || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Electricity Hours:</strong> {formData.electricityHours || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Drainage System:</strong> {formData.drainsType || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Roads Type:</strong> {formData.roadsType || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Garbage Disposal:</strong> {formData.garbageDisposal || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Street Lights:</strong> {formData.streetLights || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Paved Roads:</strong> {formData.pavedRoads || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Unpaved Roads:</strong> {formData.unpavedRoads || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Dustbins:</strong> {formData.dustbins || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Drainage Covered:</strong> {formData.drainsCovered || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Drainage Open:</strong> {formData.drainsOpen || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Drainage Absent:</strong> {formData.drainsAbsent || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Source of Drinking Water:</strong> {formData.sourceDrinkingWater ? Object.entries(formData.sourceDrinkingWater).map(([key, value]) => value > 0 ? `${key}: ${value}` : '').filter(Boolean).join(', ') || 'N/A' : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Connectivity City Water Supply:</strong> {formData.connectivityCityWaterSupply || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Drainage Sewerage Facility:</strong> {formData.drainageSewerageFacility || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Storm Water Drainage:</strong> {formData.connectivityStormWaterDrainage || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Sewerage System:</strong> {formData.connectivitySewerageSystem || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Prone to Flooding:</strong> {formData.proneToFlooding || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Latrine Facility:</strong> {formData.latrineFacility || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Frequency of Garbage Disposal:</strong> {formData.frequencyOfGarbageDisposal || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Arrangement for Garbage Disposal:</strong> {formData.arrangementForGarbageDisposal || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Frequency of Clearance of Open Drains:</strong> {formData.frequencyOfClearanceOfOpenDrains || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Street Light Available:</strong> {formData.streetLightAvailable || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Approach Road Type:</strong> {formData.approachRoadType || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Distance to Nearest Motorable Road:</strong> {formData.distanceToNearestMotorableRoad || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Internal Road Type:</strong> {formData.internalRoadType || 'N/A'}</div>
                     </div>
                 </div>
                 
@@ -5724,16 +6947,17 @@ export default function SlumSurveyPage() {
                 <div className="mb-6">
                     <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">11. Education Facilities</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-2 bg-slate-800 rounded"><strong>Primary School Government:</strong> {formData.primarySchoolGovt || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Primary School Private:</strong> {formData.primarySchoolPrivate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Secondary School Government:</strong> {formData.secondarySchoolGovt || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Secondary School Private:</strong> {formData.secondarySchoolPrivate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Higher Secondary Government:</strong> {formData.higherSecondarySchoolGovt || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Higher Secondary Private:</strong> {formData.higherSecondarySchoolPrivate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Anganwadi Center Government:</strong> {formData.anganwadiCenterGovt || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Anganwadi Center Private:</strong> {formData.anganwadiCenterPrivate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Distance to Primary School:</strong> {formData.distanceToPrimarySchool || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Distance to Secondary School:</strong> {formData.distanceToSecondarySchool || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Anganwadi under ICDS:</strong> {formData.anganwadiUnderIcds || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Municipal Preschool:</strong> {formData.municipalPreschool || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Private Preschool:</strong> {formData.privatePreschool || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Municipal Primary School:</strong> {formData.municipalPrimarySchool || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>State Government Primary School:</strong> {formData.stateGovtPrimarySchool || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Private Primary School:</strong> {formData.privatePrimarySchool || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Municipal High School:</strong> {formData.municipalHighSchool || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>State Government High School:</strong> {formData.stateGovtHighSchool || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Private High School:</strong> {formData.privateHighSchool || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Adult Education Centre:</strong> {formData.adultEducationCentre || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Non-formal Education Centre:</strong> {formData.nonFormalEducationCentre || 'N/A'}</div>
                     </div>
                 </div>
                 
@@ -5741,18 +6965,13 @@ export default function SlumSurveyPage() {
                 <div className="mb-6">
                     <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">12. Health Facilities</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-2 bg-slate-800 rounded"><strong>Dispensary Government:</strong> {formData.dispensaryGovt || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Dispensary Private:</strong> {formData.dispensaryPrivate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Hospital Government:</strong> {formData.hospitalGovt || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Hospital Private:</strong> {formData.hospitalPrivate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Distance to Dispensary:</strong> {formData.distanceToDispensary || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Distance to Hospital:</strong> {formData.distanceToHospital || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Medical Store Government:</strong> {formData.medicalStoreGovt || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Medical Store Private:</strong> {formData.medicalStorePrivate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>PHC Government:</strong> {formData.phcGovt || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>PHC Private:</strong> {formData.phcPrivate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>CHC Government:</strong> {formData.chcGovt || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>CHC Private:</strong> {formData.chcPrivate || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Urban Health Post:</strong> {formData.urbanHealthPost || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Primary Health Centre:</strong> {formData.primaryHealthCentre || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Government Hospital:</strong> {formData.governmentHospital || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Maternity Centre:</strong> {formData.maternityCentre || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Private Clinic:</strong> {formData.privateClinic || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>RMP:</strong> {formData.rmp || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Ayurvedic Doctor:</strong> {formData.ayurvedicDoctor || 'N/A'}</div>
                     </div>
                 </div>
                 
@@ -5760,22 +6979,22 @@ export default function SlumSurveyPage() {
                 <div className="mb-6">
                     <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">13. Social Development/Welfare</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-2 bg-slate-800 rounded"><strong>NRHM Scheme:</strong> {formData.nrhmScheme || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>NRHM Beneficiaries:</strong> {formData.nrhmBeneficiaries || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>ICDS Scheme:</strong> {formData.icdsScheme || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>ICDS Beneficiaries:</strong> {formData.icdsBeneficiaries || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Nirmal Bharat Abhiyan:</strong> {formData.nirmalBharatAbhiyan || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>NBA Beneficiaries:</strong> {formData.nbaBeneficiaries || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Mid Day Meal:</strong> {formData.midDayMeal || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>MDM Beneficiaries:</strong> {formData.mdmBeneficiaries || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>SABLA Scheme:</strong> {formData.sablaScheme || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>SABLA Beneficiaries:</strong> {formData.sablaBeneficiaries || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Rashtriya Swasthya Bima Yojana:</strong> {formData.rashtriyaSwasthyaBimaYojana || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>RSBY Beneficiaries:</strong> {formData.rsbyBeneficiaries || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>AYUSHMAN Bharat:</strong> {formData.ayushmanBharat || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>AYUSHMAN Beneficiaries:</strong> {formData.ayushmanBeneficiaries || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Other Schemes:</strong> {formData.otherSchemes || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Other Schemes Beneficiaries:</strong> {formData.otherSchemesBeneficiaries || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Community Hall:</strong> {formData.communityHall || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Livelihood/Production Centre:</strong> {formData.livelihoodProductionCentre || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Vocational Training Centre:</strong> {formData.vocationalTrainingCentre || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Street Children Rehabilitation Centre:</strong> {formData.streetChildrenRehabilitationCentre || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Night Shelter:</strong> {formData.nightShelter || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Old Age Home:</strong> {formData.oldAgeHome || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Old Age Pension Holders:</strong> {formData.oldAgePensionsHolders || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Widow Pension Holders:</strong> {formData.widowPensionsHolders || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Disabled Pension Holders:</strong> {formData.disabledPensionsHolders || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>General Insurance Covered:</strong> {formData.generalInsuranceCovered || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Health Insurance Covered:</strong> {formData.healthInsuranceCovered || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Self Help Groups:</strong> {formData.selfHelpGroups || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Thrift & Credit Societies:</strong> {formData.thriftCreditSocieties || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Slum Dwellers Association:</strong> {formData.slumDwellersAssociation || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Youth Associations:</strong> {formData.youthAssociations || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Women&apos;s Associations:</strong> {formData.womensAssociations || 'N/A'}</div>
                     </div>
                 </div>
                 
@@ -5812,7 +7031,7 @@ export default function SlumSurveyPage() {
                     variant="secondary"
                     size="md"
                     onClick={handlePrevious}
-                    disabled={currentStep === 0 || submitting || saving}
+                    disabled={currentStep === 0 || submitting || saving || (isPreviewMode && !isEditMode)}
                     className="w-full sm:w-auto"
                 >
                     Previous
@@ -5824,25 +7043,31 @@ export default function SlumSurveyPage() {
                             variant="secondary"
                             size="md"
                             onClick={saveSection}
-                            disabled={saving || submitting}
+                            disabled={saving || submitting || (isPreviewMode && !isEditMode)}
                             className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 w-full sm:w-auto"
                         >
-                            {saving ? "Saving..." : "Save & Next"}
+                            {saving ? "Saving..." : (isEditMode ? "Update & Next" : "Save & Next")}
                         </Button>
                     ) : (
                         <Button
                             size="md"
-                            onClick={handleSubmit}
-                            disabled={submitting || saving}
+                            onClick={() => {
+                              console.log("Submit button clicked");
+                              console.log("Button disabled:", submitting || saving || (isPreviewMode && !isEditMode));
+                              handleSubmit();
+                            }}
+                            disabled={submitting || saving || (isPreviewMode && !isEditMode)}
                             className="bg-green-600 hover:bg-green-500 w-full sm:w-auto"
                         >
-                            {submitting ? "Submitting..." : "Submit Survey"}
+                            {submitting ? "Submitting..." : (isEditMode ? "Update Survey" : "Submit Survey")}
                         </Button>
                     )}
                 </div>
             </div>
         </Card>
       </div>
+
+
     </SurveyorLayout>
   );
 }
