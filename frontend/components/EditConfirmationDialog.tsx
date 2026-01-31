@@ -37,16 +37,7 @@ export default function EditConfirmationDialog({
           This will allow you to modify the submitted survey data.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={onCancel}
-            disabled={loading}
-            className="w-full sm:w-auto"
-          >
-            Cancel
-          </Button>
+        <div className="flex flex-col sm:flex-row gap-3">          
           <Button
             variant="primary"
             size="md"
@@ -55,6 +46,15 @@ export default function EditConfirmationDialog({
             className="bg-yellow-600 hover:bg-yellow-700 w-full sm:w-auto"
           >
             {loading ? "Editing..." : "Edit Survey"}
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={onCancel}
+            disabled={loading}
+            className="w-full sm:w-auto"
+          >
+            Cancel
           </Button>
         </div>
       </div>

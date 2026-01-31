@@ -224,13 +224,12 @@ const getMyAssignments = async (req, res) => {
 
       // Check Household Survey progress
       const householdSurveys = await HouseholdSurvey.find({
-        surveyor: req.user._id
-      }).populate('household', 'slum');
+        surveyor: req.user._id,
+        slum: assignment.slum._id
+      }).populate('slum', 'name totalHouseholds');
 
-      // Filter household surveys for this slum
-      const slumHouseholdSurveys = householdSurveys.filter(
-        hs => hs.household?.slum?.toString() === assignment.slum._id.toString()
-      );
+      // All surveys are already filtered by slum, so count them directly
+      const slumHouseholdSurveys = householdSurveys;
 
       // Get total households in the slum
       const totalHouseholds = assignment.slum?.totalHouseholds || 0;

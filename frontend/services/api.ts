@@ -37,13 +37,23 @@ class ApiService {
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     if (!response.ok) {
-      // Try to parse the response as JSON, but handle cases where it's not JSON
+      // Check if response body is non-empty and content-type is application/json
+      const contentType = response.headers.get('content-type');
+      const contentLength = response.headers.get('content-length');
+      
       let errorData: any = {};
-      try {
-        errorData = await response.json();
-        console.error('API Error Response (JSON):', errorData, 'Status:', response.status);
-      } catch (parseError) {
-        // If the response is not JSON, try to get text or use status message
+      
+      // Only try to parse as JSON if content-type is JSON and body is not empty
+      if (contentType && contentType.includes('application/json') && contentLength !== '0') {
+        try {
+          errorData = await response.json();
+          console.error('API Error Response (JSON):', errorData, 'Status:', response.status);
+        } catch (parseError) {
+          console.error('Failed to parse JSON error response:', parseError);
+          errorData = { message: `HTTP error! status: ${response.status}` };
+        }
+      } else {
+        // For non-JSON responses or empty bodies, get text or use status
         try {
           const errorText = await response.text();
           console.error('Non-JSON API Error Response:', errorText, 'Status:', response.status);

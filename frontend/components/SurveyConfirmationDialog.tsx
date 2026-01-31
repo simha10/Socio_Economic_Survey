@@ -80,15 +80,6 @@ export default function SurveyConfirmationDialog({
               <Button
                 variant="secondary"
                 size="md"
-                onClick={onCancel}
-                disabled={loading}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="secondary"
-                size="md"
                 onClick={onPreview}
                 disabled={loading}
                 className="w-full sm:w-auto bg-gray-600 hover:bg-gray-700"
@@ -104,9 +95,6 @@ export default function SurveyConfirmationDialog({
               >
                 {loading ? "Editing..." : "Edit"}
               </Button>
-            </>
-          ) : (
-            <>
               <Button
                 variant="secondary"
                 size="md"
@@ -116,6 +104,9 @@ export default function SurveyConfirmationDialog({
               >
                 Cancel
               </Button>
+            </>
+          ) : (
+            <>
               <Button
                 variant="primary"
                 size="md"
@@ -126,6 +117,15 @@ export default function SurveyConfirmationDialog({
                 {loading 
                   ? (surveyStatus === "IN_PROGRESS" ? "Continuing..." : "Starting...") 
                   : (surveyStatus === "IN_PROGRESS" ? "Continue Survey" : "Start Survey")}
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={onCancel}
+                disabled={loading}
+                className="w-full sm:w-auto"
+              >
+                Cancel
               </Button>
             </>
           )}
