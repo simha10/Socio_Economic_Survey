@@ -8,6 +8,7 @@ import apiService from "@/services/api";
 import { MapPin, Users, CheckCircle, Clock, ArrowRight, CircleEllipsis, ListTodo } from "lucide-react";
 import SurveyConfirmationDialog from "@/components/SurveyConfirmationDialog";
 import EditConfirmationDialog from "@/components/EditConfirmationDialog";
+import HHSCompletionWarningModal from "@/components/HHSCompletionWarningModal";
 
 interface User {
   _id: string;
@@ -53,6 +54,7 @@ export default function SurveyorDashboard() {
   } | null>(null);
   const [surveyData, setSurveyData] = useState<Record<string, any>>({});
   const [showEditConfirm, setShowEditConfirm] = useState(false);
+  const [showCompletionWarning, setShowCompletionWarning] = useState(false);
 
   useEffect(() => {
     // Verify user is surveyor
@@ -123,8 +125,16 @@ export default function SurveyorDashboard() {
   };
 
   const handleHouseholdSurveyClick = (assignmentId: string, slumName: string) => {
-    // For household surveys, we can check if there are any completed household surveys
-    // For now, we'll treat them as always available to start
+    // Check if all households are completed
+    const assignment = assignments.find(a => a._id === assignmentId);
+    if (assignment?.householdSurveyProgress) {
+      const { completed, total } = assignment.householdSurveyProgress;
+      if (total > 0 && completed >= total) {
+        setShowCompletionWarning(true);
+        return;
+      }
+    }
+
     setPendingSurvey({
       type: 'household',
       assignmentId,
@@ -418,6 +428,15 @@ export default function SurveyorDashboard() {
                     Household Survey
                   </button>
                 </div>
+
+                {/* Completion Status Message */}
+                {assignment.householdSurveyProgress && 
+                 assignment.householdSurveyProgress.total > 0 && 
+                 assignment.householdSurveyProgress.completed >= assignment.householdSurveyProgress.total && (
+                  <div className="mt-4 col-span-1 md:col-span-2 text-xs text-center text-amber-300 font-medium p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                    {assignment.householdSurveyProgress.completed} of {assignment.householdSurveyProgress.total} HHS are done please update the status
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -436,13 +455,17 @@ export default function SurveyorDashboard() {
         onEdit={editSurvey}
       />
       
-      {/* Edit Confirmation Dialog */}
       <EditConfirmationDialog
         isOpen={showEditConfirm}
         surveyType={pendingSurvey?.type || 'slum'}
         slumName={pendingSurvey?.slumName || ''}
         onConfirm={confirmEditSurvey}
         onCancel={cancelEditSurvey}
+      />
+      
+      <HHSCompletionWarningModal
+        isOpen={showCompletionWarning}
+        onClose={() => setShowCompletionWarning(false)}
       />
     </SurveyorLayout>
   );

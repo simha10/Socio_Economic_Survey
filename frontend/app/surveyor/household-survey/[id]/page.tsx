@@ -11,6 +11,7 @@ import Checkbox from "@/components/Checkbox";
 import apiService from "@/services/api";
 import { useToast } from "@/components/Toast";
 import BackNavigationDialog from "@/components/BackNavigationDialog";
+import { HouseholdSurveyModal } from "@/components/HouseholdSurveyModal";
 
 interface HouseholdSurveyForm {
   householdId: string;
@@ -189,6 +190,25 @@ export default function HouseholdSurveyPage() {
   
   // Submit confirmation
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [lastSubmittedHouseNo, setLastSubmittedHouseNo] = useState("");
+  
+  // Completion Modal State
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [householdProgress, setHouseholdProgress] = useState({ completed: 0, total: 0 });
+
+  const fetchProgress = useCallback(async () => {
+    try {
+      const response = await apiService.getMyAssignments();
+      if (response.success && response.data) {
+        const currentAssignment = response.data.find((a: any) => a._id === assignmentId);
+        if (currentAssignment && currentAssignment.householdSurveyProgress) {
+          setHouseholdProgress(currentAssignment.householdSurveyProgress);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching progress:", error);
+    }
+  }, [assignmentId]);
 
   const loadHouseholdsForSlum = useCallback(
     async (slumId: string) => {
@@ -234,6 +254,9 @@ export default function HouseholdSurveyPage() {
 
             // Load households for this slum
             await loadHouseholdsForSlum(slumId);
+            
+            // Fetch initial progress
+            await fetchProgress();
           }
         } else {
           showToast("Failed to load assignment details", "error");
@@ -800,6 +823,9 @@ export default function HouseholdSurveyPage() {
       if (response.success) {
         showToast("Household survey submitted successfully", "success");
         
+        // Save house number for modal
+        setLastSubmittedHouseNo(formData.houseDoorNo || "");
+
         // Reset form for next household
         setFormData({
           householdId: "",
@@ -868,20 +894,9 @@ export default function HouseholdSurveyPage() {
         // Reset expanded sections
         setExpandedSections(new Set(["general", "household"]));
         
-        // Show success message with option to continue
-        setTimeout(() => {
-          const continueSurveying = confirm(
-            `Survey submitted successfully for House No: ${formData.houseDoorNo || 'N/A'}!
-
-Do you want to continue surveying other households in ${slum?.name || 'this slum'}?
-
-Click OK to continue, Cancel to return to dashboard.`
-          );
-          
-          if (!continueSurveying) {
-            router.push(`/surveyor/dashboard`);
-          }
-        }, 1500);
+        // Show completion modal instead of browser alert
+        await fetchProgress(); // Fetch updated progress
+        setShowCompletionModal(true);
       } else {
         showToast(response.message || "Failed to submit survey", "error");
       }
@@ -2177,6 +2192,15 @@ Click OK to continue, Cancel to return to dashboard.`
           </div>
         )}
       </div>
+    <HouseholdSurveyModal
+        isOpen={showCompletionModal}
+        onClose={() => router.push("/surveyor/dashboard")}
+        onSubmit={() => setShowCompletionModal(false)}
+        houseDoorNo={lastSubmittedHouseNo}
+        slumName={slum?.name || ""}
+        completedCount={householdProgress.completed}
+        totalCount={householdProgress.total}
+      />
     </SurveyorLayout>
   );
 }

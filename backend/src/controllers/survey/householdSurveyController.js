@@ -181,7 +181,9 @@ exports.submitHouseholdSurvey = async (req, res) => {
     
     // Update survey with form data directly (flat structure)
     // Ensure numeric fields have proper values
-    const sanitizedData = { ...req.body };
+    // Exclude system fields that shouldn't be overwritten
+    const { householdId, houseDoorNo, slum, surveyor, ...formData } = req.body;
+    const sanitizedData = { ...formData };
     
     // Sanitize numeric fields
     const numericFields = [
@@ -203,6 +205,12 @@ exports.submitHouseholdSurvey = async (req, res) => {
     });
     
     console.log('Sanitized data:', JSON.stringify(sanitizedData, null, 2));
+    console.log('Excluded fields:', { 
+      householdId: !!req.body.householdId, 
+      houseDoorNo: !!req.body.houseDoorNo, 
+      slum: !!req.body.slum, 
+      surveyor: !!req.body.surveyor 
+    });
     
     // Try assignment with error handling
     try {
