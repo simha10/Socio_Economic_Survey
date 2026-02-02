@@ -686,7 +686,7 @@ export default function SlumSurveyPage() {
   const assignmentId = params.id as string;
   
   // Unwrap searchParams Promise for Next.js 16.1.5 with Turbopack
-  const unwrappedSearchParams = React.use(searchParams);
+  const unwrappedSearchParams = React.useMemo(() => searchParams, [searchParams]);
   const isEditMode = unwrappedSearchParams?.get('edit') === 'true';
   const { showToast } = useToast();
 
