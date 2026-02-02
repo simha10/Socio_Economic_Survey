@@ -332,25 +332,58 @@ interface SlumSurveyForm {
   streetLightAvailable?: string; // Yes-01, No-02
   
   // 26. Pre-primary School
-  anganwadiUnderIcds?: number; // 26a. Anganwadi under ICDS
-  municipalPreschool?: number; // 26b. Municipal pre-school
-  privatePreschool?: number; // 26c. Private pre-school
+  anganwadiUnderIcds?: {
+    option: string;
+    distance: number | null;
+  }; // 26a. Anganwadi under ICDS
+  municipalPreschool?: {
+    option: string;
+    distance: number | null;
+  }; // 26b. Municipal pre-school
+  privatePreschool?: {
+    option: string;
+    distance: number | null;
+  }; // 26c. Private pre-school
   
   // 27. Primary School
-  municipalPrimarySchool?: number; // 27a. Municipal
-  stateGovtPrimarySchool?: number; // 27b. State Government
-  privatePrimarySchool?: number; // 27c. Private
+  municipalPrimarySchool?: {
+    option: string;
+    distance: number | null;
+  }; // 27a. Municipal
+  stateGovtPrimarySchool?: {
+    option: string;
+    distance: number | null;
+  }; // 27b. State Government
+  privatePrimarySchool?: {
+    option: string;
+    distance: number | null;
+  }; // 27c. Private
   
   // 28. High School
-  municipalHighSchool?: number; // 28a. Municipal
-  stateGovtHighSchool?: number; // 28b. State Government
-  privateHighSchool?: number; // 28c. Private
+  municipalHighSchool?: {
+    option: string;
+    distance: number | null;
+  }; // 28a. Municipal
+  stateGovtHighSchool?: {
+    option: string;
+    distance: number | null;
+  }; // 28b. State Government
+  privateHighSchool?: {
+    option: string;
+    distance: number | null;
+  }; // 28c. Private
   
   // 29. Adult Education Centre
-  adultEducationCentre?: number; // If 01, then number
+  adultEducationCentre?: {
+    option: string;
+    distance: number | null;
+  }; // If 01, then number
   
   // 30. Non-formal Education Centre
-  nonFormalEducationCentre?: number; // If 01, then number
+  nonFormalEducationCentre?: {
+    option: string;
+    distance: number | null;
+  }; // If 01, then number
   
   // PART-K: IX. Health Facilities
   // 31. Existence of Health Facilities
@@ -383,17 +416,17 @@ interface SlumSurveyForm {
   healthInsuranceCovered?: number;
   
   // 34. Self Help Groups/DWCUA Groups in Slum
-  selfHelpGroups?: number; // Specify Number: 0, 01, 02, 03 ....
+  selfHelpGroups?: number; // Specify Distance: 0, 01, 02, 03 ....
   
   // 35. Thrift and Credit Societies in Slum
-  thriftCreditSocieties?: number; // Specify Number: 0, 01, 02, 03 ....
+  thriftCreditSocieties?: number; // Specify Distance: 0, 01, 02, 03 ....
   
   // 36a. Slum-dwellers Association
   slumDwellersAssociation?: string; // [Yes- 01, No- 02]
   // 36b. Youth Associations
-  youthAssociations?: number; // Specify Number: 0, 01,02,03
+  youthAssociations?: number; // Specify Distance: 0, 01,02,03
   // 36c. Women's Associations/ Mahila Samithis
-  womensAssociations?: number; // Specify Number: 0, 01,02,03
+  womensAssociations?: number; // Specify Distance: 0, 01,02,03
   
   // Employment and occupation related fields
   majorIndustriesPresent?: string[];
@@ -651,7 +684,10 @@ export default function SlumSurveyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const assignmentId = params.id as string;
-  const isEditMode = searchParams.get('edit') === 'true';
+  
+  // Unwrap searchParams Promise for Next.js 16.1.5 with Turbopack
+  const unwrappedSearchParams = React.use(searchParams);
+  const isEditMode = unwrappedSearchParams?.get('edit') === 'true';
   const { showToast } = useToast();
 
   const [slum, setSlum] = useState<any>(null);
@@ -1096,17 +1132,17 @@ export default function SlumSurveyPage() {
             if (surveyData.educationFacilities) {
               setFormData(prev => ({
                 ...prev,
-                anganwadiUnderIcds: surveyData.educationFacilities.anganwadiUnderIcds || 0,
-                municipalPreschool: surveyData.educationFacilities.municipalPreschool || 0,
-                privatePreschool: surveyData.educationFacilities.privatePreschool || 0,
-                municipalPrimarySchool: surveyData.educationFacilities.municipalPrimarySchool || 0,
-                stateGovtPrimarySchool: surveyData.educationFacilities.stateGovtPrimarySchool || 0,
-                privatePrimarySchool: surveyData.educationFacilities.privatePrimarySchool || 0,
-                municipalHighSchool: surveyData.educationFacilities.municipalHighSchool || 0,
-                stateGovtHighSchool: surveyData.educationFacilities.stateGovtHighSchool || 0,
-                privateHighSchool: surveyData.educationFacilities.privateHighSchool || 0,
-                adultEducationCentre: surveyData.educationFacilities.adultEducationCentre || 0,
-                nonFormalEducationCentre: surveyData.educationFacilities.nonFormalEducationCentre || 0,
+                anganwadiUnderIcds: surveyData.educationFacilities.anganwadiUnderIcds || { option: '', distance: null },
+                municipalPreschool: surveyData.educationFacilities.municipalPreschool || { option: '', distance: null },
+                privatePreschool: surveyData.educationFacilities.privatePreschool || { option: '', distance: null },
+                municipalPrimarySchool: surveyData.educationFacilities.municipalPrimarySchool || { option: '', distance: null },
+                stateGovtPrimarySchool: surveyData.educationFacilities.stateGovtPrimarySchool || { option: '', distance: null },
+                privatePrimarySchool: surveyData.educationFacilities.privatePrimarySchool || { option: '', distance: null },
+                municipalHighSchool: surveyData.educationFacilities.municipalHighSchool || { option: '', distance: null },
+                stateGovtHighSchool: surveyData.educationFacilities.stateGovtHighSchool || { option: '', distance: null },
+                privateHighSchool: surveyData.educationFacilities.privateHighSchool || { option: '', distance: null },
+                adultEducationCentre: surveyData.educationFacilities.adultEducationCentre || { option: '', distance: null },
+                nonFormalEducationCentre: surveyData.educationFacilities.nonFormalEducationCentre || { option: '', distance: null },
               }));
             }
             
@@ -1178,6 +1214,103 @@ export default function SlumSurveyPage() {
                 schoolDropoutsFemaleOthers: surveyData.demographicProfile.schoolDropoutsFemale?.Others || 0,
                 schoolDropoutsFemaleTotal: surveyData.demographicProfile.schoolDropoutsFemale?.Total || 0,
                 schoolDropoutsFemaleMinorities: surveyData.demographicProfile.schoolDropoutsFemale?.Minorities || 0,
+
+                // Number of BPL Households (from demographicProfile.numberOfBplHouseholds)
+                noBplHouseholdsSC: surveyData.demographicProfile.numberOfBplHouseholds?.SC || 0,
+                noBplHouseholdsST: surveyData.demographicProfile.numberOfBplHouseholds?.ST || 0,
+                noBplHouseholdsOBC: surveyData.demographicProfile.numberOfBplHouseholds?.OBC || 0,
+                noBplHouseholdsOthers: surveyData.demographicProfile.numberOfBplHouseholds?.Others || 0,
+                noBplHouseholdsTotal: surveyData.demographicProfile.numberOfBplHouseholds?.Total || 0,
+                noBplHouseholdsMinorities: surveyData.demographicProfile.numberOfBplHouseholds?.Minorities || 0,
+                
+                // Number of Households (from demographicProfile.numberOfHouseholds)
+                noHouseholdsSlumSC: surveyData.demographicProfile.numberOfHouseholds?.SC || 0,
+                noHouseholdsSlumST: surveyData.demographicProfile.numberOfHouseholds?.ST || 0,
+                noHouseholdsSlumOBC: surveyData.demographicProfile.numberOfHouseholds?.OBC || 0,
+                noHouseholdsSlumOthers: surveyData.demographicProfile.numberOfHouseholds?.Others || 0,
+                noHouseholdsSlum: surveyData.demographicProfile.numberOfHouseholds?.Total || 0,
+                noHouseholdsSlumMinorities: surveyData.demographicProfile.numberOfHouseholds?.Minorities || 0,
+                
+                // Women Headed Households
+                noWomenHeadedHouseholds: surveyData.demographicProfile.womenHeadedHouseholds?.Total || 0,
+                noWomenHeadedHouseholdsSC: surveyData.demographicProfile.womenHeadedHouseholds?.SC || 0,
+                noWomenHeadedHouseholdsST: surveyData.demographicProfile.womenHeadedHouseholds?.ST || 0,
+                noWomenHeadedHouseholdsOBC: surveyData.demographicProfile.womenHeadedHouseholds?.OBC || 0,
+                noWomenHeadedHouseholdsOthers: surveyData.demographicProfile.womenHeadedHouseholds?.Others || 0,
+                noWomenHeadedHouseholdsTotal: surveyData.demographicProfile.womenHeadedHouseholds?.Total || 0,
+                noWomenHeadedHouseholdsMinorities: surveyData.demographicProfile.womenHeadedHouseholds?.Minorities || 0,
+                
+                // Persons Older Than 65 Years
+                noPersonsOlder65: surveyData.demographicProfile.personsOlderThan65Years?.Total || 0,
+                noPersonsOlder65SC: surveyData.demographicProfile.personsOlderThan65Years?.SC || 0,
+                noPersonsOlder65ST: surveyData.demographicProfile.personsOlderThan65Years?.ST || 0,
+                noPersonsOlder65OBC: surveyData.demographicProfile.personsOlderThan65Years?.OBC || 0,
+                noPersonsOlder65Others: surveyData.demographicProfile.personsOlderThan65Years?.Others || 0,
+                noPersonsOlder65Total: surveyData.demographicProfile.personsOlderThan65Years?.Total || 0,
+                noPersonsOlder65Minorities: surveyData.demographicProfile.personsOlderThan65Years?.Minorities || 0,
+                
+                // Child Labourers
+                noChildLabourers: surveyData.demographicProfile.childLabourers?.Total || 0,
+                noChildLabourersSC: surveyData.demographicProfile.childLabourers?.SC || 0,
+                noChildLabourersST: surveyData.demographicProfile.childLabourers?.ST || 0,
+                noChildLabourersOBC: surveyData.demographicProfile.childLabourers?.OBC || 0,
+                noChildLabourersOthers: surveyData.demographicProfile.childLabourers?.Others || 0,
+                noChildLabourersTotal: surveyData.demographicProfile.childLabourers?.Total || 0,
+                noChildLabourersMinorities: surveyData.demographicProfile.childLabourers?.Minorities || 0,
+                
+                // Physically Challenged Persons
+                noPhysicallyChallenged: surveyData.demographicProfile.physicallyChallengedPersons?.Total || 0,
+                noPhysicallyChallengedSC: surveyData.demographicProfile.physicallyChallengedPersons?.SC || 0,
+                noPhysicallyChallengedST: surveyData.demographicProfile.physicallyChallengedPersons?.ST || 0,
+                noPhysicallyChallengedOBC: surveyData.demographicProfile.physicallyChallengedPersons?.OBC || 0,
+                noPhysicallyChallengedOthers: surveyData.demographicProfile.physicallyChallengedPersons?.Others || 0,
+                noPhysicallyChallengedTotal: surveyData.demographicProfile.physicallyChallengedPersons?.Total || 0,
+                noPhysicallyChallengedMinorities: surveyData.demographicProfile.physicallyChallengedPersons?.Minorities || 0,
+                
+                // Mentally Challenged Persons
+                noMentallyChallenged: surveyData.demographicProfile.mentallyChallengedPersons?.Total || 0,
+                noMentallyChallengedSC: surveyData.demographicProfile.mentallyChallengedPersons?.SC || 0,
+                noMentallyChallengedST: surveyData.demographicProfile.mentallyChallengedPersons?.ST || 0,
+                noMentallyChallengedOBC: surveyData.demographicProfile.mentallyChallengedPersons?.OBC || 0,
+                noMentallyChallengedOthers: surveyData.demographicProfile.mentallyChallengedPersons?.Others || 0,
+                noMentallyChallengedTotal: surveyData.demographicProfile.mentallyChallengedPersons?.Total || 0,
+                noMentallyChallengedMinorities: surveyData.demographicProfile.mentallyChallengedPersons?.Minorities || 0,
+                
+                // HIV/AIDS
+                noPersonsHivaids: surveyData.demographicProfile.personsWithHivAids?.Total || 0,
+                noPersonsHivaidsSC: surveyData.demographicProfile.personsWithHivAids?.SC || 0,
+                noPersonsHivaidsST: surveyData.demographicProfile.personsWithHivAids?.ST || 0,
+                noPersonsHivaidsOBC: surveyData.demographicProfile.personsWithHivAids?.OBC || 0,
+                noPersonsHivaidsOthers: surveyData.demographicProfile.personsWithHivAids?.Others || 0,
+                noPersonsHivaidsTotal: surveyData.demographicProfile.personsWithHivAids?.Total || 0,
+                noPersonsHivaidsMinorities: surveyData.demographicProfile.personsWithHivAids?.Minorities || 0,
+                
+                // Tuberculosis
+                noPersonsTuberculosis: surveyData.demographicProfile.personsWithTuberculosis?.Total || 0,
+                noPersonsTuberculosisSC: surveyData.demographicProfile.personsWithTuberculosis?.SC || 0,
+                noPersonsTuberculosisST: surveyData.demographicProfile.personsWithTuberculosis?.ST || 0,
+                noPersonsTuberculosisOBC: surveyData.demographicProfile.personsWithTuberculosis?.OBC || 0,
+                noPersonsTuberculosisOthers: surveyData.demographicProfile.personsWithTuberculosis?.Others || 0,
+                noPersonsTuberculosisTotal: surveyData.demographicProfile.personsWithTuberculosis?.Total || 0,
+                noPersonsTuberculosisMinorities: surveyData.demographicProfile.personsWithTuberculosis?.Minorities || 0,
+                
+                // Respiratory Diseases
+                noPersonsRespiratory: surveyData.demographicProfile.personsWithRespiratoryDiseases?.Total || 0,
+                noPersonsRespiratorySC: surveyData.demographicProfile.personsWithRespiratoryDiseases?.SC || 0,
+                noPersonsRespiratoryST: surveyData.demographicProfile.personsWithRespiratoryDiseases?.ST || 0,
+                noPersonsRespiratoryOBC: surveyData.demographicProfile.personsWithRespiratoryDiseases?.OBC || 0,
+                noPersonsRespiratoryOthers: surveyData.demographicProfile.personsWithRespiratoryDiseases?.Others || 0,
+                noPersonsRespiratoryTotal: surveyData.demographicProfile.personsWithRespiratoryDiseases?.Total || 0,
+                noPersonsRespiratoryMinorities: surveyData.demographicProfile.personsWithRespiratoryDiseases?.Minorities || 0,
+                
+                // Other Chronic Diseases
+                noPersonsOtherChronic: surveyData.demographicProfile.personsWithOtherChronicDiseases?.Total || 0,
+                noPersonsOtherChronicSC: surveyData.demographicProfile.personsWithOtherChronicDiseases?.SC || 0,
+                noPersonsOtherChronicST: surveyData.demographicProfile.personsWithOtherChronicDiseases?.ST || 0,
+                noPersonsOtherChronicOBC: surveyData.demographicProfile.personsWithOtherChronicDiseases?.OBC || 0,
+                noPersonsOtherChronicOthers: surveyData.demographicProfile.personsWithOtherChronicDiseases?.Others || 0,
+                noPersonsOtherChronicTotal: surveyData.demographicProfile.personsWithOtherChronicDiseases?.Total || 0,
+                noPersonsOtherChronicMinorities: surveyData.demographicProfile.personsWithOtherChronicDiseases?.Minorities || 0,
               }));
             }
             
@@ -2780,17 +2913,50 @@ export default function SlumSurveyPage() {
             break;
           case 'educationFacilities':
             data.educationFacilities = {
-              anganwadiUnderIcds: formData.anganwadiUnderIcds || 0,
-              municipalPreschool: formData.municipalPreschool || 0,
-              privatePreschool: formData.privatePreschool || 0,
-              municipalPrimarySchool: formData.municipalPrimarySchool || 0,
-              stateGovtPrimarySchool: formData.stateGovtPrimarySchool || 0,
-              privatePrimarySchool: formData.privatePrimarySchool || 0,
-              municipalHighSchool: formData.municipalHighSchool || 0,
-              stateGovtHighSchool: formData.stateGovtHighSchool || 0,
-              privateHighSchool: formData.privateHighSchool || 0,
-              adultEducationCentre: formData.adultEducationCentre || 0,
-              nonFormalEducationCentre: formData.nonFormalEducationCentre || 0
+              anganwadiUnderIcds: {
+                option: formData.anganwadiUnderIcds?.option || '',
+                distance: formData.anganwadiUnderIcds?.distance || null
+              },
+              municipalPreschool: {
+                option: formData.municipalPreschool?.option || '',
+                distance: formData.municipalPreschool?.distance || null
+              },
+              privatePreschool: {
+                option: formData.privatePreschool?.option || '',
+                distance: formData.privatePreschool?.distance || null
+              },
+              municipalPrimarySchool: {
+                option: formData.municipalPrimarySchool?.option || '',
+                distance: formData.municipalPrimarySchool?.distance || null
+              },
+              stateGovtPrimarySchool: {
+                option: formData.stateGovtPrimarySchool?.option || '',
+                distance: formData.stateGovtPrimarySchool?.distance || null
+              },
+              privatePrimarySchool: {
+                option: formData.privatePrimarySchool?.option || '',
+                distance: formData.privatePrimarySchool?.distance || null
+              },
+              municipalHighSchool: {
+                option: formData.municipalHighSchool?.option || '',
+                distance: formData.municipalHighSchool?.distance || null
+              },
+              stateGovtHighSchool: {
+                option: formData.stateGovtHighSchool?.option || '',
+                distance: formData.stateGovtHighSchool?.distance || null
+              },
+              privateHighSchool: {
+                option: formData.privateHighSchool?.option || '',
+                distance: formData.privateHighSchool?.distance || null
+              },
+              adultEducationCentre: {
+                option: formData.adultEducationCentre?.option || '',
+                distance: formData.adultEducationCentre?.distance || null
+              },
+              nonFormalEducationCentre: {
+                option: formData.nonFormalEducationCentre?.option || '',
+                distance: formData.nonFormalEducationCentre?.distance || null
+              }
             };
             break;
           case 'healthFacilities':
@@ -3475,7 +3641,6 @@ export default function SlumSurveyPage() {
                         value={formData.ownershipLandSpecify || ""}
                         onChange={(e) => handleInputChange("ownershipLandSpecify", e.target.value)}
                         placeholder="Specify ownership details..."
-                        required
                         name="ownershipLandSpecify"
                         error={getFieldError('ownershipLandSpecify')}
                         />
@@ -3504,7 +3669,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalPopulationSlumSC || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlumSC", parseInt(e.target.value) || 0)}
-                            required
                             name="totalPopulationSlumSC"
                             error={getFieldError('totalPopulationSlumSC')}
                             />
@@ -3513,7 +3677,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalPopulationSlumST || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlumST", parseInt(e.target.value) || 0)}
-                            required
                             name="totalPopulationSlumST"
                             error={getFieldError('totalPopulationSlumST')}
                             />
@@ -3522,7 +3685,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalPopulationSlumOBC || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlumOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="totalPopulationSlumOBC"
                             error={getFieldError('totalPopulationSlumOBC')}
                             />
@@ -3531,7 +3693,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalPopulationSlumOthers || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlumOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="totalPopulationSlumOthers"
                             error={getFieldError('totalPopulationSlumOthers')}
                             />
@@ -3540,7 +3701,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalPopulationSlumMinorities || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlumMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="totalPopulationSlumMinorities"
                             error={getFieldError('totalPopulationSlumMinorities')}
                             />
@@ -3549,7 +3709,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalPopulationSlum || ""}
                             onChange={(e) => handleInputChange("totalPopulationSlum", parseInt(e.target.value) || 0)}
-                            required
                             name="totalPopulationSlum"
                             error={getFieldError('totalPopulationSlum')}
                             />
@@ -3565,7 +3724,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.bplPopulationSlumSC || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumSC", parseInt(e.target.value) || 0)}
-                            required
                             name="bplPopulationSlumSC"
                             error={getFieldError('bplPopulationSlumSC')}
                             />
@@ -3574,7 +3732,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.bplPopulationSlumST || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumST", parseInt(e.target.value) || 0)}
-                            required
                             name="bplPopulationSlumST"
                             error={getFieldError('bplPopulationSlumST')}
                             />
@@ -3583,7 +3740,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.bplPopulationSlumOBC || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="bplPopulationSlumOBC"
                             error={getFieldError('bplPopulationSlumOBC')}
                             />
@@ -3592,7 +3748,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.bplPopulationSlumOthers || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="bplPopulationSlumOthers"
                             error={getFieldError('bplPopulationSlumOthers')}
                             />
@@ -3601,7 +3756,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.bplPopulationSlumMinorities || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="bplPopulationSlumMinorities"
                             error={getFieldError('bplPopulationSlumMinorities')}
                             />
@@ -3610,7 +3764,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.bplPopulationSlum || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlum", parseInt(e.target.value) || 0)}
-                            required
                             name="bplPopulationSlum"
                             error={getFieldError('bplPopulationSlum')}
                             />
@@ -3626,7 +3779,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noHouseholdsSlumSC || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlumSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noHouseholdsSlumSC"
                             error={getFieldError('noHouseholdsSlumSC')}
                             />
@@ -3635,7 +3787,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noHouseholdsSlumST || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlumST", parseInt(e.target.value) || 0)}
-                            required
                             name="noHouseholdsSlumST"
                             error={getFieldError('noHouseholdsSlumST')}
                             />
@@ -3644,7 +3795,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noHouseholdsSlumOBC || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlumOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noHouseholdsSlumOBC"
                             error={getFieldError('noHouseholdsSlumOBC')}
                             />
@@ -3653,7 +3803,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noHouseholdsSlumOthers || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlumOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noHouseholdsSlumOthers"
                             error={getFieldError('noHouseholdsSlumOthers')}
                             />
@@ -3662,7 +3811,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noHouseholdsSlumMinorities || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlumMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noHouseholdsSlumMinorities"
                             error={getFieldError('noHouseholdsSlumMinorities')}
                             />
@@ -3671,7 +3819,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noHouseholdsSlum || ""}
                             onChange={(e) => handleInputChange("noHouseholdsSlum", parseInt(e.target.value) || 0)}
-                            required
                             name="noHouseholdsSlum"
                             error={getFieldError('noHouseholdsSlum')}
                             />
@@ -3687,7 +3834,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplHouseholdsSC || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplHouseholdsSC"
                             error={getFieldError('noBplHouseholdsSC')}
                             />
@@ -3696,7 +3842,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplHouseholdsST || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsST", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplHouseholdsST"
                             error={getFieldError('noBplHouseholdsST')}
                             />
@@ -3705,7 +3850,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplHouseholdsOBC || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplHouseholdsOBC"
                             error={getFieldError('noBplHouseholdsOBC')}
                             />
@@ -3714,7 +3858,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplHouseholdsOthers || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplHouseholdsOthers"
                             error={getFieldError('noBplHouseholdsOthers')}
                             />
@@ -3723,7 +3866,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplHouseholdsMinorities || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplHouseholdsMinorities"
                             error={getFieldError('noBplHouseholdsMinorities')}
                             />
@@ -3732,7 +3874,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplHouseholdsTotal || ""}
                             onChange={(e) => handleInputChange("noBplHouseholdsTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplHouseholdsTotal"
                             error={getFieldError('noBplHouseholdsTotal')}
                             />
@@ -3748,7 +3889,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noWomenHeadedHouseholdsSC || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noWomenHeadedHouseholdsSC"
                             error={getFieldError('noWomenHeadedHouseholdsSC')}
                             />
@@ -3757,7 +3897,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noWomenHeadedHouseholdsST || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsST", parseInt(e.target.value) || 0)}
-                            required
                             name="noWomenHeadedHouseholdsST"
                             error={getFieldError('noWomenHeadedHouseholdsST')}
                             />
@@ -3766,7 +3905,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noWomenHeadedHouseholdsOBC || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noWomenHeadedHouseholdsOBC"
                             error={getFieldError('noWomenHeadedHouseholdsOBC')}
                             />
@@ -3775,7 +3913,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noWomenHeadedHouseholdsOthers || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noWomenHeadedHouseholdsOthers"
                             error={getFieldError('noWomenHeadedHouseholdsOthers')}
                             />
@@ -3784,7 +3921,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noWomenHeadedHouseholdsMinorities || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noWomenHeadedHouseholdsMinorities"
                             error={getFieldError('noWomenHeadedHouseholdsMinorities')}
                             />
@@ -3793,7 +3929,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noWomenHeadedHouseholdsTotal || ""}
                             onChange={(e) => handleInputChange("noWomenHeadedHouseholdsTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noWomenHeadedHouseholdsTotal"
                             error={getFieldError('noWomenHeadedHouseholdsTotal')}
                             />
@@ -3809,7 +3944,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOlder65SC || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65SC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOlder65SC"
                             error={getFieldError('noPersonsOlder65SC')}
                             />
@@ -3818,7 +3952,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOlder65ST || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65ST", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOlder65ST"
                             error={getFieldError('noPersonsOlder65ST')}
                             />
@@ -3827,7 +3960,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOlder65OBC || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65OBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOlder65OBC"
                             error={getFieldError('noPersonsOlder65OBC')}  
                             />
@@ -3836,7 +3968,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOlder65Others || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65Others", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOlder65Others"
                             error={getFieldError('noPersonsOlder65Others')}
                             />
@@ -3845,7 +3976,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOlder65Minorities || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65Minorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOlder65Minorities"
                             error={getFieldError('noPersonsOlder65Minorities')}
                             />
@@ -3854,7 +3984,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOlder65Total || ""}
                             onChange={(e) => handleInputChange("noPersonsOlder65Total", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOlder65Total"
                             error={getFieldError('noPersonsOlder65Total')}
                             />
@@ -3870,7 +3999,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noChildLabourersSC || ""}
                             onChange={(e) => handleInputChange("noChildLabourersSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noChildLabourersSC"
                             error={getFieldError('noChildLabourersSC')}
                             />
@@ -3879,7 +4007,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noChildLabourersST || ""}
                             onChange={(e) => handleInputChange("noChildLabourersST", parseInt(e.target.value) || 0)}
-                            required
                             name="noChildLabourersST"
                             error={getFieldError('noChildLabourersST')}
                             />
@@ -3888,7 +4015,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noChildLabourersOBC || ""}
                             onChange={(e) => handleInputChange("noChildLabourersOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noChildLabourersOBC"
                             error={getFieldError('noChildLabourersOBC')}
                             />
@@ -3897,7 +4023,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noChildLabourersOthers || ""}
                             onChange={(e) => handleInputChange("noChildLabourersOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noChildLabourersOthers"
                             error={getFieldError('noChildLabourersOthers')}
                             />
@@ -3906,7 +4031,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noChildLabourersMinorities || ""}
                             onChange={(e) => handleInputChange("noChildLabourersMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noChildLabourersMinorities"
                             error={getFieldError('noChildLabourersMinorities')}
                             />
@@ -3915,7 +4039,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noChildLabourersTotal || ""}
                             onChange={(e) => handleInputChange("noChildLabourersTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noChildLabourersTotal"
                             error={getFieldError('noChildLabourersTotal')}
                             />
@@ -3931,7 +4054,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPhysicallyChallengedSC || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPhysicallyChallengedSC"
                             error={getFieldError('noPhysicallyChallengedSC')}
                             />
@@ -3940,7 +4062,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPhysicallyChallengedST || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedST", parseInt(e.target.value) || 0)}
-                            required
                             name="noPhysicallyChallengedST"
                             error={getFieldError('noPhysicallyChallengedST')}
                             />
@@ -3949,7 +4070,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPhysicallyChallengedOBC || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPhysicallyChallengedOBC"
                             error={getFieldError('noPhysicallyChallengedOBC')}
                             />
@@ -3958,7 +4078,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPhysicallyChallengedOthers || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noPhysicallyChallengedOthers"
                             error={getFieldError('noPhysicallyChallengedOthers')}
                             />
@@ -3967,7 +4086,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPhysicallyChallengedMinorities || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noPhysicallyChallengedMinorities"
                             error={getFieldError('noPhysicallyChallengedMinorities')}
                             />
@@ -3976,7 +4094,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPhysicallyChallengedTotal || ""}
                             onChange={(e) => handleInputChange("noPhysicallyChallengedTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noPhysicallyChallengedTotal"
                             error={getFieldError('noPhysicallyChallengedTotal')}
                             />
@@ -3992,7 +4109,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMentallyChallengedSC || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noMentallyChallengedSC"
                             error={getFieldError('noMentallyChallengedSC')}
                             />
@@ -4001,7 +4117,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMentallyChallengedST || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedST", parseInt(e.target.value) || 0)}
-                            required
                             name="noMentallyChallengedST"
                             error={getFieldError('noMentallyChallengedST')}
                             />
@@ -4010,7 +4125,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMentallyChallengedOBC || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noMentallyChallengedOBC"
                             error={getFieldError('noMentallyChallengedOBC')}
                             />
@@ -4019,7 +4133,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMentallyChallengedOthers || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noMentallyChallengedOthers"
                             error={getFieldError('noMentallyChallengedOthers')}
                             />
@@ -4028,7 +4141,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMentallyChallengedMinorities || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noMentallyChallengedMinorities"
                             error={getFieldError('noMentallyChallengedMinorities')}
                             />
@@ -4037,7 +4149,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMentallyChallengedTotal || ""}
                             onChange={(e) => handleInputChange("noMentallyChallengedTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noMentallyChallengedTotal"
                             error={getFieldError('noMentallyChallengedTotal')}
                             />
@@ -4053,7 +4164,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsHivaidsSC || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsHivaidsSC"
                             error={getFieldError('noPersonsHivaidsSC')}
                             />
@@ -4062,7 +4172,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsHivaidsST || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsST", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsHivaidsST"
                             error={getFieldError('noPersonsHivaidsST')}
                             />
@@ -4071,7 +4180,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsHivaidsOBC || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsHivaidsOBC"
                             error={getFieldError('noPersonsHivaidsOBC')}
                             />
@@ -4080,7 +4188,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsHivaidsOthers || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsHivaidsOthers"
                             error={getFieldError('noPersonsHivaidsOthers')}
                             />
@@ -4089,7 +4196,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsHivaidsMinorities || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsHivaidsMinorities"
                             error={getFieldError('noPersonsHivaidsMinorities')}
                             />
@@ -4098,7 +4204,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsHivaidsTotal || ""}
                             onChange={(e) => handleInputChange("noPersonsHivaidsTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsHivaidsTotal"
                             error={getFieldError('noPersonsHivaidsTotal')}
                             />
@@ -4114,7 +4219,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsTuberculosisSC || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsTuberculosisSC"
                             error={getFieldError('noPersonsTuberculosisSC')}
                             />
@@ -4123,7 +4227,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsTuberculosisST || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisST", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsTuberculosisST"
                             error={getFieldError('noPersonsTuberculosisST')}
                             />
@@ -4132,7 +4235,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsTuberculosisOBC || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsTuberculosisOBC"
                             error={getFieldError('noPersonsTuberculosisOBC')}
                             />
@@ -4141,7 +4243,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsTuberculosisOthers || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsTuberculosisOthers"
                             error={getFieldError('noPersonsTuberculosisOthers')}
                             />
@@ -4150,7 +4251,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsTuberculosisMinorities || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsTuberculosisMinorities"
                             error={getFieldError('noPersonsTuberculosisMinorities')}
                             />
@@ -4159,7 +4259,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsTuberculosisTotal || ""}
                             onChange={(e) => handleInputChange("noPersonsTuberculosisTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsTuberculosisTotal"
                             error={getFieldError('noPersonsTuberculosisTotal')}
                             />
@@ -4175,7 +4274,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsRespiratorySC || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratorySC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsRespiratorySC"
                             error={getFieldError('noPersonsRespiratorySC')}
                             />
@@ -4184,7 +4282,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsRespiratoryST || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratoryST", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsRespiratoryST"
                             error={getFieldError('noPersonsRespiratoryST')}
                             />
@@ -4193,7 +4290,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsRespiratoryOBC || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratoryOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsRespiratoryOBC"
                             error={getFieldError('noPersonsRespiratoryOBC')}
                             />
@@ -4202,7 +4298,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsRespiratoryOthers || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratoryOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsRespiratoryOthers"
                             error={getFieldError('noPersonsRespiratoryOthers')}
                             />
@@ -4211,7 +4306,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsRespiratoryMinorities || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratoryMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsRespiratoryMinorities"
                             error={getFieldError('noPersonsRespiratoryMinorities')}
                             />
@@ -4220,7 +4314,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsRespiratoryTotal || ""}
                             onChange={(e) => handleInputChange("noPersonsRespiratoryTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsRespiratoryTotal"
                             error={getFieldError('noPersonsRespiratoryTotal')}
                             />
@@ -4236,7 +4329,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOtherChronicSC || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOtherChronicSC"
                             error={getFieldError('noPersonsOtherChronicSC')}
                             />
@@ -4245,7 +4337,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOtherChronicST || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicST", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOtherChronicST"
                             error={getFieldError('noPersonsOtherChronicST')}
                             />
@@ -4254,7 +4345,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOtherChronicOBC || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOtherChronicOBC"
                             error={getFieldError('noPersonsOtherChronicOBC')}
                             />
@@ -4263,7 +4353,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOtherChronicOthers || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOtherChronicOthers"
                             error={getFieldError('noPersonsOtherChronicOthers')}
                             />
@@ -4272,7 +4361,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOtherChronicMinorities || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOtherChronicMinorities"
                             error={getFieldError('noPersonsOtherChronicMinorities')}
                             />
@@ -4281,7 +4369,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noPersonsOtherChronicTotal || ""}
                             onChange={(e) => handleInputChange("noPersonsOtherChronicTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noPersonsOtherChronicTotal"
                             error={getFieldError('noPersonsOtherChronicTotal')}
                             />
@@ -4301,7 +4388,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalIlliteratePersonsSC || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsSC", parseInt(e.target.value) || 0)}
-                            required
                             name="totalIlliteratePersonsSC"
                             error={getFieldError('totalIlliteratePersonsSC')}
                             />
@@ -4310,7 +4396,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalIlliteratePersonsST || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsST", parseInt(e.target.value) || 0)}
-                            required
                             name="totalIlliteratePersonsST"
                             error={getFieldError('totalIlliteratePersonsST')}
                             />
@@ -4319,7 +4404,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalIlliteratePersonsOBC || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="totalIlliteratePersonsOBC"
                             error={getFieldError('totalIlliteratePersonsOBC')}
                             />
@@ -4328,7 +4412,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalIlliteratePersonsOthers || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="totalIlliteratePersonsOthers"
                             error={getFieldError('totalIlliteratePersonsOthers')}
                             />
@@ -4337,7 +4420,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalIlliteratePersonsMinorities || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="totalIlliteratePersonsMinorities"
                             error={getFieldError('totalIlliteratePersonsMinorities')}
                             />
@@ -4346,7 +4428,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.totalIlliteratePersonsTotal || ""}
                             onChange={(e) => handleInputChange("totalIlliteratePersonsTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="totalIlliteratePersonsTotal"
                             error={getFieldError('totalIlliteratePersonsTotal')}
                             />
@@ -4362,7 +4443,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleIlliterateSC || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleIlliterateSC"
                             error={getFieldError('noMaleIlliterateSC')}
                             />
@@ -4371,7 +4451,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleIlliterateST || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateST", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleIlliterateST"
                             error={getFieldError('noMaleIlliterateST')}
                             />
@@ -4380,7 +4459,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleIlliterateOBC || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleIlliterateOBC"
                             error={getFieldError('noMaleIlliterateOBC')}
                             />
@@ -4389,7 +4467,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleIlliterateOthers || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleIlliterateOthers"
                             error={getFieldError('noMaleIlliterateOthers')}
                             />
@@ -4398,7 +4475,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleIlliterateMinorities || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleIlliterateMinorities"
                             error={getFieldError('noMaleIlliterateMinorities')}
                             />
@@ -4407,7 +4483,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleIlliterateTotal || ""}
                             onChange={(e) => handleInputChange("noMaleIlliterateTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleIlliterateTotal"
                             error={getFieldError('noMaleIlliterateTotal')}
                             />
@@ -4423,7 +4498,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleIlliterateSC || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleIlliterateSC"
                             error={getFieldError('noFemaleIlliterateSC')}
                             />
@@ -4432,7 +4506,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleIlliterateST || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateST", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleIlliterateST"
                             error={getFieldError('noFemaleIlliterateST')}
                             />
@@ -4441,7 +4514,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleIlliterateOBC || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleIlliterateOBC"
                             error={getFieldError('noFemaleIlliterateOBC')}
                             />
@@ -4450,7 +4522,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleIlliterateOthers || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleIlliterateOthers"
                             error={getFieldError('noFemaleIlliterateOthers')}
                             />
@@ -4459,7 +4530,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleIlliterateMinorities || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleIlliterateMinorities"
                             error={getFieldError('noFemaleIlliterateMinorities')}
                             />
@@ -4468,7 +4538,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleIlliterateTotal || ""}
                             onChange={(e) => handleInputChange("noFemaleIlliterateTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleIlliterateTotal"
                             error={getFieldError('noFemaleIlliterateTotal')}
                             />
@@ -4484,7 +4553,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplIlliteratePersonsSC || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplIlliteratePersonsSC"
                             error={getFieldError('noBplIlliteratePersonsSC')}
                             />
@@ -4493,7 +4561,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplIlliteratePersonsST || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsST", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplIlliteratePersonsST"
                             error={getFieldError('noBplIlliteratePersonsST')}
                             />
@@ -4502,7 +4569,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplIlliteratePersonsOBC || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplIlliteratePersonsOBC"
                             error={getFieldError('noBplIlliteratePersonsOBC')}
                             />
@@ -4511,7 +4577,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplIlliteratePersonsOthers || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplIlliteratePersonsOthers"
                             error={getFieldError('noBplIlliteratePersonsOthers')}
                             />
@@ -4520,7 +4585,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplIlliteratePersonsMinorities || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplIlliteratePersonsMinorities"
                             error={getFieldError('noBplIlliteratePersonsMinorities')}
                             />
@@ -4529,7 +4593,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noBplIlliteratePersonsTotal || ""}
                             onChange={(e) => handleInputChange("noBplIlliteratePersonsTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noBplIlliteratePersonsTotal"
                             error={getFieldError('noBplIlliteratePersonsTotal')}
                             />
@@ -4545,7 +4608,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleBplIlliterateSC || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleBplIlliterateSC"
                             error={getFieldError('noMaleBplIlliterateSC')}
                             />
@@ -4554,7 +4616,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleBplIlliterateST || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateST", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleBplIlliterateST"
                             error={getFieldError('noMaleBplIlliterateST')}
                             />
@@ -4563,7 +4624,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleBplIlliterateOBC || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleBplIlliterateOBC"
                             error={getFieldError('noMaleBplIlliterateOBC')}
                             />
@@ -4572,7 +4632,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleBplIlliterateOthers || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleBplIlliterateOthers"
                             error={getFieldError('noMaleBplIlliterateOthers')}
                             />
@@ -4581,7 +4640,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleBplIlliterateMinorities || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleBplIlliterateMinorities"
                             error={getFieldError('noMaleBplIlliterateMinorities')}
                             />
@@ -4590,7 +4648,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noMaleBplIlliterateTotal || ""}
                             onChange={(e) => handleInputChange("noMaleBplIlliterateTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noMaleBplIlliterateTotal"
                             error={getFieldError('noMaleBplIlliterateTotal')}
                             />
@@ -4606,7 +4663,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleBplIlliterateSC || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateSC", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleBplIlliterateSC"
                             error={getFieldError('noFemaleBplIlliterateSC')}
                             />
@@ -4615,7 +4671,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleBplIlliterateST || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateST", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleBplIlliterateST"
                             error={getFieldError('noFemaleBplIlliterateST')}
                             />
@@ -4624,7 +4679,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleBplIlliterateOBC || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleBplIlliterateOBC"
                             error={getFieldError('noFemaleBplIlliterateOBC')}
                             />
@@ -4633,7 +4687,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleBplIlliterateOthers || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleBplIlliterateOthers"
                             error={getFieldError('noFemaleBplIlliterateOthers')}
                             />
@@ -4642,7 +4695,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleBplIlliterateMinorities || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleBplIlliterateMinorities"
                             error={getFieldError('noFemaleBplIlliterateMinorities')}
                             />
@@ -4651,7 +4703,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.noFemaleBplIlliterateTotal || ""}
                             onChange={(e) => handleInputChange("noFemaleBplIlliterateTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="noFemaleBplIlliterateTotal"
                             error={getFieldError('noFemaleBplIlliterateTotal')}
                             />
@@ -4667,7 +4718,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsMaleSC || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleSC", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsMaleSC"
                             error={getFieldError('schoolDropoutsMaleSC')}
                             />
@@ -4676,7 +4726,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsMaleST || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleST", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsMaleST"
                             error={getFieldError('schoolDropoutsMaleST')}
                             />
@@ -4685,7 +4734,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsMaleOBC || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsMaleOBC"
                             error={getFieldError('schoolDropoutsMaleOBC')}
                             />
@@ -4694,7 +4742,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsMaleOthers || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsMaleOthers"
                             error={getFieldError('schoolDropoutsMaleOthers')}
                             />
@@ -4703,7 +4750,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsMaleMinorities || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsMaleMinorities"
                             error={getFieldError('schoolDropoutsMaleMinorities')}
                             />
@@ -4712,7 +4758,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsMaleTotal || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsMaleTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsMaleTotal"
                             error={getFieldError('schoolDropoutsMaleTotal')}
                             />
@@ -4728,7 +4773,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsFemaleSC || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleSC", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsFemaleSC"
                             error={getFieldError('schoolDropoutsFemaleSC')}
                             />
@@ -4737,7 +4781,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsFemaleST || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleST", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsFemaleST"
                             error={getFieldError('schoolDropoutsFemaleST')}
                             />
@@ -4746,7 +4789,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsFemaleOBC || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleOBC", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsFemaleOBC"
                             error={getFieldError('schoolDropoutsFemaleOBC')}
                             />
@@ -4755,7 +4797,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsFemaleOthers || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleOthers", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsFemaleOthers"
                             error={getFieldError('schoolDropoutsFemaleOthers')}
                             />
@@ -4764,7 +4805,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsFemaleMinorities || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleMinorities", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsFemaleMinorities"
                             error={getFieldError('schoolDropoutsFemaleMinorities')}
                             />
@@ -4773,7 +4813,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.schoolDropoutsFemaleTotal || ""}
                             onChange={(e) => handleInputChange("schoolDropoutsFemaleTotal", parseInt(e.target.value) || 0)}
-                            required
                             name="schoolDropoutsFemaleTotal"
                             error={getFieldError('schoolDropoutsFemaleTotal')}
                             />
@@ -5313,84 +5352,261 @@ export default function SlumSurveyPage() {
                 <h2 className="text-xl font-bold text-white border-b border-slate-800 pb-4">
                 Part K: Education Facilities (Questions 26-30)
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Input
-                    label="26a. Anganwadi under ICDS"
-                    type="number"
-                    value={formData.anganwadiUnderIcds || ""}
-                    onChange={(e) => handleInputChange("anganwadiUnderIcds", parseInt(e.target.value) || 0)}
-                    required
-                    />
-                    <Input
-                    label="26b. Municipal pre-school"
-                    type="number"
-                    value={formData.municipalPreschool || ""}
-                    onChange={(e) => handleInputChange("municipalPreschool", parseInt(e.target.value) || 0)}
-                    required
-                    />
-                    <Input
-                    label="26c. Private pre-school"
-                    type="number"
-                    value={formData.privatePreschool || ""}
-                    onChange={(e) => handleInputChange("privatePreschool", parseInt(e.target.value) || 0)}
-                    required
-                    />
-                    <Input
-                    label="27a. Municipal"
-                    type="number"
-                    value={formData.municipalPrimarySchool || ""}
-                    onChange={(e) => handleInputChange("municipalPrimarySchool", parseInt(e.target.value) || 0)}
-                    required
-                    />
-                    <Input
-                    label="27b. State Government"
-                    type="number"
-                    value={formData.stateGovtPrimarySchool || ""}
-                    onChange={(e) => handleInputChange("stateGovtPrimarySchool", parseInt(e.target.value) || 0)}
-                    required
-                    />
-                    <Input
-                    label="27c. Private"
-                    type="number"
-                    value={formData.privatePrimarySchool || ""}
-                    onChange={(e) => handleInputChange("privatePrimarySchool", parseInt(e.target.value) || 0)}
-                    required
-                    />
-                    <Input
-                    label="28a. Municipal"
-                    type="number"
-                    value={formData.municipalHighSchool || ""}
-                    onChange={(e) => handleInputChange("municipalHighSchool", parseInt(e.target.value) || 0)}
-                    required
-                    />
-                    <Input
-                    label="28b. State Government"
-                    type="number"
-                    value={formData.stateGovtHighSchool || ""}
-                    onChange={(e) => handleInputChange("stateGovtHighSchool", parseInt(e.target.value) || 0)}
-                    required
-                    />
-                    <Input
-                    label="28c. Private"
-                    type="number"
-                    value={formData.privateHighSchool || ""}
-                    onChange={(e) => handleInputChange("privateHighSchool", parseInt(e.target.value) || 0)}
-                    required
-                    />
-                    <Input
-                    label="29. Adult Education Centre"
-                    type="number"
-                    value={formData.adultEducationCentre || ""}
-                    onChange={(e) => handleInputChange("adultEducationCentre", parseInt(e.target.value) || 0)}
-                    required
-                    />
-                    <Input
-                    label="30. Non-formal Education Centre"
-                    type="number"
-                    value={formData.nonFormalEducationCentre || ""}
-                    onChange={(e) => handleInputChange("nonFormalEducationCentre", parseInt(e.target.value) || 0)}
-                    required
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Select
+                        label="26a. Anganwadi under ICDS"
+                        value={formData.anganwadiUnderIcds?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('anganwadiUnderIcds', 'option', value);
+                          // Clear distance if option is not 'Within the slum area'
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('anganwadiUnderIcds', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.anganwadiUnderIcds?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.anganwadiUnderIcds?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('anganwadiUnderIcds', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <Select
+                        label="26b. Municipal pre-school"
+                        value={formData.municipalPreschool?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('municipalPreschool', 'option', value);
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('municipalPreschool', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.municipalPreschool?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.municipalPreschool?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('municipalPreschool', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <Select
+                        label="26c. Private pre-school"
+                        value={formData.privatePreschool?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('privatePreschool', 'option', value);
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('privatePreschool', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.privatePreschool?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.privatePreschool?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('privatePreschool', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <Select
+                        label="27a. Municipal Primary School"
+                        value={formData.municipalPrimarySchool?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('municipalPrimarySchool', 'option', value);
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('municipalPrimarySchool', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.municipalPrimarySchool?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.municipalPrimarySchool?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('municipalPrimarySchool', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <Select
+                        label="27b. State Government Primary School"
+                        value={formData.stateGovtPrimarySchool?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('stateGovtPrimarySchool', 'option', value);
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('stateGovtPrimarySchool', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.stateGovtPrimarySchool?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.stateGovtPrimarySchool?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('stateGovtPrimarySchool', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <Select
+                        label="27c. Private Primary School"
+                        value={formData.privatePrimarySchool?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('privatePrimarySchool', 'option', value);
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('privatePrimarySchool', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.privatePrimarySchool?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.privatePrimarySchool?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('privatePrimarySchool', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <Select
+                        label="28a. Municipal High School"
+                        value={formData.municipalHighSchool?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('municipalHighSchool', 'option', value);
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('municipalHighSchool', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.municipalHighSchool?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.municipalHighSchool?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('municipalHighSchool', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <Select
+                        label="28b. State Government High School"
+                        value={formData.stateGovtHighSchool?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('stateGovtHighSchool', 'option', value);
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('stateGovtHighSchool', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.stateGovtHighSchool?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.stateGovtHighSchool?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('stateGovtHighSchool', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <Select
+                        label="28c. Private High School"
+                        value={formData.privateHighSchool?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('privateHighSchool', 'option', value);
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('privateHighSchool', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.privateHighSchool?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.privateHighSchool?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('privateHighSchool', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <Select
+                        label="29. Adult Education Centre"
+                        value={formData.adultEducationCentre?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('adultEducationCentre', 'option', value);
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('adultEducationCentre', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.adultEducationCentre?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.adultEducationCentre?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('adultEducationCentre', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <Select
+                        label="30. Non-formal Education Centre"
+                        value={formData.nonFormalEducationCentre?.option || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleNestedInputChange('nonFormalEducationCentre', 'option', value);
+                          if (value !== 'Within the slum area') {
+                            handleNestedInputChange('nonFormalEducationCentre', 'distance', null);
+                          }
+                        }}
+                        options={[{ value: '', label: 'No' }, { value: 'Within the slum area', label: 'Within the slum area' }, { value: 'Outside the slum area: with distance Less than 0.5 kms', label: 'Outside the slum area: with distance Less than 0.5 kms' }, { value: 'Outside the slum area: with distance 0.5 to 1.0 km', label: 'Outside the slum area: with distance 0.5 to 1.0 km' }, { value: 'Outside the slum area: with distance 1.0 to 2.0 km', label: 'Outside the slum area: with distance 1.0 to 2.0 km' }, { value: 'Outside the slum area: with distance 2.0 to 5.0 km', label: 'Outside the slum area: with distance 2.0 to 5.0 km' }, { value: 'Outside the slum area: with distance more than 5.0 km', label: 'Outside the slum area: with distance more than 5.0 km' }]}
+                      />
+                      {formData.nonFormalEducationCentre?.option === 'Within the slum area' && (
+                        <Input
+                          label="Distance within slum area"
+                          type="number"
+                          value={formData.nonFormalEducationCentre?.distance || ''}
+                          onChange={(e) => handleNestedInputChange('nonFormalEducationCentre', 'distance', parseInt(e.target.value) || 0)}
+                          placeholder="Enter number"
+                        />
+                      )}
+                    </div>
                 </div>
             </div>
             )}
@@ -5658,7 +5874,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.waterSupplyPipelinesCost || ""}
                             onChange={(e) => handleInputChange("waterSupplyPipelinesCost", parseInt(e.target.value) || 0)}
-                            required
                             name="waterSupplyPipelinesCost"
                             error={getFieldError("waterSupplyPipelinesCost")}
                             />
@@ -5694,7 +5909,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.waterSupplyIndividualTapsCost || ""}
                             onChange={(e) => handleInputChange("waterSupplyIndividualTapsCost", parseInt(e.target.value) || 0)}
-                            required
                             name="waterSupplyIndividualTapsCost"
                             error={getFieldError("waterSupplyIndividualTapsCost")}
                             />
@@ -5730,7 +5944,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.waterSupplyBorewellsCost || ""}
                             onChange={(e) => handleInputChange("waterSupplyBorewellsCost", parseInt(e.target.value) || 0)}
-                            required
                             name="waterSupplyBorewellsCost"
                             error={getFieldError("waterSupplyBorewellsCost")}
                             />
@@ -5766,7 +5979,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.waterSupplyConnectivityTrunkLinesCost || ""}
                             onChange={(e) => handleInputChange("waterSupplyConnectivityTrunkLinesCost", parseInt(e.target.value) || 0)}
-                            required
                             name="waterSupplyConnectivityTrunkLinesCost"
                             error={getFieldError("waterSupplyConnectivityTrunkLinesCost")}
                             />
@@ -5808,7 +6020,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.drainageStormwaterDrainageCost || ""}
                             onChange={(e) => handleInputChange("drainageStormwaterDrainageCost", parseInt(e.target.value) || 0)}
-                            required
                             name="drainageStormwaterDrainageCost"
                             error={getFieldError("drainageStormwaterDrainageCost")}
                             />
@@ -5844,7 +6055,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.drainageConnectivityMainDrainsCost || ""}
                             onChange={(e) => handleInputChange("drainageConnectivityMainDrainsCost", parseInt(e.target.value) || 0)}
-                            required
                             name="drainageConnectivityMainDrainsCost"
                             error={getFieldError("drainageConnectivityMainDrainsCost")}
                             />
@@ -5880,7 +6090,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.drainageSewerLinesCost || ""}
                             onChange={(e) => handleInputChange("drainageSewerLinesCost", parseInt(e.target.value) || 0)}
-                            required
                             name="drainageSewerLinesCost"
                             error={getFieldError("drainageSewerLinesCost")}
                             />
@@ -5916,7 +6125,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.drainageConnectivityTrunkSewersCost || ""}
                             onChange={(e) => handleInputChange("drainageConnectivityTrunkSewersCost", parseInt(e.target.value) || 0)}
-                            required
                             name="drainageConnectivityTrunkSewersCost"
                             error={getFieldError("drainageConnectivityTrunkSewersCost")}
                             />
@@ -5958,7 +6166,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.roadsInternalRoadsCCCost || ""}
                             onChange={(e) => handleInputChange("roadsInternalRoadsCCCost", parseInt(e.target.value) || 0)}
-                            required
                             name="roadsInternalRoadsCCCost"
                             error={getFieldError("roadsInternalRoadsCCCost")}
                             />
@@ -5994,7 +6201,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.roadsInternalRoadsBTCost || ""}
                             onChange={(e) => handleInputChange("roadsInternalRoadsBTCost", parseInt(e.target.value) || 0)}
-                            required
                             name="roadsInternalRoadsBTCost"
                             error={getFieldError("roadsInternalRoadsBTCost")}
                             />
@@ -6030,7 +6236,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.roadsInternalRoadsOthersCost || ""}
                             onChange={(e) => handleInputChange("roadsInternalRoadsOthersCost", parseInt(e.target.value) || 0)}
-                            required
                             name="roadsInternalRoadsOthersCost"
                             error={getFieldError("roadsInternalRoadsOthersCost")}
                             />
@@ -6066,7 +6271,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.roadsApproachRoadsCCCost || ""}
                             onChange={(e) => handleInputChange("roadsApproachRoadsCCCost", parseInt(e.target.value) || 0)}
-                            required
                             name="roadsApproachRoadsCCCost"
                             error={getFieldError("roadsApproachRoadsCCCost")}
                             />
@@ -6102,7 +6306,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.roadsApproachRoadsOthersCost || ""}
                             onChange={(e) => handleInputChange("roadsApproachRoadsOthersCost", parseInt(e.target.value) || 0)}
-                            required
                             name="roadsApproachRoadsOthersCost"
                             error={getFieldError("roadsApproachRoadsOthersCost")}
                             />
@@ -6144,7 +6347,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.streetLightingPolesCost || ""}
                             onChange={(e) => handleInputChange("streetLightingPolesCost", parseInt(e.target.value) || 0)}
-                            required
                             name="streetLightingPolesCost"
                             error={getFieldError("streetLightingPolesCost")}
                             />
@@ -6180,7 +6382,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.streetLightingLightsCost || ""}
                             onChange={(e) => handleInputChange("streetLightingLightsCost", parseInt(e.target.value) || 0)}
-                            required
                             name="streetLightingLightsCost"
                             error={getFieldError("streetLightingLightsCost")}
                             />
@@ -6222,7 +6423,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.sanitationIndividualToiletsCost || ""}
                             onChange={(e) => handleInputChange("sanitationIndividualToiletsCost", parseInt(e.target.value) || 0)}
-                            required
                             name="sanitationIndividualToiletsCost"
                             error={getFieldError("sanitationIndividualToiletsCost")}
                             />
@@ -6258,7 +6458,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.sanitationCommunityToiletsCost || ""}
                             onChange={(e) => handleInputChange("sanitationCommunityToiletsCost", parseInt(e.target.value) || 0)}
-                            required
                             name="sanitationCommunityToiletsCost"
                             error={getFieldError("sanitationCommunityToiletsCost")}
                             />
@@ -6294,7 +6493,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.sanitationSeatsCommunityToiletsCost || ""}
                             onChange={(e) => handleInputChange("sanitationSeatsCommunityToiletsCost", parseInt(e.target.value) || 0)}
-                            required
                             name="sanitationSeatsCommunityToiletsCost"
                             error={getFieldError("sanitationSeatsCommunityToiletsCost")}
                             />
@@ -6330,7 +6528,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.sanitationDumperBinsCost || ""}
                             onChange={(e) => handleInputChange("sanitationDumperBinsCost", parseInt(e.target.value) || 0)}
-                            required
                             name="sanitationDumperBinsCost"
                             error={getFieldError("sanitationDumperBinsCost")}
                             />
@@ -6372,7 +6569,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.communityHallsCost || ""}
                             onChange={(e) => handleInputChange("communityHallsCost", parseInt(e.target.value) || 0)}
-                            required
                             name="communityHallsCost"
                             error={getFieldError("communityHallsCost")}
                             />
@@ -6408,7 +6604,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.communityLivelihoodCentresCost || ""}
                             onChange={(e) => handleInputChange("communityLivelihoodCentresCost", parseInt(e.target.value) || 0)}
-                            required
                             name="communityLivelihoodCentresCost"
                             error={getFieldError("communityLivelihoodCentresCost")}
                             />
@@ -6444,7 +6639,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.communityAnganwadisCost || ""}
                             onChange={(e) => handleInputChange("communityAnganwadisCost", parseInt(e.target.value) || 0)}
-                            required
                             name="communityAnganwadisCost"
                             error={getFieldError("communityAnganwadisCost")}
                             />
@@ -6480,7 +6674,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.communityPrimarySchoolsCost || ""}
                             onChange={(e) => handleInputChange("communityPrimarySchoolsCost", parseInt(e.target.value) || 0)}
-                            required
                             name="communityPrimarySchoolsCost"
                             error={getFieldError("communityPrimarySchoolsCost")}
                             />
@@ -6516,7 +6709,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.communityHealthCentresCost || ""}
                             onChange={(e) => handleInputChange("communityHealthCentresCost", parseInt(e.target.value) || 0)}
-                            required
                             name="communityHealthCentresCost"
                             error={getFieldError("communityHealthCentresCost")}
                             />
@@ -6552,7 +6744,6 @@ export default function SlumSurveyPage() {
                             type="number"
                             value={formData.communityOthersCost || ""}
                             onChange={(e) => handleInputChange("communityOthersCost", parseInt(e.target.value) || 0)}
-                            required
                             name="communityOthersCost"
                             error={getFieldError("communityOthersCost")}
                             />
@@ -6590,7 +6781,6 @@ export default function SlumSurveyPage() {
                         type="number"
                         value={formData.electricityCost || ""}
                         onChange={(e) => handleInputChange("electricityCost", parseInt(e.target.value) || 0)}
-                        required
                         name="electricityCost"
                         error={getFieldError("electricityCost")}
                         />
@@ -6621,7 +6811,6 @@ export default function SlumSurveyPage() {
                         type="number"
                         value={formData.healthcareCost || ""}
                         onChange={(e) => handleInputChange("healthcareCost", parseInt(e.target.value) || 0)}
-                        required
                         name="healthcareCost"
                         error={getFieldError("healthcareCost")}
                         />
@@ -6652,7 +6841,6 @@ export default function SlumSurveyPage() {
                         type="number"
                         value={formData.toiletsCost || ""}
                         onChange={(e) => handleInputChange("toiletsCost", parseInt(e.target.value) || 0)}
-                        required
                         name="toiletsCost"
                         error={getFieldError("toiletsCost")}
                         />
@@ -6769,54 +6957,63 @@ export default function SlumSurveyPage() {
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of BPL Households Others:</strong> {formData.noBplHouseholdsOthers || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of BPL Households Total:</strong> {formData.noBplHouseholdsTotal || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of BPL Households Minorities:</strong> {formData.noBplHouseholdsMinorities || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>No. of Women Headed Households:</strong> {formData.noWomenHeadedHouseholds || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Women Headed Households SC:</strong> {formData.noWomenHeadedHouseholdsSC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Women Headed Households ST:</strong> {formData.noWomenHeadedHouseholdsST || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Women Headed Households OBC:</strong> {formData.noWomenHeadedHouseholdsOBC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Women Headed Households Others:</strong> {formData.noWomenHeadedHouseholdsOthers || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Women Headed Households Total:</strong> {formData.noWomenHeadedHouseholdsTotal || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Women Headed Households Minorities:</strong> {formData.noWomenHeadedHouseholdsMinorities || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Older 65:</strong> {formData.noPersonsOlder65 || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Older 65 SC:</strong> {formData.noPersonsOlder65SC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Older 65 ST:</strong> {formData.noPersonsOlder65ST || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Older 65 OBC:</strong> {formData.noPersonsOlder65OBC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Older 65 Others:</strong> {formData.noPersonsOlder65Others || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Older 65 Total:</strong> {formData.noPersonsOlder65Total || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Older 65 Minorities:</strong> {formData.noPersonsOlder65Minorities || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>No. of Child Labourers:</strong> {formData.noChildLabourers || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Child Labourers SC:</strong> {formData.noChildLabourersSC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Child Labourers ST:</strong> {formData.noChildLabourersST || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Child Labourers OBC:</strong> {formData.noChildLabourersOBC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Child Labourers Others:</strong> {formData.noChildLabourersOthers || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Child Labourers Total:</strong> {formData.noChildLabourersTotal || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Child Labourers Minorities:</strong> {formData.noChildLabourersMinorities || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>No. of Physically Challenged:</strong> {formData.noPhysicallyChallenged || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Physically Challenged SC:</strong> {formData.noPhysicallyChallengedSC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Physically Challenged ST:</strong> {formData.noPhysicallyChallengedST || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Physically Challenged OBC:</strong> {formData.noPhysicallyChallengedOBC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Physically Challenged Others:</strong> {formData.noPhysicallyChallengedOthers || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Physically Challenged Total:</strong> {formData.noPhysicallyChallengedTotal || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Physically Challenged Minorities:</strong> {formData.noPhysicallyChallengedMinorities || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>No. of Mentally Challenged:</strong> {formData.noMentallyChallenged || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Mentally Challenged SC:</strong> {formData.noMentallyChallengedSC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Mentally Challenged ST:</strong> {formData.noMentallyChallengedST || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Mentally Challenged OBC:</strong> {formData.noMentallyChallengedOBC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Mentally Challenged Others:</strong> {formData.noMentallyChallengedOthers || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Mentally Challenged Total:</strong> {formData.noMentallyChallengedTotal || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Mentally Challenged Minorities:</strong> {formData.noMentallyChallengedMinorities || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons HIV/AIDS:</strong> {formData.noPersonsHivaids || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons HIV/AIDS SC:</strong> {formData.noPersonsHivaidsSC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons HIV/AIDS ST:</strong> {formData.noPersonsHivaidsST || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons HIV/AIDS OBC:</strong> {formData.noPersonsHivaidsOBC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons HIV/AIDS Others:</strong> {formData.noPersonsHivaidsOthers || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons HIV/AIDS Total:</strong> {formData.noPersonsHivaidsTotal || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons HIV/AIDS Minorities:</strong> {formData.noPersonsHivaidsMinorities || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Tuberculosis:</strong> {formData.noPersonsTuberculosis || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Tuberculosis SC:</strong> {formData.noPersonsTuberculosisSC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Tuberculosis ST:</strong> {formData.noPersonsTuberculosisST || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Tuberculosis OBC:</strong> {formData.noPersonsTuberculosisOBC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Tuberculosis Others:</strong> {formData.noPersonsTuberculosisOthers || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Tuberculosis Total:</strong> {formData.noPersonsTuberculosisTotal || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Tuberculosis Minorities:</strong> {formData.noPersonsTuberculosisMinorities || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Respiratory:</strong> {formData.noPersonsRespiratory || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Respiratory SC:</strong> {formData.noPersonsRespiratorySC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Respiratory ST:</strong> {formData.noPersonsRespiratoryST || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Respiratory OBC:</strong> {formData.noPersonsRespiratoryOBC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Respiratory Others:</strong> {formData.noPersonsRespiratoryOthers || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Respiratory Total:</strong> {formData.noPersonsRespiratoryTotal || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Respiratory Minorities:</strong> {formData.noPersonsRespiratoryMinorities || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Other Chronic:</strong> {formData.noPersonsOtherChronic || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Other Chronic SC:</strong> {formData.noPersonsOtherChronicSC || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Other Chronic ST:</strong> {formData.noPersonsOtherChronicST || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Persons Other Chronic OBC:</strong> {formData.noPersonsOtherChronicOBC || 'N/A'}</div>
@@ -6950,17 +7147,17 @@ export default function SlumSurveyPage() {
                 <div className="mb-6">
                     <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">11. Education Facilities</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-2 bg-slate-800 rounded"><strong>Anganwadi under ICDS:</strong> {formData.anganwadiUnderIcds || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Municipal Preschool:</strong> {formData.municipalPreschool || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Private Preschool:</strong> {formData.privatePreschool || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Municipal Primary School:</strong> {formData.municipalPrimarySchool || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>State Government Primary School:</strong> {formData.stateGovtPrimarySchool || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Private Primary School:</strong> {formData.privatePrimarySchool || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Municipal High School:</strong> {formData.municipalHighSchool || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>State Government High School:</strong> {formData.stateGovtHighSchool || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Private High School:</strong> {formData.privateHighSchool || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Adult Education Centre:</strong> {formData.adultEducationCentre || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Non-formal Education Centre:</strong> {formData.nonFormalEducationCentre || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Anganwadi under ICDS:</strong> {formData.anganwadiUnderIcds?.option ? `${formData.anganwadiUnderIcds.option}${formData.anganwadiUnderIcds.option === 'Within the slum area' && formData.anganwadiUnderIcds.distance !== null ? ` (${formData.anganwadiUnderIcds.distance})` : ''}` : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Municipal Preschool:</strong> {formData.municipalPreschool?.option ? `${formData.municipalPreschool.option}${formData.municipalPreschool.option === 'Within the slum area' && formData.municipalPreschool.distance !== null ? ` (${formData.municipalPreschool.distance})` : ''}` : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Private Preschool:</strong> {formData.privatePreschool?.option ? `${formData.privatePreschool.option}${formData.privatePreschool.option === 'Within the slum area' && formData.privatePreschool.distance !== null ? ` (${formData.privatePreschool.distance})` : ''}` : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Municipal Primary School:</strong> {formData.municipalPrimarySchool?.option ? `${formData.municipalPrimarySchool.option}${formData.municipalPrimarySchool.option === 'Within the slum area' && formData.municipalPrimarySchool.distance !== null ? ` (${formData.municipalPrimarySchool.distance})` : ''}` : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>State Government Primary School:</strong> {formData.stateGovtPrimarySchool?.option ? `${formData.stateGovtPrimarySchool.option}${formData.stateGovtPrimarySchool.option === 'Within the slum area' && formData.stateGovtPrimarySchool.distance !== null ? ` (${formData.stateGovtPrimarySchool.distance})` : ''}` : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Private Primary School:</strong> {formData.privatePrimarySchool?.option ? `${formData.privatePrimarySchool.option}${formData.privatePrimarySchool.option === 'Within the slum area' && formData.privatePrimarySchool.distance !== null ? ` (${formData.privatePrimarySchool.distance})` : ''}` : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Municipal High School:</strong> {formData.municipalHighSchool?.option ? `${formData.municipalHighSchool.option}${formData.municipalHighSchool.option === 'Within the slum area' && formData.municipalHighSchool.distance !== null ? ` (${formData.municipalHighSchool.distance})` : ''}` : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>State Government High School:</strong> {formData.stateGovtHighSchool?.option ? `${formData.stateGovtHighSchool.option}${formData.stateGovtHighSchool.option === 'Within the slum area' && formData.stateGovtHighSchool.distance !== null ? ` (${formData.stateGovtHighSchool.distance})` : ''}` : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Private High School:</strong> {formData.privateHighSchool?.option ? `${formData.privateHighSchool.option}${formData.privateHighSchool.option === 'Within the slum area' && formData.privateHighSchool.distance !== null ? ` (${formData.privateHighSchool.distance})` : ''}` : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Adult Education Centre:</strong> {formData.adultEducationCentre?.option ? `${formData.adultEducationCentre.option}${formData.adultEducationCentre.option === 'Within the slum area' && formData.adultEducationCentre.distance !== null ? ` (${formData.adultEducationCentre.distance})` : ''}` : 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Non-formal Education Centre:</strong> {formData.nonFormalEducationCentre?.option ? `${formData.nonFormalEducationCentre.option}${formData.nonFormalEducationCentre.option === 'Within the slum area' && formData.nonFormalEducationCentre.distance !== null ? ` (${formData.nonFormalEducationCentre.distance})` : ''}` : 'N/A'}</div>
                     </div>
                 </div>
                 
@@ -7005,24 +7202,98 @@ export default function SlumSurveyPage() {
                 <div className="mb-6">
                     <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">14. Additional Infrastructure Requirements</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-2 bg-slate-800 rounded"><strong>Water Supply Existing:</strong> {formData.additionalInfrastructure?.waterSupply?.existing || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Water Supply Additional:</strong> {formData.additionalInfrastructure?.waterSupply?.additionalRequirement || 'N/A'}</div>
-                        {formData.additionalInfrastructure?.waterSupply?.additionalRequirement === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-1 md:col-span-2"><strong>Water Supply Estimated Cost:</strong> {formData.additionalInfrastructure?.waterSupply?.estimatedCost || 'N/A'}</div>}
-                        <div className="p-2 bg-slate-800 rounded"><strong>Electricity Existing:</strong> {formData.additionalInfrastructure?.electricity?.existing || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Electricity Additional:</strong> {formData.additionalInfrastructure?.electricity?.additionalRequirement || 'N/A'}</div>
-                        {formData.additionalInfrastructure?.electricity?.additionalRequirement === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-1 md:col-span-2"><strong>Electricity Estimated Cost:</strong> {formData.additionalInfrastructure?.electricity?.estimatedCost || 'N/A'}</div>}
-                        <div className="p-2 bg-slate-800 rounded"><strong>Drainage Existing:</strong> {formData.additionalInfrastructure?.drainage?.existing || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Drainage Additional:</strong> {formData.additionalInfrastructure?.drainage?.additionalRequirement || 'N/A'}</div>
-                        {formData.additionalInfrastructure?.drainage?.additionalRequirement === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-1 md:col-span-2"><strong>Drainage Estimated Cost:</strong> {formData.additionalInfrastructure?.drainage?.estimatedCost || 'N/A'}</div>}
-                        <div className="p-2 bg-slate-800 rounded"><strong>Roads Existing:</strong> {formData.additionalInfrastructure?.roads?.existing || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Roads Additional:</strong> {formData.additionalInfrastructure?.roads?.additionalRequirement || 'N/A'}</div>
-                        {formData.additionalInfrastructure?.roads?.additionalRequirement === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-1 md:col-span-2"><strong>Roads Estimated Cost:</strong> {formData.additionalInfrastructure?.roads?.estimatedCost || 'N/A'}</div>}
-                        <div className="p-2 bg-slate-800 rounded"><strong>Toilets Existing:</strong> {formData.additionalInfrastructure?.toilets?.existing || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Toilets Additional:</strong> {formData.additionalInfrastructure?.toilets?.additionalRequirement || 'N/A'}</div>
-                        {formData.additionalInfrastructure?.toilets?.additionalRequirement === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-1 md:col-span-2"><strong>Toilets Estimated Cost:</strong> {formData.additionalInfrastructure?.toilets?.estimatedCost || 'N/A'}</div>}
-                        <div className="p-2 bg-slate-800 rounded"><strong>Healthcare Existing:</strong> {formData.additionalInfrastructure?.healthcare?.existing || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Healthcare Additional:</strong> {formData.additionalInfrastructure?.healthcare?.additionalRequirement || 'N/A'}</div>
-                        {formData.additionalInfrastructure?.healthcare?.additionalRequirement === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-1 md:col-span-2"><strong>Healthcare Estimated Cost:</strong> {formData.additionalInfrastructure?.healthcare?.estimatedCost || 'N/A'}</div>}
+                        {/* Water Supply */}
+                        <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Water Supply</strong></div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Pipelines Existing:</strong> {formData.waterSupplyPipelinesExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Pipelines Additional:</strong> {formData.waterSupplyPipelinesAdditional || 'N/A'}</div>
+                        {formData.waterSupplyPipelinesAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Pipelines Estimated Cost:</strong> {formData.waterSupplyPipelinesCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Individual Taps Existing:</strong> {formData.waterSupplyIndividualTapsExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Individual Taps Additional:</strong> {formData.waterSupplyIndividualTapsAdditional || 'N/A'}</div>
+                        {formData.waterSupplyIndividualTapsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Individual Taps Estimated Cost:</strong> {formData.waterSupplyIndividualTapsCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Borewells Existing:</strong> {formData.waterSupplyBorewellsExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Borewells Additional:</strong> {formData.waterSupplyBorewellsAdditional || 'N/A'}</div>
+                        {formData.waterSupplyBorewellsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Borewells Estimated Cost:</strong> {formData.waterSupplyBorewellsCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Trunk Lines Existing:</strong> {formData.waterSupplyConnectivityTrunkLinesExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Trunk Lines Additional:</strong> {formData.waterSupplyConnectivityTrunkLinesAdditional || 'N/A'}</div>
+                        {formData.waterSupplyConnectivityTrunkLinesAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Connectivity Trunk Lines Estimated Cost:</strong> {formData.waterSupplyConnectivityTrunkLinesCost || 'N/A'}</div>}
+                        
+                        {/* Drainage/Sewerage */}
+                        <div className="p-2 bg-slate-800 rounded col-span-2 mt-4"><strong>Drainage/Sewerage</strong></div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Stormwater Drainage Existing:</strong> {formData.drainageStormwaterDrainageExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Stormwater Drainage Additional:</strong> {formData.drainageStormwaterDrainageAdditional || 'N/A'}</div>
+                        {formData.drainageStormwaterDrainageAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Stormwater Drainage Estimated Cost:</strong> {formData.drainageStormwaterDrainageCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Main Drains Existing:</strong> {formData.drainageConnectivityMainDrainsExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Main Drains Additional:</strong> {formData.drainageConnectivityMainDrainsAdditional || 'N/A'}</div>
+                        {formData.drainageConnectivityMainDrainsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Connectivity Main Drains Estimated Cost:</strong> {formData.drainageConnectivityMainDrainsCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Sewer Lines Existing:</strong> {formData.drainageSewerLinesExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Sewer Lines Additional:</strong> {formData.drainageSewerLinesAdditional || 'N/A'}</div>
+                        {formData.drainageSewerLinesAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Sewer Lines Estimated Cost:</strong> {formData.drainageSewerLinesCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Trunk Sewers Existing:</strong> {formData.drainageConnectivityTrunkSewersExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Trunk Sewers Additional:</strong> {formData.drainageConnectivityTrunkSewersAdditional || 'N/A'}</div>
+                        {formData.drainageConnectivityTrunkSewersAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Connectivity Trunk Sewers Estimated Cost:</strong> {formData.drainageConnectivityTrunkSewersCost || 'N/A'}</div>}
+                        
+                        {/* Roads */}
+                        <div className="p-2 bg-slate-800 rounded col-span-2 mt-4"><strong>Roads</strong></div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads CC Existing:</strong> {formData.roadsInternalRoadsCCExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads CC Additional:</strong> {formData.roadsInternalRoadsCCAdditional || 'N/A'}</div>
+                        {formData.roadsInternalRoadsCCAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Internal Roads CC Estimated Cost:</strong> {formData.roadsInternalRoadsCCCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads BT Existing:</strong> {formData.roadsInternalRoadsBTExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads BT Additional:</strong> {formData.roadsInternalRoadsBTAdditional || 'N/A'}</div>
+                        {formData.roadsInternalRoadsBTAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Internal Roads BT Estimated Cost:</strong> {formData.roadsInternalRoadsBTCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads Others Existing:</strong> {formData.roadsInternalRoadsOthersExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads Others Additional:</strong> {formData.roadsInternalRoadsOthersAdditional || 'N/A'}</div>
+                        {formData.roadsInternalRoadsOthersAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Internal Roads Others Estimated Cost:</strong> {formData.roadsInternalRoadsOthersCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Approach Roads CC Existing:</strong> {formData.roadsApproachRoadsCCExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Approach Roads CC Additional:</strong> {formData.roadsApproachRoadsCCAdditional || 'N/A'}</div>
+                        {formData.roadsApproachRoadsCCAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Approach Roads CC Estimated Cost:</strong> {formData.roadsApproachRoadsCCCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Approach Roads Others Existing:</strong> {formData.roadsApproachRoadsOthersExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Approach Roads Others Additional:</strong> {formData.roadsApproachRoadsOthersAdditional || 'N/A'}</div>
+                        {formData.roadsApproachRoadsOthersAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Approach Roads Others Estimated Cost:</strong> {formData.roadsApproachRoadsOthersCost || 'N/A'}</div>}
+                        
+                        {/* Street Lighting */}
+                        <div className="p-2 bg-slate-800 rounded col-span-2 mt-4"><strong>Street Lighting</strong></div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Poles Existing:</strong> {formData.streetLightingPolesExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Poles Additional:</strong> {formData.streetLightingPolesAdditional || 'N/A'}</div>
+                        {formData.streetLightingPolesAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Poles Estimated Cost:</strong> {formData.streetLightingPolesCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Lights Existing:</strong> {formData.streetLightingLightsExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Lights Additional:</strong> {formData.streetLightingLightsAdditional || 'N/A'}</div>
+                        {formData.streetLightingLightsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Lights Estimated Cost:</strong> {formData.streetLightingLightsCost || 'N/A'}</div>}
+                        
+                        {/* Sanitation */}
+                        <div className="p-2 bg-slate-800 rounded col-span-2 mt-4"><strong>Sanitation</strong></div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Individual Toilets Existing:</strong> {formData.sanitationIndividualToiletsExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Individual Toilets Additional:</strong> {formData.sanitationIndividualToiletsAdditional || 'N/A'}</div>
+                        {formData.sanitationIndividualToiletsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Individual Toilets Estimated Cost:</strong> {formData.sanitationIndividualToiletsCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Community Toilets Existing:</strong> {formData.sanitationCommunityToiletsExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Community Toilets Additional:</strong> {formData.sanitationCommunityToiletsAdditional || 'N/A'}</div>
+                        {formData.sanitationCommunityToiletsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Community Toilets Estimated Cost:</strong> {formData.sanitationCommunityToiletsCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Seats in Community Toilets Existing:</strong> {formData.sanitationSeatsCommunityToiletsExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Seats in Community Toilets Additional:</strong> {formData.sanitationSeatsCommunityToiletsAdditional || 'N/A'}</div>
+                        {formData.sanitationSeatsCommunityToiletsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Seats in Community Toilets Estimated Cost:</strong> {formData.sanitationSeatsCommunityToiletsCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Dumper Bins Existing:</strong> {formData.sanitationDumperBinsExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Dumper Bins Additional:</strong> {formData.sanitationDumperBinsAdditional || 'N/A'}</div>
+                        {formData.sanitationDumperBinsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Dumper Bins Estimated Cost:</strong> {formData.sanitationDumperBinsCost || 'N/A'}</div>}
+                        
+                        {/* Community Facilities */}
+                        <div className="p-2 bg-slate-800 rounded col-span-2 mt-4"><strong>Community Facilities</strong></div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Community Halls Existing:</strong> {formData.communityHallsExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Community Halls Additional:</strong> {formData.communityHallsAdditional || 'N/A'}</div>
+                        {formData.communityHallsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Community Halls Estimated Cost:</strong> {formData.communityHallsCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Livelihood Centres Existing:</strong> {formData.communityLivelihoodCentresExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Livelihood Centres Additional:</strong> {formData.communityLivelihoodCentresAdditional || 'N/A'}</div>
+                        {formData.communityLivelihoodCentresAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Livelihood Centres Estimated Cost:</strong> {formData.communityLivelihoodCentresCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Anganwadis Existing:</strong> {formData.communityAnganwadisExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Anganwadis Additional:</strong> {formData.communityAnganwadisAdditional || 'N/A'}</div>
+                        {formData.communityAnganwadisAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Anganwadis Estimated Cost:</strong> {formData.communityAnganwadisCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Primary Schools Existing:</strong> {formData.communityPrimarySchoolsExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Primary Schools Additional:</strong> {formData.communityPrimarySchoolsAdditional || 'N/A'}</div>
+                        {formData.communityPrimarySchoolsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Primary Schools Estimated Cost:</strong> {formData.communityPrimarySchoolsCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Health Centres Existing:</strong> {formData.communityHealthCentresExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Health Centres Additional:</strong> {formData.communityHealthCentresAdditional || 'N/A'}</div>
+                        {formData.communityHealthCentresAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Health Centres Estimated Cost:</strong> {formData.communityHealthCentresCost || 'N/A'}</div>}
+                        <div className="p-2 bg-slate-800 rounded"><strong>Others Existing:</strong> {formData.communityOthersExisting || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Others Additional:</strong> {formData.communityOthersAdditional || 'N/A'}</div>
+                        {formData.communityOthersAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Others Estimated Cost:</strong> {formData.communityOthersCost || 'N/A'}</div>}
                     </div>
                 </div>
             </div>

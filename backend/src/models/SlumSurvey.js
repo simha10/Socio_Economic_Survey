@@ -315,17 +315,50 @@ const slumSurveySchema = new mongoose.Schema({
 
   // SECTION 11: EDUCATION FACILITIES
   educationFacilities: {
-    anganwadiUnderIcds: Number,
-    municipalPreschool: Number,
-    privatePreschool: Number,
-    municipalPrimarySchool: Number,
-    stateGovtPrimarySchool: Number,
-    privatePrimarySchool: Number,
-    municipalHighSchool: Number,
-    stateGovtHighSchool: Number,
-    privateHighSchool: Number,
-    adultEducationCentre: Number,
-    nonFormalEducationCentre: Number
+    anganwadiUnderIcds: {
+      option: String,
+      distance: Number
+    },
+    municipalPreschool: {
+      option: String,
+      distance: Number
+    },
+    privatePreschool: {
+      option: String,
+      distance: Number
+    },
+    municipalPrimarySchool: {
+      option: String,
+      distance: Number
+    },
+    stateGovtPrimarySchool: {
+      option: String,
+      distance: Number
+    },
+    privatePrimarySchool: {
+      option: String,
+      distance: Number
+    },
+    municipalHighSchool: {
+      option: String,
+      distance: Number
+    },
+    stateGovtHighSchool: {
+      option: String,
+      distance: Number
+    },
+    privateHighSchool: {
+      option: String,
+      distance: Number
+    },
+    adultEducationCentre: {
+      option: String,
+      distance: Number
+    },
+    nonFormalEducationCentre: {
+      option: String,
+      distance: Number
+    }
   },
 
   // SECTION 12: HEALTH FACILITIES
