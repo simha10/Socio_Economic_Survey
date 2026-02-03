@@ -12,14 +12,33 @@ const slumSurveySchema = new mongoose.Schema({
     required: true
   },
 
+  ward: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Ward',
+    required: true
+  },
+
+  state: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'State',
+    required: true
+  },
+
+  district: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'District',
+    required: true
+  },
+
   // SECTION 1: GENERAL INFORMATION -CITY/TOWN
   generalInformation: {
     stateCode: String,
     stateName: String,
     districtCode: String,
     districtName: String,
+    ulbCode: String,
+    ulbName: String,
     cityTownCode: String,
-    cityTownName: String,
     cityTown: String,
     cityTownNoHouseholds: Number
   },
@@ -41,25 +60,17 @@ const slumSurveySchema = new mongoose.Schema({
   surveyOperation: {
     surveyorName: String,
     surveyDate: String,
-    receiptQuestionnaireDate: String,
-    scrutinyDate: String,
-    receiptByNodalCellDate: String,
-    remarksInvestigator: String,
-    commentsSupervisor: String
   },
 
   // SECTION 4: BASIC INFORMATION ON SLUM
   basicInformation: {
     slumNameBasicInfo: String,
-    slumCode: String,
-    locationWard: String,
+    wardNumber: String,
+    zoneNumber: String,
     ageSlumYears: Number,
-    areaSlumSqMtrs: Number,
     locationCoreOrFringe: String,
     typeAreaSurrounding: String,
     physicalLocationSlum: String,
-    isSlumNotified: String,
-    yearOfNotification: Number
   },
 
   // SECTION 5: LAND STATUS
@@ -276,7 +287,6 @@ const slumSurveySchema = new mongoose.Schema({
 
   // SECTION 9: EMPLOYMENT AND OCCUPATION STATUS
   employmentAndOccupation: {
-    majorIndustriesPresent: [String],
     selfEmployed: Number,
     salaried: Number,
     regularWage: Number,
@@ -397,145 +407,164 @@ const slumSurveySchema = new mongoose.Schema({
     // Water Supply
     waterSupply: {
       pipelines: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       individualTaps: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       borewells: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       connectivityToTrunkLines: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       }
     },
     // Drainage/Sewerage
     drainageSewerage: {
       stormwaterDrainage: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       connectivityToMainDrains: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       sewerLines: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       connectivityToTrunkSewers: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       }
     },
     // Roads
     roads: {
       internalRoadsCC: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       internalRoadsBT: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       internalRoadsOthers: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       approachRoadsCC: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       approachRoadsOthers: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       }
     },
     // Street Lighting
     streetLighting: {
       poles: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       lights: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       }
     },
     // Sanitation
     sanitation: {
       individualToilets: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       communityToilets: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       seatsInCommunityToilets: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       dumperBins: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       }
     },
     // Community Facilities
     communityFacilities: {
       communityHalls: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       livelihoodCentres: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       anganwadis: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       primarySchools: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       healthCentres: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       },
       others: {
-        existing: String,
-        additionalRequirement: String,
+        existing: Number,
+        additionalRequirement: Number,
         estimatedCost: Number
       }
+    },
+
+    //Standalone Infrastructure Requirements
+    standaloneInfrastructureRequirements: {
+      electricity: {
+        existing: Number,
+        additionalRequirement: Number,
+        estimatedCost: Number
+      },
+      healthCare: {
+        existing: Number,
+        additionalRequirement: Number,
+        estimatedCost: Number
+      },
+      toilets: {
+        existing: Number,
+        additionalRequirement: Number,
+        estimatedCost: Number
+      },
     }
   },
 

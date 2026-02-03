@@ -14,6 +14,7 @@ import EditConfirmationDialog from '@/components/EditConfirmationDialog';
 import apiService from '@/services/api';
 import { useToast } from '@/components/Toast';
 
+// Slum Survey Form Interface
 interface SlumSurveyForm {
   slumId: string;
   surveyed: boolean;
@@ -24,8 +25,9 @@ interface SlumSurveyForm {
   stateName?: string; // 1(b)
   districtCode?: string; // 2(a)
   districtName?: string; // 2(b)
-  cityTownCode?: string; // 3(a)
-  cityTownName?: string; // 3(b)
+  ulbCode?: string; // 3(a)
+  ulbName?: string; // 3(b)
+  cityTownCode?: string;
   cityTown?: string; // 4(a)
   cityTownNoHouseholds?: number; // 4(b)
   
@@ -33,7 +35,7 @@ interface SlumSurveyForm {
   slumType?: string; // 5 - Notified / Non-Notified / New Identified
   slumIdField?: string; // 6 - Slum ID
   slumName?: string; // 7 - Slum Name
-  ownershipLand?: string; // 8 - Local Body -01, State Government - 02, Central Government – 03, Private -04, Other - 05
+  ownershipLand?: string; // 8 - Municipal Corporation -01, State Government - 02, Central Government – 03, Private -04, Other - 05
   areaSqMtrs?: number; // 9 - Area in sq Mtrs
   slumPopulation?: number; // 10 - Slum population
   noSlumHouseholds?: number; // 11 - No. of slum House Holds
@@ -45,14 +47,15 @@ interface SlumSurveyForm {
   surveyDate?: string; // 8(a) - Date(s) of Survey
   receiptQuestionnaireDate?: string; // 8(b) - Date(s) of Receipt of Questionnaire
   scrutinyDate?: string; // 8(c) - Date(s) of Scrutiny
-  receiptByNodalCellDate?: string; // 8(d) - Date(s) of Receipt by Nodal Cell in Urban Local Body
+  receiptByNodalCellDate?: string; // 8(d) - Date(s) of Receipt by Nodal Cell in Urban Municipal Corporation
   remarksInvestigator?: string; // 10 - Remarks by Investigator/Surveyor
   commentsSupervisor?: string; // 11 - Comments by the Supervisor
   
   // PART-D: I. BASIC INFORMATION ON SLUM
   slumNameBasicInfo?: string; // 1 - Name of Slum
-  slumCode?: string; // 1a - Slum Code
-  locationWard?: string; // 2 - Location - Ward No/Name
+  wardNumber?: string; // 2 - Location - Ward No/Name
+  wardName?: string; // 2 - Location - Ward No/Name
+  zoneNumber?: string; // 2 - Location - Ward No/Name
   ageSlumYears?: number; // 3 - Age of Slum in Years
   areaSlumSqMtrs?: number; // 4 - Area of Slum (Sq. metres)
   locationCoreOrFringe?: string; // 5 - Whether located in Core City/Town or Fringe area (Core City/Town - 01, Fringe Area -02)
@@ -62,7 +65,7 @@ interface SlumSurveyForm {
   yearOfNotification?: number; // 9 - If Yes (01) in 8, state Year of Notification
   
   // PART-E: II. LAND STATUS
-  ownershipLandDetail?: string; // 10 - Ownership of Land where Slum is located (Public: Local Body -01, State Government - 02, etc.)
+  ownershipLandDetail?: string; // 10 - Ownership of Land where Slum is located (Public: Municipal Corporation -01, State Government - 02, etc.)
   ownershipLandSpecify?: string; // 11 - Please specify Ownership of Land (To whom land belongs)
   
   // PART-F: III. DEMOGRAPHIC PROFILE
@@ -428,247 +431,119 @@ interface SlumSurveyForm {
   // 36c. Women's Associations/ Mahila Samithis
   womensAssociations?: number; // Specify Distance: 0, 01,02,03
   
-  // Employment and occupation related fields
-  majorIndustriesPresent?: string[];
-  
   // PART-XII: XI. ADDITIONAL INFRASTRUCTURE REQUIREMENTS
-  // Water Supply
-  waterSupplyPipelinesExisting?: string; // 37 - Water Supply: Pipelines (Rmts) - Existing
-  waterSupplyPipelinesAdditional?: string; // 37 - Water Supply: Pipelines (Rmts) - Additional Requirement
-  waterSupplyPipelinesCost?: number; // 37 - Water Supply: Pipelines (Rmts) - Estimated Cost
+  // Additional Infrastructure - flat structure fields
+  waterSupplyPipelinesExisting?: number;
+  waterSupplyPipelinesAdditional?: number;
+  waterSupplyPipelinesCost?: number;
   
-  waterSupplyIndividualTapsExisting?: string; // Individual Taps (Nos.) - Existing
-  waterSupplyIndividualTapsAdditional?: string; // Individual Taps (Nos.) - Additional Requirement
-  waterSupplyIndividualTapsCost?: number; // Individual Taps (Nos.) - Estimated Cost
+  waterSupplyIndividualTapsExisting?: number;
+  waterSupplyIndividualTapsAdditional?: number;
+  waterSupplyIndividualTapsCost?: number;
   
-  waterSupplyBorewellsExisting?: string; // Borewells (Nos.) - Existing
-  waterSupplyBorewellsAdditional?: string; // Borewells (Nos.) - Additional Requirement
-  waterSupplyBorewellsCost?: number; // Borewells (Nos.) - Estimated Cost
+  waterSupplyBorewellsExisting?: number;
+  waterSupplyBorewellsAdditional?: number;
+  waterSupplyBorewellsCost?: number;
   
-  waterSupplyConnectivityTrunkLinesExisting?: string; // Connectivity to Trunk Lines (Rmts) - Existing
-  waterSupplyConnectivityTrunkLinesAdditional?: string; // Connectivity to Trunk Lines (Rmts) - Additional Requirement
-  waterSupplyConnectivityTrunkLinesCost?: number; // Connectivity to Trunk Lines (Rmts) - Estimated Cost
+  waterSupplyConnectivityTrunkLinesExisting?: number;
+  waterSupplyConnectivityTrunkLinesAdditional?: number;
+  waterSupplyConnectivityTrunkLinesCost?: number;
   
-  // Drainage/Sewerage
-  drainageStormwaterDrainageExisting?: string; // 38 - Stormwater Drainage (Rmts.) - Existing
-  drainageStormwaterDrainageAdditional?: string; // 38 - Stormwater Drainage (Rmts.) - Additional Requirement
-  drainageStormwaterDrainageCost?: number; // 38 - Stormwater Drainage (Rmts.) - Estimated Cost
+  drainageStormwaterDrainageExisting?: number;
+  drainageStormwaterDrainageAdditional?: number;
+  drainageStormwaterDrainageCost?: number;
   
-  drainageConnectivityMainDrainsExisting?: string; // Connectivity to Main Drains (Rmts) - Existing
-  drainageConnectivityMainDrainsAdditional?: string; // Connectivity to Main Drains (Rmts) - Additional Requirement
-  drainageConnectivityMainDrainsCost?: number; // Connectivity to Main Drains (Rmts) - Estimated Cost
+  drainageConnectivityMainDrainsExisting?: number;
+  drainageConnectivityMainDrainsAdditional?: number;
+  drainageConnectivityMainDrainsCost?: number;
   
-  drainageSewerLinesExisting?: string; // Sewer Lines (Rmts) - Existing
-  drainageSewerLinesAdditional?: string; // Sewer Lines (Rmts) - Additional Requirement
-  drainageSewerLinesCost?: number; // Sewer Lines (Rmts) - Estimated Cost
+  drainageSewerLinesExisting?: number;
+  drainageSewerLinesAdditional?: number;
+  drainageSewerLinesCost?: number;
   
-  drainageConnectivityTrunkSewersExisting?: string; // Connectivity to Trunk Sewers (Rmts) - Existing
-  drainageConnectivityTrunkSewersAdditional?: string; // Connectivity to Trunk Sewers (Rmts) - Additional Requirement
-  drainageConnectivityTrunkSewersCost?: number; // Connectivity to Trunk Sewers (Rmts) - Estimated Cost
+  drainageConnectivityTrunkSewersExisting?: number;
+  drainageConnectivityTrunkSewersAdditional?: number;
+  drainageConnectivityTrunkSewersCost?: number;
   
-  // Roads
-  roadsInternalRoadsCCExisting?: string; // 39 - Internal Roads -CC (Rmts) - Existing
-  roadsInternalRoadsCCAdditional?: string; // 39 - Internal Roads -CC (Rmts) - Additional Requirement
-  roadsInternalRoadsCCCost?: number; // 39 - Internal Roads -CC (Rmts) - Estimated Cost
+  roadsInternalRoadsCCExisting?: number;
+  roadsInternalRoadsCCAdditional?: number;
+  roadsInternalRoadsCCCost?: number;
   
-  roadsInternalRoadsBTExisting?: string; // Internal Roads - BT (Rmts.) - Existing
-  roadsInternalRoadsBTAdditional?: string; // Internal Roads - BT (Rmts.) - Additional Requirement
-  roadsInternalRoadsBTCost?: number; // Internal Roads - BT (Rmts.) - Estimated Cost
+  roadsInternalRoadsBTExisting?: number;
+  roadsInternalRoadsBTAdditional?: number;
+  roadsInternalRoadsBTCost?: number;
   
-  roadsInternalRoadsOthersExisting?: string; // Internal Roads - Others (Rmts) - Existing
-  roadsInternalRoadsOthersAdditional?: string; // Internal Roads - Others (Rmts) - Additional Requirement
-  roadsInternalRoadsOthersCost?: number; // Internal Roads - Others (Rmts) - Estimated Cost
+  roadsInternalRoadsOthersExisting?: number;
+  roadsInternalRoadsOthersAdditional?: number;
+  roadsInternalRoadsOthersCost?: number;
   
-  roadsApproachRoadsCCExisting?: string; // Approach Roads -CC (Rmts) - Existing
-  roadsApproachRoadsCCAdditional?: string; // Approach Roads -CC (Rmts) - Additional Requirement
-  roadsApproachRoadsCCCost?: number; // Approach Roads -CC (Rmts) - Estimated Cost
+  roadsApproachRoadsCCExisting?: number;
+  roadsApproachRoadsCCAdditional?: number;
+  roadsApproachRoadsCCCost?: number;
   
-  roadsApproachRoadsOthersExisting?: string; // Approach Roads - Others (Rmts) - Existing
-  roadsApproachRoadsOthersAdditional?: string; // Approach Roads - Others (Rmts) - Additional Requirement
-  roadsApproachRoadsOthersCost?: number; // Approach Roads - Others (Rmts) - Estimated Cost
+  roadsApproachRoadsOthersExisting?: number;
+  roadsApproachRoadsOthersAdditional?: number;
+  roadsApproachRoadsOthersCost?: number;
   
-  // Street Lighting
-  streetLightingPolesExisting?: string; // 40 - Street Light Poles (Nos.) - Existing
-  streetLightingPolesAdditional?: string; // 40 - Street Light Poles (Nos.) - Additional Requirement
-  streetLightingPolesCost?: number; // 40 - Street Light Poles (Nos.) - Estimated Cost
+  streetLightingPolesExisting?: number;
+  streetLightingPolesAdditional?: number;
+  streetLightingPolesCost?: number;
   
-  streetLightingLightsExisting?: string; // Street Lights (Nos) - Existing
-  streetLightingLightsAdditional?: string; // Street Lights (Nos) - Additional Requirement
-  streetLightingLightsCost?: number; // Street Lights (Nos) - Estimated Cost
+  streetLightingLightsExisting?: number;
+  streetLightingLightsAdditional?: number;
+  streetLightingLightsCost?: number;
   
-  // Sanitation
-  sanitationIndividualToiletsExisting?: string; // 41 - Individual Toilets (Nos) - Existing
-  sanitationIndividualToiletsAdditional?: string; // 41 - Individual Toilets (Nos) - Additional Requirement
-  sanitationIndividualToiletsCost?: number; // 41 - Individual Toilets (Nos) - Estimated Cost
+  sanitationIndividualToiletsExisting?: number;
+  sanitationIndividualToiletsAdditional?: number;
+  sanitationIndividualToiletsCost?: number;
   
-  sanitationCommunityToiletsExisting?: string; // Community Toilets (Nos) - Existing
-  sanitationCommunityToiletsAdditional?: string; // Community Toilets (Nos) - Additional Requirement
-  sanitationCommunityToiletsCost?: number; // Community Toilets (Nos) - Estimated Cost
+  sanitationCommunityToiletsExisting?: number;
+  sanitationCommunityToiletsAdditional?: number;
+  sanitationCommunityToiletsCost?: number;
   
-  sanitationSeatsCommunityToiletsExisting?: string; // Seats in Community Toilets (Nos.) - Existing
-  sanitationSeatsCommunityToiletsAdditional?: string; // Seats in Community Toilets (Nos.) - Additional Requirement
-  sanitationSeatsCommunityToiletsCost?: number; // Seats in Community Toilets (Nos.) - Estimated Cost
+  sanitationSeatsCommunityToiletsExisting?: number;
+  sanitationSeatsCommunityToiletsAdditional?: number;
+  sanitationSeatsCommunityToiletsCost?: number;
   
-  sanitationDumperBinsExisting?: string; // Dumper Bins (Nos) - Existing
-  sanitationDumperBinsAdditional?: string; // Dumper Bins (Nos) - Additional Requirement
-  sanitationDumperBinsCost?: number; // Dumper Bins (Nos) - Estimated Cost
+  sanitationDumperBinsExisting?: number;
+  sanitationDumperBinsAdditional?: number;
+  sanitationDumperBinsCost?: number;
   
-  // Community Facilities
-  communityHallsExisting?: string; // 42 - Community Halls (No of Rooms) - Existing
-  communityHallsAdditional?: string; // 42 - Community Halls (No of Rooms) - Additional Requirement
-  communityHallsCost?: number; // 42 - Community Halls (No of Rooms) - Estimated Cost
+  communityHallsExisting?: number;
+  communityHallsAdditional?: number;
+  communityHallsCost?: number;
   
-  communityLivelihoodCentresExisting?: string; // Livelihood / Production Centres (Noof Rooms) - Existing
-  communityLivelihoodCentresAdditional?: string; // Livelihood / Production Centres (Noof Rooms) - Additional Requirement
-  communityLivelihoodCentresCost?: number; // Livelihood / Production Centres (Noof Rooms) - Estimated Cost
+  communityLivelihoodCentresExisting?: number;
+  communityLivelihoodCentresAdditional?: number;
+  communityLivelihoodCentresCost?: number;
   
-  communityAnganwadisExisting?: string; // Anganwadis /Pre-schools (No ofRooms) - Existing
-  communityAnganwadisAdditional?: string; // Anganwadis /Pre-schools (No ofRooms) - Additional Requirement
-  communityAnganwadisCost?: number; // Anganwadis /Pre-schools (No ofRooms) - Estimated Cost
+  communityAnganwadisExisting?: number;
+  communityAnganwadisAdditional?: number;
+  communityAnganwadisCost?: number;
   
-  communityPrimarySchoolsExisting?: string; // Primary Schools (No of Class Rooms) - Existing
-  communityPrimarySchoolsAdditional?: string; // Primary Schools (No of Class Rooms) - Additional Requirement
-  communityPrimarySchoolsCost?: number; // Primary Schools (No of Class Rooms) - Estimated Cost
+  communityPrimarySchoolsExisting?: number;
+  communityPrimarySchoolsAdditional?: number;
+  communityPrimarySchoolsCost?: number;
   
-  communityHealthCentresExisting?: string; // Health Centres (No. of Rooms) - Existing
-  communityHealthCentresAdditional?: string; // Health Centres (No. of Rooms) - Additional Requirement
-  communityHealthCentresCost?: number; // Health Centres (No. of Rooms) - Estimated Cost
+  communityHealthCentresExisting?: number;
+  communityHealthCentresAdditional?: number;
+  communityHealthCentresCost?: number;
   
-  communityOthersExisting?: string; // Others (Specify) - Existing
-  communityOthersAdditional?: string; // Others (Specify) - Additional Requirement
-  communityOthersCost?: number; // Others (Specify) - Estimated Cost
+  communityOthersExisting?: number;
+  communityOthersAdditional?: number;
+  communityOthersCost?: number;
   
-  // Additional fields that may be used
-  // Infrastructure and services
-  waterSupplyDuration?: string;
-  waterSupplyHours?: number;
-  waterSupplySource?: string;
-  electricityConnection?: string;
-  electricityHours?: number;
-  streetLights?: string;
-  pavedRoads?: string;
-  unpavedRoads?: string;
-  dustbins?: string;
-  drainsCovered?: string;
-  drainsOpen?: string;
-  drainsAbsent?: string;
-  drainsType?: string;
-  roadsType?: string;
-  garbageDisposal?: string;
-  
-  // Education facilities
-  primarySchoolGovt?: number;
-  primarySchoolPrivate?: number;
-  secondarySchoolGovt?: number;
-  secondarySchoolPrivate?: number;
-  higherSecondarySchoolGovt?: number;
-  higherSecondarySchoolPrivate?: number;
-  anganwadiCenterGovt?: number;
-  anganwadiCenterPrivate?: number;
-  distanceToPrimarySchool?: string;
-  distanceToSecondarySchool?: string;
-  
-  // Health facilities
-  dispensaryGovt?: number;
-  dispensaryPrivate?: number;
-  hospitalGovt?: number;
-  hospitalPrivate?: number;
-  distanceToDispensary?: string;
-  distanceToHospital?: string;
-  medicalStoreGovt?: number;
-  medicalStorePrivate?: number;
-  phcGovt?: number;
-  phcPrivate?: number;
-  chcGovt?: number;
-  chcPrivate?: number;
-  
-  // Social welfare schemes
-  nrhmScheme?: string;
-  nrhmBeneficiaries?: number;
-  icdsScheme?: string;
-  icdsBeneficiaries?: number;
-  nirmalBharatAbhiyan?: string;
-  nbaBeneficiaries?: number;
-  midDayMeal?: string;
-  mdmBeneficiaries?: number;
-  sablaScheme?: string;
-  sablaBeneficiaries?: number;
-  rashtriyaSwasthyaBimaYojana?: string;
-  rsbyBeneficiaries?: number;
-  ayushmanBharat?: string;
-  ayushmanBeneficiaries?: number;
-  otherSchemes?: string;
-  otherSchemesBeneficiaries?: number;
-  
-  // Additional infrastructure
-  // Additional Infrastructure standalone fields
-  electricityExisting?: string;
-  electricityAdditional?: string;
+  electricityExisting?: number;
+  electricityAdditional?: number;
   electricityCost?: number;
   
-  healthcareExisting?: string;
-  healthcareAdditional?: string;
+  healthcareExisting?: number;
+  healthcareAdditional?: number;
   healthcareCost?: number;
   
-  toiletsExisting?: string;
-  toiletsAdditional?: string;
+  toiletsExisting?: number;
+  toiletsAdditional?: number;
   toiletsCost?: number;
-  
-  additionalInfrastructure?: {
-    waterSupply?: {
-      existing?: string;
-      additionalRequirement?: string;
-      estimatedCost?: number;
-    };
-    electricity?: {
-      existing?: string;
-      additionalRequirement?: string;
-      estimatedCost?: number;
-    };
-    drainage?: {
-      existing?: string;
-      additionalRequirement?: string;
-      estimatedCost?: number;
-    };
-    roads?: {
-      existing?: string;
-      additionalRequirement?: string;
-      estimatedCost?: number;
-    };
-    streetLighting?: {
-      existing?: string;
-      additionalRequirement?: string;
-      estimatedCost?: number;
-    };
-    sanitation?: {
-      existing?: string;
-      additionalRequirement?: string;
-      estimatedCost?: number;
-    };
-    toilets?: {
-      existing?: string;
-      additionalRequirement?: string;
-      estimatedCost?: number;
-    };
-    healthcare?: {
-      existing?: string;
-      additionalRequirement?: string;
-      estimatedCost?: number;
-    };
-    communityFacilities?: {
-      existing?: string;
-      additionalRequirement?: string;
-      estimatedCost?: number;
-    };
-  };
-  
-  distanceToWaterSource?: string;
-  typeOfToilet?: string;
-  toiletAccessibility?: string;
-  bathingFacility?: string;
-  wastewaterDisposal?: string;
-  drainageSystem?: string;
-
 };
 
 const SANITATION_OPTIONS = [
@@ -751,126 +626,118 @@ export default function SlumSurveyPage() {
     ayurvedicDoctor: "",
     slumDwellersAssociation: "",
     
-    // Additional Infrastructure Requirements
-    // Water Supply
-    waterSupplyPipelinesExisting: "",
-    waterSupplyPipelinesAdditional: "",
-    waterSupplyPipelinesCost: undefined,
-    
-    waterSupplyIndividualTapsExisting: "",
-    waterSupplyIndividualTapsAdditional: "",
-    waterSupplyIndividualTapsCost: undefined,
-    
-    waterSupplyBorewellsExisting: "",
-    waterSupplyBorewellsAdditional: "",
-    waterSupplyBorewellsCost: undefined,
-    
-    waterSupplyConnectivityTrunkLinesExisting: "",
-    waterSupplyConnectivityTrunkLinesAdditional: "",
-    waterSupplyConnectivityTrunkLinesCost: undefined,
-    
-    // Drainage/Sewerage
-    drainageStormwaterDrainageExisting: "",
-    drainageStormwaterDrainageAdditional: "",
-    drainageStormwaterDrainageCost: undefined,
-    
-    drainageConnectivityMainDrainsExisting: "",
-    drainageConnectivityMainDrainsAdditional: "",
-    drainageConnectivityMainDrainsCost: undefined,
-    
-    drainageSewerLinesExisting: "",
-    drainageSewerLinesAdditional: "",
-    drainageSewerLinesCost: undefined,
-    
-    drainageConnectivityTrunkSewersExisting: "",
-    drainageConnectivityTrunkSewersAdditional: "",
-    drainageConnectivityTrunkSewersCost: undefined,
-    
-    // Roads
-    roadsInternalRoadsCCExisting: "",
-    roadsInternalRoadsCCAdditional: "",
-    roadsInternalRoadsCCCost: undefined,
-    
-    roadsInternalRoadsBTExisting: "",
-    roadsInternalRoadsBTAdditional: "",
-    roadsInternalRoadsBTCost: undefined,
-    
-    roadsInternalRoadsOthersExisting: "",
-    roadsInternalRoadsOthersAdditional: "",
-    roadsInternalRoadsOthersCost: undefined,
-    
-    roadsApproachRoadsCCExisting: "",
-    roadsApproachRoadsCCAdditional: "",
-    roadsApproachRoadsCCCost: undefined,
-    
-    roadsApproachRoadsOthersExisting: "",
-    roadsApproachRoadsOthersAdditional: "",
-    roadsApproachRoadsOthersCost: undefined,
-    
-    // Street Lighting
-    streetLightingPolesExisting: "",
-    streetLightingPolesAdditional: "",
-    streetLightingPolesCost: undefined,
-    
-    streetLightingLightsExisting: "",
-    streetLightingLightsAdditional: "",
-    streetLightingLightsCost: undefined,
-    
-    // Sanitation
-    sanitationIndividualToiletsExisting: "",
-    sanitationIndividualToiletsAdditional: "",
-    sanitationIndividualToiletsCost: undefined,
-    
-    sanitationCommunityToiletsExisting: "",
-    sanitationCommunityToiletsAdditional: "",
-    sanitationCommunityToiletsCost: undefined,
-    
-    sanitationSeatsCommunityToiletsExisting: "",
-    sanitationSeatsCommunityToiletsAdditional: "",
-    sanitationSeatsCommunityToiletsCost: undefined,
-    
-    sanitationDumperBinsExisting: "",
-    sanitationDumperBinsAdditional: "",
-    sanitationDumperBinsCost: undefined,
-    
-    // Community Facilities
-    communityHallsExisting: "",
-    communityHallsAdditional: "",
-    communityHallsCost: undefined,
-    
-    communityLivelihoodCentresExisting: "",
-    communityLivelihoodCentresAdditional: "",
-    communityLivelihoodCentresCost: undefined,
-    
-    communityAnganwadisExisting: "",
-    communityAnganwadisAdditional: "",
-    communityAnganwadisCost: undefined,
-    
-    communityPrimarySchoolsExisting: "",
-    communityPrimarySchoolsAdditional: "",
-    communityPrimarySchoolsCost: undefined,
-    
-    communityHealthCentresExisting: "",
-    communityHealthCentresAdditional: "",
-    communityHealthCentresCost: undefined,
-    
-    communityOthersExisting: "",
-    communityOthersAdditional: "",
-    communityOthersCost: undefined,
-    
-    // Standalone infrastructure fields
-    electricityExisting: "",
-    electricityAdditional: "",
-    electricityCost: undefined,
-    
-    healthcareExisting: "",
-    healthcareAdditional: "",
-    healthcareCost: undefined,
-    
-    toiletsExisting: "",
-    toiletsAdditional: "",
-    toiletsCost: undefined,
-    majorIndustriesPresent: [],
+    // Additional Infrastructure Requirements - using flat structure to match interface
+    waterSupplyPipelinesExisting: 0,
+    waterSupplyPipelinesAdditional: 0,
+    waterSupplyPipelinesCost: 0,
+        
+    waterSupplyIndividualTapsExisting: 0,
+    waterSupplyIndividualTapsAdditional: 0,
+    waterSupplyIndividualTapsCost: 0,
+        
+    waterSupplyBorewellsExisting: 0,
+    waterSupplyBorewellsAdditional: 0,
+    waterSupplyBorewellsCost: 0,
+        
+    waterSupplyConnectivityTrunkLinesExisting: 0,
+    waterSupplyConnectivityTrunkLinesAdditional: 0,
+    waterSupplyConnectivityTrunkLinesCost: 0,
+        
+    drainageStormwaterDrainageExisting: 0,
+    drainageStormwaterDrainageAdditional: 0,
+    drainageStormwaterDrainageCost: 0,
+        
+    drainageConnectivityMainDrainsExisting: 0,
+    drainageConnectivityMainDrainsAdditional: 0,
+    drainageConnectivityMainDrainsCost: 0,
+        
+    drainageSewerLinesExisting: 0,
+    drainageSewerLinesAdditional: 0,
+    drainageSewerLinesCost: 0,
+        
+    drainageConnectivityTrunkSewersExisting: 0,
+    drainageConnectivityTrunkSewersAdditional: 0,
+    drainageConnectivityTrunkSewersCost: 0,
+        
+    roadsInternalRoadsCCExisting: 0,
+    roadsInternalRoadsCCAdditional: 0,
+    roadsInternalRoadsCCCost: 0,
+        
+    roadsInternalRoadsBTExisting: 0,
+    roadsInternalRoadsBTAdditional: 0,
+    roadsInternalRoadsBTCost: 0,
+        
+    roadsInternalRoadsOthersExisting: 0,
+    roadsInternalRoadsOthersAdditional: 0,
+    roadsInternalRoadsOthersCost: 0,
+        
+    roadsApproachRoadsCCExisting: 0,
+    roadsApproachRoadsCCAdditional: 0,
+    roadsApproachRoadsCCCost: 0,
+        
+    roadsApproachRoadsOthersExisting: 0,
+    roadsApproachRoadsOthersAdditional: 0,
+    roadsApproachRoadsOthersCost: 0,
+        
+    streetLightingPolesExisting: 0,
+    streetLightingPolesAdditional: 0,
+    streetLightingPolesCost: 0,
+        
+    streetLightingLightsExisting: 0,
+    streetLightingLightsAdditional: 0,
+    streetLightingLightsCost: 0,
+        
+    sanitationIndividualToiletsExisting: 0,
+    sanitationIndividualToiletsAdditional: 0,
+    sanitationIndividualToiletsCost: 0,
+        
+    sanitationCommunityToiletsExisting: 0,
+    sanitationCommunityToiletsAdditional: 0,
+    sanitationCommunityToiletsCost: 0,
+        
+    sanitationSeatsCommunityToiletsExisting: 0,
+    sanitationSeatsCommunityToiletsAdditional: 0,
+    sanitationSeatsCommunityToiletsCost: 0,
+        
+    sanitationDumperBinsExisting: 0,
+    sanitationDumperBinsAdditional: 0,
+    sanitationDumperBinsCost: 0,
+        
+    communityHallsExisting: 0,
+    communityHallsAdditional: 0,
+    communityHallsCost: 0,
+        
+    communityLivelihoodCentresExisting: 0,
+    communityLivelihoodCentresAdditional: 0,
+    communityLivelihoodCentresCost: 0,
+        
+    communityAnganwadisExisting: 0,
+    communityAnganwadisAdditional: 0,
+    communityAnganwadisCost: 0,
+        
+    communityPrimarySchoolsExisting: 0,
+    communityPrimarySchoolsAdditional: 0,
+    communityPrimarySchoolsCost: 0,
+        
+    communityHealthCentresExisting: 0,
+    communityHealthCentresAdditional: 0,
+    communityHealthCentresCost: 0,
+        
+    communityOthersExisting: 0,
+    communityOthersAdditional: 0,
+    communityOthersCost: 0,
+        
+    electricityExisting: 0,
+    electricityAdditional: 0,
+    electricityCost: 0,
+        
+    healthcareExisting: 0,
+    healthcareAdditional: 0,
+    healthcareCost: 0,
+        
+    toiletsExisting: 0,
+    toiletsAdditional: 0,
+    toiletsCost: 0
   });
 
   const steps = [
@@ -1333,7 +1200,7 @@ export default function SlumSurveyPage() {
               setFormData(prev => ({
                 ...prev,
                 // Water Supply
-                waterSupplyPipelinesExisting: surveyData.additionalInfrastructure.waterSupply?.pipelines?.existing || "",
+                waterSupplyPipelinesExisting: surveyData.additionalInfrastructure?.waterSupply?.pipelines?.existing || 0,
                 waterSupplyPipelinesAdditional: surveyData.additionalInfrastructure.waterSupply?.pipelines?.additionalRequirement || "",
                 waterSupplyPipelinesCost: surveyData.additionalInfrastructure.waterSupply?.pipelines?.estimatedCost || 0,
                 
@@ -1350,7 +1217,7 @@ export default function SlumSurveyPage() {
                 waterSupplyConnectivityTrunkLinesCost: surveyData.additionalInfrastructure.waterSupply?.connectivityToTrunkLines?.estimatedCost || 0,
                 
                 // Drainage/Sewerage
-                drainageStormwaterDrainageExisting: surveyData.additionalInfrastructure.drainageSewerage?.stormwaterDrainage?.existing || "",
+                drainageStormwaterDrainageExisting: surveyData.drainageStormwaterDrainageExisting || 0,
                 drainageStormwaterDrainageAdditional: surveyData.additionalInfrastructure.drainageSewerage?.stormwaterDrainage?.additionalRequirement || "",
                 drainageStormwaterDrainageCost: surveyData.additionalInfrastructure.drainageSewerage?.stormwaterDrainage?.estimatedCost || 0,
                 
@@ -1541,28 +1408,13 @@ export default function SlumSurveyPage() {
     const newErrors: FieldError[] = [];
     
     // Part A - General Information - City/Town
-    if (!formData.cityTownCode?.trim()) {
-      newErrors.push({ field: 'cityTownCode', message: 'City/Town Code is required' });
-    }
-    if (!formData.cityTownName?.trim()) {
-      newErrors.push({ field: 'cityTownName', message: 'City/Town Name is required' });
-    }
     if (formData.cityTownNoHouseholds === undefined || formData.cityTownNoHouseholds === null || isNaN(formData.cityTownNoHouseholds) || formData.cityTownNoHouseholds < 0) {
       newErrors.push({ field: 'cityTownNoHouseholds', message: 'City/Town No. of Households is required' });
     }
     
     // Part B - City/Town Slum Profile
-    if (!formData.slumType) {
-      newErrors.push({ field: 'slumType', message: 'Slum Type is required' });
-    }
-    if (!formData.slumIdField?.trim()) {
-      newErrors.push({ field: 'slumIdField', message: 'Slum ID is required' });
-    }
     if (!formData.ownershipLand) {
       newErrors.push({ field: 'ownershipLand', message: 'Ownership of Land is required' });
-    }
-    if (formData.areaSqMtrs === undefined || formData.areaSqMtrs === null || isNaN(formData.areaSqMtrs) || formData.areaSqMtrs < 0) {
-      newErrors.push({ field: 'areaSqMtrs', message: 'Area (sq Mtrs) is required' });
     }
     if (formData.slumPopulation === undefined || formData.slumPopulation === null || isNaN(formData.slumPopulation) || formData.slumPopulation < 0) {
       newErrors.push({ field: 'slumPopulation', message: 'Slum Population is required' });
@@ -1578,34 +1430,13 @@ export default function SlumSurveyPage() {
     }
     
     // Part C - Particulars of Survey Operation
-    if (!formData.surveyorName?.trim()) {
-      newErrors.push({ field: 'surveyorName', message: 'Surveyor Name is required' });
-    }
     if (!formData.surveyDate) {
       newErrors.push({ field: 'surveyDate', message: 'Survey Date is required' });
     }
-    if (!formData.receiptQuestionnaireDate) {
-      newErrors.push({ field: 'receiptQuestionnaireDate', message: 'Receipt of Questionnaire Date is required' });
-    }
-    if (!formData.scrutinyDate) {
-      newErrors.push({ field: 'scrutinyDate', message: 'Scrutiny Date is required' });
-    }
-    if (!formData.receiptByNodalCellDate) {
-      newErrors.push({ field: 'receiptByNodalCellDate', message: 'Receipt by Nodal Cell Date is required' });
-    }
     
     // Part D - Basic Information on Slum
-    if (!formData.slumCode?.trim()) {
-      newErrors.push({ field: 'slumCode', message: 'Slum Code is required' });
-    }
-    if (!formData.locationWard?.trim()) {
-      newErrors.push({ field: 'locationWard', message: 'Location Ward is required' });
-    }
     if (formData.ageSlumYears === undefined || formData.ageSlumYears === null || isNaN(formData.ageSlumYears) || formData.ageSlumYears < 0) {
       newErrors.push({ field: 'ageSlumYears', message: 'Age of Slum (Years) is required' });
-    }
-    if (formData.areaSlumSqMtrs === undefined || formData.areaSlumSqMtrs === null || isNaN(formData.areaSlumSqMtrs) || formData.areaSlumSqMtrs < 0) {
-      newErrors.push({ field: 'areaSlumSqMtrs', message: 'Area of Slum (sq Mtrs) is required' });
     }
     if (!formData.locationCoreOrFringe) {
       newErrors.push({ field: 'locationCoreOrFringe', message: 'Location - Core City/Town or Fringe Area is required' });
@@ -1616,77 +1447,10 @@ export default function SlumSurveyPage() {
     if (!formData.physicalLocationSlum) {
       newErrors.push({ field: 'physicalLocationSlum', message: 'Physical Location of Slum is required' });
     }
-    if (!formData.isSlumNotified) {
-      newErrors.push({ field: 'isSlumNotified', message: 'Is Slum Notified? is required' });
-    }
-    if (formData.isSlumNotified === 'YES' && (formData.yearOfNotification === undefined || formData.yearOfNotification === null || isNaN(formData.yearOfNotification) || formData.yearOfNotification < 0)) {
-      newErrors.push({ field: 'yearOfNotification', message: 'Year of Notification is required when Slum is Notified' });
-    }
     
     // Part E - Land Status
     if (!formData.ownershipLandDetail) {
       newErrors.push({ field: 'ownershipLandDetail', message: 'Ownership of Land is required' });
-    }
-    if (!formData.ownershipLandSpecify?.trim()) {
-      newErrors.push({ field: 'ownershipLandSpecify', message: 'Specify Ownership (if Other) is required' });
-    }
-    
-    // Part F - Demographic Profile
-    if (formData.totalPopulationSlumSC === undefined || formData.totalPopulationSlumSC === null || isNaN(formData.totalPopulationSlumSC) || formData.totalPopulationSlumSC < 0) {
-      newErrors.push({ field: 'totalPopulationSlumSC', message: 'Total Population SC is required' });
-    }
-    if (formData.totalPopulationSlumST === undefined || formData.totalPopulationSlumST === null || isNaN(formData.totalPopulationSlumST) || formData.totalPopulationSlumST < 0) {
-      newErrors.push({ field: 'totalPopulationSlumST', message: 'Total Population ST is required' });
-    }
-    if (formData.totalPopulationSlumOBC === undefined || formData.totalPopulationSlumOBC === null || isNaN(formData.totalPopulationSlumOBC) || formData.totalPopulationSlumOBC < 0) {
-      newErrors.push({ field: 'totalPopulationSlumOBC', message: 'Total Population OBC is required' });
-    }
-    if (formData.totalPopulationSlumOthers === undefined || formData.totalPopulationSlumOthers === null || isNaN(formData.totalPopulationSlumOthers) || formData.totalPopulationSlumOthers < 0) {
-      newErrors.push({ field: 'totalPopulationSlumOthers', message: 'Total Population Others is required' });
-    }
-    if (formData.totalPopulationSlum === undefined || formData.totalPopulationSlum === null || isNaN(formData.totalPopulationSlum) || formData.totalPopulationSlum < 0) {
-      newErrors.push({ field: 'totalPopulationSlum', message: 'Total Population is required' });
-    }
-    if (formData.totalPopulationSlumMinorities === undefined || formData.totalPopulationSlumMinorities === null || isNaN(formData.totalPopulationSlumMinorities) || formData.totalPopulationSlumMinorities < 0) {
-      newErrors.push({ field: 'totalPopulationSlumMinorities', message: 'Total Population Minorities is required' });
-    }
-    
-    if (formData.bplPopulationSlumSC === undefined || formData.bplPopulationSlumSC === null || isNaN(formData.bplPopulationSlumSC) || formData.bplPopulationSlumSC < 0) {
-      newErrors.push({ field: 'bplPopulationSlumSC', message: 'BPL Population SC is required' });
-    }
-    if (formData.bplPopulationSlumST === undefined || formData.bplPopulationSlumST === null || isNaN(formData.bplPopulationSlumST) || formData.bplPopulationSlumST < 0) {
-      newErrors.push({ field: 'bplPopulationSlumST', message: 'BPL Population ST is required' });
-    }
-    if (formData.bplPopulationSlumOBC === undefined || formData.bplPopulationSlumOBC === null || isNaN(formData.bplPopulationSlumOBC) || formData.bplPopulationSlumOBC < 0) {
-      newErrors.push({ field: 'bplPopulationSlumOBC', message: 'BPL Population OBC is required' });
-    }
-    if (formData.bplPopulationSlumOthers === undefined || formData.bplPopulationSlumOthers === null || isNaN(formData.bplPopulationSlumOthers) || formData.bplPopulationSlumOthers < 0) {
-      newErrors.push({ field: 'bplPopulationSlumOthers', message: 'BPL Population Others is required' });
-    }
-    if (formData.bplPopulationSlum === undefined || formData.bplPopulationSlum === null || isNaN(formData.bplPopulationSlum) || formData.bplPopulationSlum < 0) {
-      newErrors.push({ field: 'bplPopulationSlum', message: 'BPL Population is required' });
-    }
-    if (formData.bplPopulationSlumMinorities === undefined || formData.bplPopulationSlumMinorities === null || isNaN(formData.bplPopulationSlumMinorities) || formData.bplPopulationSlumMinorities < 0) {
-      newErrors.push({ field: 'bplPopulationSlumMinorities', message: 'BPL Population Minorities is required' });
-    }
-    
-    if (formData.noHouseholdsSlumSC === undefined || formData.noHouseholdsSlumSC === null || isNaN(formData.noHouseholdsSlumSC) || formData.noHouseholdsSlumSC < 0) {
-      newErrors.push({ field: 'noHouseholdsSlumSC', message: 'No. of Households SC is required' });
-    }
-    if (formData.noHouseholdsSlumST === undefined || formData.noHouseholdsSlumST === null || isNaN(formData.noHouseholdsSlumST) || formData.noHouseholdsSlumST < 0) {
-      newErrors.push({ field: 'noHouseholdsSlumST', message: 'No. of Households ST is required' });
-    }
-    if (formData.noHouseholdsSlumOBC === undefined || formData.noHouseholdsSlumOBC === null || isNaN(formData.noHouseholdsSlumOBC) || formData.noHouseholdsSlumOBC < 0) {
-      newErrors.push({ field: 'noHouseholdsSlumOBC', message: 'No. of Households OBC is required' });
-    }
-    if (formData.noHouseholdsSlumOthers === undefined || formData.noHouseholdsSlumOthers === null || isNaN(formData.noHouseholdsSlumOthers) || formData.noHouseholdsSlumOthers < 0) {
-      newErrors.push({ field: 'noHouseholdsSlumOthers', message: 'No. of Households Others is required' });
-    }
-    if (formData.noHouseholdsSlum === undefined || formData.noHouseholdsSlum === null || isNaN(formData.noHouseholdsSlum) || formData.noHouseholdsSlum < 0) {
-      newErrors.push({ field: 'noHouseholdsSlum', message: 'No. of Households is required' });
-    }
-    if (formData.noHouseholdsSlumMinorities === undefined || formData.noHouseholdsSlumMinorities === null || isNaN(formData.noHouseholdsSlumMinorities) || formData.noHouseholdsSlumMinorities < 0) {
-      newErrors.push({ field: 'noHouseholdsSlumMinorities', message: 'No. of Households Minorities is required' });
     }
     
     // Part H - Housing Status
@@ -1705,6 +1469,20 @@ export default function SlumSurveyPage() {
     if (formData.landTenureWithPatta === undefined || formData.landTenureWithPatta === null || isNaN(formData.landTenureWithPatta) || formData.landTenureWithPatta < 0) {
       newErrors.push({ field: 'landTenureWithPatta', message: 'Land Tenure With Patta is required' });
     }
+    if (formData.landTenurePossessionCertificate === undefined || formData.landTenurePossessionCertificate === null || isNaN(formData.landTenurePossessionCertificate) || formData.landTenurePossessionCertificate < 0) {
+      newErrors.push({ field: 'landTenurePossessionCertificate', message: 'Land Tenure With Possession Certificate is required' });
+    }
+    if (formData.landTenureEncroachedPrivate === undefined || formData.landTenureEncroachedPrivate === null || isNaN(formData.landTenureEncroachedPrivate) || formData.landTenureEncroachedPrivate < 0) {
+      newErrors.push({ field: 'landTenureEncroachedPrivate', message: 'Land Tenure Encroached on Private Property is required' });
+    }
+    if (formData.landTenureEncroachedPublic === undefined || formData.landTenureEncroachedPublic === null || isNaN(formData.landTenureEncroachedPublic) || formData.landTenureEncroachedPublic < 0) {
+      newErrors.push({ field: 'landTenureEncroachedPublic', message: 'Land Tenure Encroached on Public Property is required' });
+    }
+    if (formData.landTenureOnRent === undefined || formData.landTenureOnRent === null || isNaN(formData.landTenureOnRent) || formData.landTenureOnRent < 0) {
+      newErrors.push({ field: 'landTenureOnRent', message: 'Land Tenure On Rent is required' });
+    }
+
+
     
     // Additional Infrastructure Requirements
     // Water Supply
@@ -1714,7 +1492,7 @@ export default function SlumSurveyPage() {
     if (!formData.waterSupplyPipelinesAdditional) {
       newErrors.push({ field: 'waterSupplyPipelinesAdditional', message: 'Water Supply Pipelines - Additional Requirement is required' });
     }
-    if (formData.waterSupplyPipelinesAdditional === 'Yes' && (formData.waterSupplyPipelinesCost === undefined || formData.waterSupplyPipelinesCost === null || isNaN(formData.waterSupplyPipelinesCost) || formData.waterSupplyPipelinesCost < 0)) {
+    if ((formData.waterSupplyPipelinesAdditional || 0) > 0 && (formData.waterSupplyPipelinesCost === undefined || formData.waterSupplyPipelinesCost === null || isNaN(formData.waterSupplyPipelinesCost) || (formData.waterSupplyPipelinesCost || 0) < 0)) {
       newErrors.push({ field: 'waterSupplyPipelinesCost', message: 'Water Supply Pipelines - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1724,7 +1502,7 @@ export default function SlumSurveyPage() {
     if (!formData.waterSupplyIndividualTapsAdditional) {
       newErrors.push({ field: 'waterSupplyIndividualTapsAdditional', message: 'Water Supply Individual Taps - Additional Requirement is required' });
     }
-    if (formData.waterSupplyIndividualTapsAdditional === 'Yes' && (formData.waterSupplyIndividualTapsCost === undefined || formData.waterSupplyIndividualTapsCost === null || isNaN(formData.waterSupplyIndividualTapsCost) || formData.waterSupplyIndividualTapsCost < 0)) {
+    if ((formData.waterSupplyIndividualTapsAdditional || 0) > 0 && (formData.waterSupplyIndividualTapsCost === undefined || formData.waterSupplyIndividualTapsCost === null || isNaN(formData.waterSupplyIndividualTapsCost) || (formData.waterSupplyIndividualTapsCost || 0) < 0)) {
       newErrors.push({ field: 'waterSupplyIndividualTapsCost', message: 'Water Supply Individual Taps - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1734,7 +1512,7 @@ export default function SlumSurveyPage() {
     if (!formData.waterSupplyBorewellsAdditional) {
       newErrors.push({ field: 'waterSupplyBorewellsAdditional', message: 'Water Supply Borewells - Additional Requirement is required' });
     }
-    if (formData.waterSupplyBorewellsAdditional === 'Yes' && (formData.waterSupplyBorewellsCost === undefined || formData.waterSupplyBorewellsCost === null || isNaN(formData.waterSupplyBorewellsCost) || formData.waterSupplyBorewellsCost < 0)) {
+    if ((formData.waterSupplyBorewellsAdditional || 0) > 0 && (formData.waterSupplyBorewellsCost === undefined || formData.waterSupplyBorewellsCost === null || isNaN(formData.waterSupplyBorewellsCost) || (formData.waterSupplyBorewellsCost || 0) < 0)) {
       newErrors.push({ field: 'waterSupplyBorewellsCost', message: 'Water Supply Borewells - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1744,7 +1522,7 @@ export default function SlumSurveyPage() {
     if (!formData.waterSupplyConnectivityTrunkLinesAdditional) {
       newErrors.push({ field: 'waterSupplyConnectivityTrunkLinesAdditional', message: 'Water Supply Connectivity to Trunk Lines - Additional Requirement is required' });
     }
-    if (formData.waterSupplyConnectivityTrunkLinesAdditional === 'Yes' && (formData.waterSupplyConnectivityTrunkLinesCost === undefined || formData.waterSupplyConnectivityTrunkLinesCost === null || isNaN(formData.waterSupplyConnectivityTrunkLinesCost) || formData.waterSupplyConnectivityTrunkLinesCost < 0)) {
+    if ((formData.waterSupplyConnectivityTrunkLinesAdditional || 0) > 0 && (formData.waterSupplyConnectivityTrunkLinesCost === undefined || formData.waterSupplyConnectivityTrunkLinesCost === null || isNaN(formData.waterSupplyConnectivityTrunkLinesCost) || (formData.waterSupplyConnectivityTrunkLinesCost || 0) < 0)) {
       newErrors.push({ field: 'waterSupplyConnectivityTrunkLinesCost', message: 'Water Supply Connectivity to Trunk Lines - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1755,7 +1533,7 @@ export default function SlumSurveyPage() {
     if (!formData.drainageStormwaterDrainageAdditional) {
       newErrors.push({ field: 'drainageStormwaterDrainageAdditional', message: 'Drainage Stormwater Drainage - Additional Requirement is required' });
     }
-    if (formData.drainageStormwaterDrainageAdditional === 'Yes' && (formData.drainageStormwaterDrainageCost === undefined || formData.drainageStormwaterDrainageCost === null || isNaN(formData.drainageStormwaterDrainageCost) || formData.drainageStormwaterDrainageCost < 0)) {
+    if ((formData.drainageStormwaterDrainageAdditional || 0) > 0 && (formData.drainageStormwaterDrainageCost === undefined || formData.drainageStormwaterDrainageCost === null || isNaN(formData.drainageStormwaterDrainageCost) || (formData.drainageStormwaterDrainageCost || 0) < 0)) {
       newErrors.push({ field: 'drainageStormwaterDrainageCost', message: 'Drainage Stormwater Drainage - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1765,27 +1543,27 @@ export default function SlumSurveyPage() {
     if (!formData.drainageConnectivityMainDrainsAdditional) {
       newErrors.push({ field: 'drainageConnectivityMainDrainsAdditional', message: 'Drainage Connectivity to Main Drains - Additional Requirement is required' });
     }
-    if (formData.drainageConnectivityMainDrainsAdditional === 'Yes' && (formData.drainageConnectivityMainDrainsCost === undefined || formData.drainageConnectivityMainDrainsCost === null || isNaN(formData.drainageConnectivityMainDrainsCost) || formData.drainageConnectivityMainDrainsCost < 0)) {
+    if ((formData.drainageConnectivityMainDrainsAdditional || 0) > 0 && (formData.drainageConnectivityMainDrainsCost === undefined || formData.drainageConnectivityMainDrainsCost === null || isNaN(formData.drainageConnectivityMainDrainsCost) || (formData.drainageConnectivityMainDrainsCost || 0) < 0)) {
       newErrors.push({ field: 'drainageConnectivityMainDrainsCost', message: 'Drainage Connectivity to Main Drains - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
     if (!formData.drainageSewerLinesExisting) {
       newErrors.push({ field: 'drainageSewerLinesExisting', message: 'Drainage Sewer Lines - Existing is required' });
     }
-    if (!formData.drainageSewerLinesAdditional) {
+    if (!(formData.drainageSewerLinesAdditional || 0)) {
       newErrors.push({ field: 'drainageSewerLinesAdditional', message: 'Drainage Sewer Lines - Additional Requirement is required' });
     }
-    if (formData.drainageSewerLinesAdditional === 'Yes' && (formData.drainageSewerLinesCost === undefined || formData.drainageSewerLinesCost === null || isNaN(formData.drainageSewerLinesCost) || formData.drainageSewerLinesCost < 0)) {
+    if ((formData.drainageSewerLinesAdditional || 0) > 0 && (formData.drainageSewerLinesCost === undefined || formData.drainageSewerLinesCost === null || isNaN(formData.drainageSewerLinesCost) || (formData.drainageSewerLinesCost || 0) < 0)) {
       newErrors.push({ field: 'drainageSewerLinesCost', message: 'Drainage Sewer Lines - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
     if (!formData.drainageConnectivityTrunkSewersExisting) {
       newErrors.push({ field: 'drainageConnectivityTrunkSewersExisting', message: 'Drainage Connectivity to Trunk Sewers - Existing is required' });
     }
-    if (!formData.drainageConnectivityTrunkSewersAdditional) {
+    if (!(formData.drainageConnectivityTrunkSewersAdditional || 0)) {
       newErrors.push({ field: 'drainageConnectivityTrunkSewersAdditional', message: 'Drainage Connectivity to Trunk Sewers - Additional Requirement is required' });
     }
-    if (formData.drainageConnectivityTrunkSewersAdditional === 'Yes' && (formData.drainageConnectivityTrunkSewersCost === undefined || formData.drainageConnectivityTrunkSewersCost === null || isNaN(formData.drainageConnectivityTrunkSewersCost) || formData.drainageConnectivityTrunkSewersCost < 0)) {
+    if ((formData.drainageConnectivityTrunkSewersAdditional || 0) > 0 && (formData.drainageConnectivityTrunkSewersCost === undefined || formData.drainageConnectivityTrunkSewersCost === null || isNaN(formData.drainageConnectivityTrunkSewersCost) || (formData.drainageConnectivityTrunkSewersCost || 0) < 0)) {
       newErrors.push({ field: 'drainageConnectivityTrunkSewersCost', message: 'Drainage Connectivity to Trunk Sewers - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1793,50 +1571,50 @@ export default function SlumSurveyPage() {
     if (!formData.roadsInternalRoadsCCExisting) {
       newErrors.push({ field: 'roadsInternalRoadsCCExisting', message: 'Roads Internal Roads CC - Existing is required' });
     }
-    if (!formData.roadsInternalRoadsCCAdditional) {
+    if (!(formData.roadsInternalRoadsCCAdditional || 0)) {
       newErrors.push({ field: 'roadsInternalRoadsCCAdditional', message: 'Roads Internal Roads CC - Additional Requirement is required' });
     }
-    if (formData.roadsInternalRoadsCCAdditional === 'Yes' && (formData.roadsInternalRoadsCCCost === undefined || formData.roadsInternalRoadsCCCost === null || isNaN(formData.roadsInternalRoadsCCCost) || formData.roadsInternalRoadsCCCost < 0)) {
+    if ((formData.roadsInternalRoadsCCAdditional || 0) > 0 && (formData.roadsInternalRoadsCCCost === undefined || formData.roadsInternalRoadsCCCost === null || isNaN(formData.roadsInternalRoadsCCCost) || (formData.roadsInternalRoadsCCCost || 0) < 0)) {
       newErrors.push({ field: 'roadsInternalRoadsCCCost', message: 'Roads Internal Roads CC - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
     if (!formData.roadsInternalRoadsBTExisting) {
       newErrors.push({ field: 'roadsInternalRoadsBTExisting', message: 'Roads Internal Roads BT - Existing is required' });
     }
-    if (!formData.roadsInternalRoadsBTAdditional) {
+    if (!(formData.roadsInternalRoadsBTAdditional || 0)) {
       newErrors.push({ field: 'roadsInternalRoadsBTAdditional', message: 'Roads Internal Roads BT - Additional Requirement is required' });
     }
-    if (formData.roadsInternalRoadsBTAdditional === 'Yes' && (formData.roadsInternalRoadsBTCost === undefined || formData.roadsInternalRoadsBTCost === null || isNaN(formData.roadsInternalRoadsBTCost) || formData.roadsInternalRoadsBTCost < 0)) {
+    if ((formData.roadsInternalRoadsBTAdditional || 0) > 0 && (formData.roadsInternalRoadsBTCost === undefined || formData.roadsInternalRoadsBTCost === null || isNaN(formData.roadsInternalRoadsBTCost) || (formData.roadsInternalRoadsBTCost || 0) < 0)) {
       newErrors.push({ field: 'roadsInternalRoadsBTCost', message: 'Roads Internal Roads BT - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
     if (!formData.roadsInternalRoadsOthersExisting) {
       newErrors.push({ field: 'roadsInternalRoadsOthersExisting', message: 'Roads Internal Roads Others - Existing is required' });
     }
-    if (!formData.roadsInternalRoadsOthersAdditional) {
+    if (!(formData.roadsInternalRoadsOthersAdditional || 0)) {
       newErrors.push({ field: 'roadsInternalRoadsOthersAdditional', message: 'Roads Internal Roads Others - Additional Requirement is required' });
     }
-    if (formData.roadsInternalRoadsOthersAdditional === 'Yes' && (formData.roadsInternalRoadsOthersCost === undefined || formData.roadsInternalRoadsOthersCost === null || isNaN(formData.roadsInternalRoadsOthersCost) || formData.roadsInternalRoadsOthersCost < 0)) {
+    if ((formData.roadsInternalRoadsOthersAdditional || 0) > 0 && (formData.roadsInternalRoadsOthersCost === undefined || formData.roadsInternalRoadsOthersCost === null || isNaN(formData.roadsInternalRoadsOthersCost) || (formData.roadsInternalRoadsOthersCost || 0) < 0)) {
       newErrors.push({ field: 'roadsInternalRoadsOthersCost', message: 'Roads Internal Roads Others - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
     if (!formData.roadsApproachRoadsCCExisting) {
       newErrors.push({ field: 'roadsApproachRoadsCCExisting', message: 'Roads Approach Roads CC - Existing is required' });
     }
-    if (!formData.roadsApproachRoadsCCAdditional) {
+    if (!(formData.roadsApproachRoadsCCAdditional || 0)) {
       newErrors.push({ field: 'roadsApproachRoadsCCAdditional', message: 'Roads Approach Roads CC - Additional Requirement is required' });
     }
-    if (formData.roadsApproachRoadsCCAdditional === 'Yes' && (formData.roadsApproachRoadsCCCost === undefined || formData.roadsApproachRoadsCCCost === null || isNaN(formData.roadsApproachRoadsCCCost) || formData.roadsApproachRoadsCCCost < 0)) {
+    if ((formData.roadsApproachRoadsCCAdditional || 0) > 0 && (formData.roadsApproachRoadsCCCost === undefined || formData.roadsApproachRoadsCCCost === null || isNaN(formData.roadsApproachRoadsCCCost) || (formData.roadsApproachRoadsCCCost || 0) < 0)) {
       newErrors.push({ field: 'roadsApproachRoadsCCCost', message: 'Roads Approach Roads CC - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
     if (!formData.roadsApproachRoadsOthersExisting) {
       newErrors.push({ field: 'roadsApproachRoadsOthersExisting', message: 'Roads Approach Roads Others - Existing is required' });
     }
-    if (!formData.roadsApproachRoadsOthersAdditional) {
+    if (!(formData.roadsApproachRoadsOthersAdditional || 0)) {
       newErrors.push({ field: 'roadsApproachRoadsOthersAdditional', message: 'Roads Approach Roads Others - Additional Requirement is required' });
     }
-    if (formData.roadsApproachRoadsOthersAdditional === 'Yes' && (formData.roadsApproachRoadsOthersCost === undefined || formData.roadsApproachRoadsOthersCost === null || isNaN(formData.roadsApproachRoadsOthersCost) || formData.roadsApproachRoadsOthersCost < 0)) {
+    if ((formData.roadsApproachRoadsOthersAdditional || 0) > 0 && (formData.roadsApproachRoadsOthersCost === undefined || formData.roadsApproachRoadsOthersCost === null || isNaN(formData.roadsApproachRoadsOthersCost) || (formData.roadsApproachRoadsOthersCost || 0) < 0)) {
       newErrors.push({ field: 'roadsApproachRoadsOthersCost', message: 'Roads Approach Roads Others - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1844,20 +1622,20 @@ export default function SlumSurveyPage() {
     if (!formData.streetLightingPolesExisting) {
       newErrors.push({ field: 'streetLightingPolesExisting', message: 'Street Lighting Poles - Existing is required' });
     }
-    if (!formData.streetLightingPolesAdditional) {
+    if (!(formData.streetLightingPolesAdditional || 0)) {
       newErrors.push({ field: 'streetLightingPolesAdditional', message: 'Street Lighting Poles - Additional Requirement is required' });
     }
-    if (formData.streetLightingPolesAdditional === 'Yes' && (formData.streetLightingPolesCost === undefined || formData.streetLightingPolesCost === null || isNaN(formData.streetLightingPolesCost) || formData.streetLightingPolesCost < 0)) {
+    if ((formData.streetLightingPolesAdditional || 0) > 0 && (formData.streetLightingPolesCost === undefined || formData.streetLightingPolesCost === null || isNaN(formData.streetLightingPolesCost) || (formData.streetLightingPolesCost || 0) < 0)) {
       newErrors.push({ field: 'streetLightingPolesCost', message: 'Street Lighting Poles - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
     if (!formData.streetLightingLightsExisting) {
       newErrors.push({ field: 'streetLightingLightsExisting', message: 'Street Lighting Lights - Existing is required' });
     }
-    if (!formData.streetLightingLightsAdditional) {
+    if (!(formData.streetLightingLightsAdditional || 0)) {
       newErrors.push({ field: 'streetLightingLightsAdditional', message: 'Street Lighting Lights - Additional Requirement is required' });
     }
-    if (formData.streetLightingLightsAdditional === 'Yes' && (formData.streetLightingLightsCost === undefined || formData.streetLightingLightsCost === null || isNaN(formData.streetLightingLightsCost) || formData.streetLightingLightsCost < 0)) {
+    if ((formData.streetLightingLightsAdditional || 0) > 0 && (formData.streetLightingLightsCost === undefined || formData.streetLightingLightsCost === null || isNaN(formData.streetLightingLightsCost) || (formData.streetLightingLightsCost || 0) < 0)) {
       newErrors.push({ field: 'streetLightingLightsCost', message: 'Street Lighting Lights - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1865,10 +1643,10 @@ export default function SlumSurveyPage() {
     if (!formData.sanitationIndividualToiletsExisting) {
       newErrors.push({ field: 'sanitationIndividualToiletsExisting', message: 'Sanitation Individual Toilets - Existing is required' });
     }
-    if (!formData.sanitationIndividualToiletsAdditional) {
+    if (!(formData.sanitationIndividualToiletsAdditional || 0)) {
       newErrors.push({ field: 'sanitationIndividualToiletsAdditional', message: 'Sanitation Individual Toilets - Additional Requirement is required' });
     }
-    if (formData.sanitationIndividualToiletsAdditional === 'Yes' && (formData.sanitationIndividualToiletsCost === undefined || formData.sanitationIndividualToiletsCost === null || isNaN(formData.sanitationIndividualToiletsCost) || formData.sanitationIndividualToiletsCost < 0)) {
+    if ((formData.sanitationIndividualToiletsAdditional || 0) > 0 && (formData.sanitationIndividualToiletsCost === undefined || formData.sanitationIndividualToiletsCost === null || isNaN(formData.sanitationIndividualToiletsCost) || (formData.sanitationIndividualToiletsCost || 0) < 0)) {
       newErrors.push({ field: 'sanitationIndividualToiletsCost', message: 'Sanitation Individual Toilets - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1878,7 +1656,7 @@ export default function SlumSurveyPage() {
     if (!formData.sanitationCommunityToiletsAdditional) {
       newErrors.push({ field: 'sanitationCommunityToiletsAdditional', message: 'Sanitation Community Toilets - Additional Requirement is required' });
     }
-    if (formData.sanitationCommunityToiletsAdditional === 'Yes' && (formData.sanitationCommunityToiletsCost === undefined || formData.sanitationCommunityToiletsCost === null || isNaN(formData.sanitationCommunityToiletsCost) || formData.sanitationCommunityToiletsCost < 0)) {
+    if ((formData.sanitationCommunityToiletsAdditional || 0) > 0 && (formData.sanitationCommunityToiletsCost === undefined || formData.sanitationCommunityToiletsCost === null || isNaN(formData.sanitationCommunityToiletsCost) || (formData.sanitationCommunityToiletsCost || 0) < 0)) {
       newErrors.push({ field: 'sanitationCommunityToiletsCost', message: 'Sanitation Community Toilets - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1888,7 +1666,7 @@ export default function SlumSurveyPage() {
     if (!formData.sanitationSeatsCommunityToiletsAdditional) {
       newErrors.push({ field: 'sanitationSeatsCommunityToiletsAdditional', message: 'Sanitation Seats in Community Toilets - Additional Requirement is required' });
     }
-    if (formData.sanitationSeatsCommunityToiletsAdditional === 'Yes' && (formData.sanitationSeatsCommunityToiletsCost === undefined || formData.sanitationSeatsCommunityToiletsCost === null || isNaN(formData.sanitationSeatsCommunityToiletsCost) || formData.sanitationSeatsCommunityToiletsCost < 0)) {
+    if ((formData.sanitationSeatsCommunityToiletsAdditional || 0) > 0 && (formData.sanitationSeatsCommunityToiletsCost === undefined || formData.sanitationSeatsCommunityToiletsCost === null || isNaN(formData.sanitationSeatsCommunityToiletsCost) || (formData.sanitationSeatsCommunityToiletsCost || 0) < 0)) {
       newErrors.push({ field: 'sanitationSeatsCommunityToiletsCost', message: 'Sanitation Seats in Community Toilets - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1898,7 +1676,7 @@ export default function SlumSurveyPage() {
     if (!formData.sanitationDumperBinsAdditional) {
       newErrors.push({ field: 'sanitationDumperBinsAdditional', message: 'Sanitation Dumper Bins - Additional Requirement is required' });
     }
-    if (formData.sanitationDumperBinsAdditional === 'Yes' && (formData.sanitationDumperBinsCost === undefined || formData.sanitationDumperBinsCost === null || isNaN(formData.sanitationDumperBinsCost) || formData.sanitationDumperBinsCost < 0)) {
+    if ((formData.sanitationDumperBinsAdditional || 0) > 0 && (formData.sanitationDumperBinsCost === undefined || formData.sanitationDumperBinsCost === null || isNaN(formData.sanitationDumperBinsCost) || (formData.sanitationDumperBinsCost || 0) < 0)) {
       newErrors.push({ field: 'sanitationDumperBinsCost', message: 'Sanitation Dumper Bins - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1909,7 +1687,7 @@ export default function SlumSurveyPage() {
     if (!formData.communityHallsAdditional) {
       newErrors.push({ field: 'communityHallsAdditional', message: 'Community Halls - Additional Requirement is required' });
     }
-    if (formData.communityHallsAdditional === 'Yes' && (formData.communityHallsCost === undefined || formData.communityHallsCost === null || isNaN(formData.communityHallsCost) || formData.communityHallsCost < 0)) {
+    if ((formData.communityHallsAdditional || 0) > 0 && (formData.communityHallsCost === undefined || formData.communityHallsCost === null || isNaN(formData.communityHallsCost) || (formData.communityHallsCost || 0) < 0)) {
       newErrors.push({ field: 'communityHallsCost', message: 'Community Halls - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1919,7 +1697,7 @@ export default function SlumSurveyPage() {
     if (!formData.communityLivelihoodCentresAdditional) {
       newErrors.push({ field: 'communityLivelihoodCentresAdditional', message: 'Community Livelihood Centres - Additional Requirement is required' });
     }
-    if (formData.communityLivelihoodCentresAdditional === 'Yes' && (formData.communityLivelihoodCentresCost === undefined || formData.communityLivelihoodCentresCost === null || isNaN(formData.communityLivelihoodCentresCost) || formData.communityLivelihoodCentresCost < 0)) {
+    if ((formData.communityLivelihoodCentresAdditional || 0) > 0 && (formData.communityLivelihoodCentresCost === undefined || formData.communityLivelihoodCentresCost === null || isNaN(formData.communityLivelihoodCentresCost) || (formData.communityLivelihoodCentresCost || 0) < 0)) {
       newErrors.push({ field: 'communityLivelihoodCentresCost', message: 'Community Livelihood Centres - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1929,7 +1707,7 @@ export default function SlumSurveyPage() {
     if (!formData.communityAnganwadisAdditional) {
       newErrors.push({ field: 'communityAnganwadisAdditional', message: 'Community Anganwadis - Additional Requirement is required' });
     }
-    if (formData.communityAnganwadisAdditional === 'Yes' && (formData.communityAnganwadisCost === undefined || formData.communityAnganwadisCost === null || isNaN(formData.communityAnganwadisCost) || formData.communityAnganwadisCost < 0)) {
+    if ((formData.communityAnganwadisAdditional || 0) > 0 && (formData.communityAnganwadisCost === undefined || formData.communityAnganwadisCost === null || isNaN(formData.communityAnganwadisCost) || (formData.communityAnganwadisCost || 0) < 0)) {
       newErrors.push({ field: 'communityAnganwadisCost', message: 'Community Anganwadis - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1939,7 +1717,7 @@ export default function SlumSurveyPage() {
     if (!formData.communityPrimarySchoolsAdditional) {
       newErrors.push({ field: 'communityPrimarySchoolsAdditional', message: 'Community Primary Schools - Additional Requirement is required' });
     }
-    if (formData.communityPrimarySchoolsAdditional === 'Yes' && (formData.communityPrimarySchoolsCost === undefined || formData.communityPrimarySchoolsCost === null || isNaN(formData.communityPrimarySchoolsCost) || formData.communityPrimarySchoolsCost < 0)) {
+    if ((formData.communityPrimarySchoolsAdditional || 0) > 0 && (formData.communityPrimarySchoolsCost === undefined || formData.communityPrimarySchoolsCost === null || isNaN(formData.communityPrimarySchoolsCost) || (formData.communityPrimarySchoolsCost || 0) < 0)) {
       newErrors.push({ field: 'communityPrimarySchoolsCost', message: 'Community Primary Schools - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1949,7 +1727,7 @@ export default function SlumSurveyPage() {
     if (!formData.communityHealthCentresAdditional) {
       newErrors.push({ field: 'communityHealthCentresAdditional', message: 'Community Health Centres - Additional Requirement is required' });
     }
-    if (formData.communityHealthCentresAdditional === 'Yes' && (formData.communityHealthCentresCost === undefined || formData.communityHealthCentresCost === null || isNaN(formData.communityHealthCentresCost) || formData.communityHealthCentresCost < 0)) {
+    if ((formData.communityHealthCentresAdditional || 0) > 0 && (formData.communityHealthCentresCost === undefined || formData.communityHealthCentresCost === null || isNaN(formData.communityHealthCentresCost) || (formData.communityHealthCentresCost || 0) < 0)) {
       newErrors.push({ field: 'communityHealthCentresCost', message: 'Community Health Centres - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -1959,7 +1737,7 @@ export default function SlumSurveyPage() {
     if (!formData.communityOthersAdditional) {
       newErrors.push({ field: 'communityOthersAdditional', message: 'Community Others - Additional Requirement is required' });
     }
-    if (formData.communityOthersAdditional === 'Yes' && (formData.communityOthersCost === undefined || formData.communityOthersCost === null || isNaN(formData.communityOthersCost) || formData.communityOthersCost < 0)) {
+    if ((formData.communityOthersAdditional || 0) > 0 && (formData.communityOthersCost === undefined || formData.communityOthersCost === null || isNaN(formData.communityOthersCost) || (formData.communityOthersCost || 0) < 0)) {
       newErrors.push({ field: 'communityOthersCost', message: 'Community Others - Estimated Cost is required when Additional Requirement is Yes' });
     }
     
@@ -2023,7 +1801,6 @@ export default function SlumSurveyPage() {
           districtCode: finalFormData.districtCode || "",
           districtName: finalFormData.districtName || "",
           cityTownCode: finalFormData.cityTownCode || "",
-          cityTownName: finalFormData.cityTownName || "",
           cityTown: finalFormData.cityTown || "",
           cityTownNoHouseholds: finalFormData.cityTownNoHouseholds || 0
         },
@@ -2055,8 +1832,8 @@ export default function SlumSurveyPage() {
         // PART-D: I. BASIC INFORMATION ON SLUM
         basicInformation: {
           slumNameBasicInfo: finalFormData.slumNameBasicInfo || "",
-          slumCode: finalFormData.slumCode || "",
-          locationWard: finalFormData.locationWard || "",
+          wardNumber: finalFormData.wardNumber || "",
+          zoneNumber: finalFormData.zoneNumber || "",
           ageSlumYears: finalFormData.ageSlumYears || 0,
           areaSlumSqMtrs: finalFormData.areaSlumSqMtrs || 0,
           locationCoreOrFringe: finalFormData.locationCoreOrFringe || "",
@@ -2279,7 +2056,6 @@ export default function SlumSurveyPage() {
         
         // Employment and Occupation Status
         employmentAndOccupation: {
-          majorIndustriesPresent: finalFormData.majorIndustriesPresent || [],
           selfEmployed: finalFormData.occupationalStatus?.selfEmployed || 0,
           salaried: finalFormData.occupationalStatus?.salaried || 0,
           regularWage: finalFormData.occupationalStatus?.regularWage || 0,
@@ -2627,9 +2403,9 @@ export default function SlumSurveyPage() {
             data.stateName = formData.stateName;
             data.districtCode = formData.districtCode;
             data.districtName = formData.districtName;
+            data.ulbCode = formData.ulbCode;
+            data.ulbName = formData.ulbName;
             data.cityTownCode = formData.cityTownCode;
-            data.cityTownName = formData.cityTownName;
-            data.cityTown = formData.cityTown;
             data.cityTownNoHouseholds = formData.cityTownNoHouseholds;
             break;
           case 'cityTownSlumProfile':
@@ -2646,23 +2422,16 @@ export default function SlumSurveyPage() {
           case 'surveyOperation':
             data.surveyorName = formData.surveyorName;
             data.surveyDate = formData.surveyDate;
-            data.receiptQuestionnaireDate = formData.receiptQuestionnaireDate;
-            data.scrutinyDate = formData.scrutinyDate;
-            data.receiptByNodalCellDate = formData.receiptByNodalCellDate;
-            data.remarksInvestigator = formData.remarksInvestigator;
-            data.commentsSupervisor = formData.commentsSupervisor;
             break;
           case 'basicInformation':
             data.slumNameBasicInfo = formData.slumNameBasicInfo;
-            data.slumCode = formData.slumCode;
-            data.locationWard = formData.locationWard;
+            data.wardNumber = formData.wardNumber;
+            data.wardName = formData.wardName;
+            data.zoneNumber = formData.zoneNumber;
             data.ageSlumYears = formData.ageSlumYears;
-            data.areaSlumSqMtrs = formData.areaSlumSqMtrs;
             data.locationCoreOrFringe = formData.locationCoreOrFringe;
             data.typeAreaSurrounding = formData.typeAreaSurrounding;
             data.physicalLocationSlum = formData.physicalLocationSlum;
-            data.isSlumNotified = formData.isSlumNotified;
-            data.yearOfNotification = formData.yearOfNotification;
             break;
           case 'landStatus':
             data.ownershipLandDetail = formData.ownershipLandDetail;
@@ -2874,7 +2643,6 @@ export default function SlumSurveyPage() {
             break;
           case 'employmentAndOccupation':
             data.employmentAndOccupation = {
-              majorIndustriesPresent: formData.majorIndustriesPresent || [],
               selfEmployed: formData.occupationalStatus?.selfEmployed || 0,
               salaried: formData.occupationalStatus?.salaried || 0,
               regularWage: formData.occupationalStatus?.regularWage || 0,
@@ -3301,32 +3069,44 @@ export default function SlumSurveyPage() {
                     className="bg-slate-800/50 cursor-not-allowed opacity-75"
                     />
                     <Input
+                    label="ULB Code"
+                    value={formData.ulbCode || ""}
+                    onChange={(e) => handleInputChange("ulbCode", e.target.value)}
+                    required
+                    name="ulbCode"
+                    error={getFieldError('ulbCode')}
+                    readOnly
+                    className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                    />
+                    <Input
+                    label="ULB Name"
+                    value={formData.ulbName || ""}
+                    onChange={(e) => handleInputChange("ulbName", e.target.value)}
+                    required
+                    name="ulbName"
+                    error={getFieldError('ulbName')}
+                    readOnly
+                    className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                    />
+                    <Input
                     label="City/Town Code"
                     value={formData.cityTownCode || ""}
                     onChange={(e) => handleInputChange("cityTownCode", e.target.value)}
                     required
                     name="cityTownCode"
                     error={getFieldError('cityTownCode')}
+                    readOnly
+                    className="bg-slate-800/50 cursor-not-allowed opacity-75"
                     />
                     <Input
-                    label="City/Town Name"
-                    value={formData.cityTownName || ""}
-                    onChange={(e) => handleInputChange("cityTownName", e.target.value)}
+                    label="City/Town No. of Households (2011 Census)"
+                    type="number"
+                    value={formData.cityTownNoHouseholds || ""}
+                    onChange={(e) => handleInputChange("cityTownNoHouseholds", parseInt(e.target.value) || 0)}
                     required
-                    name="cityTownName"
-                    error={getFieldError('cityTownName')}
-                    />
-                    <div className="md:col-span-2">
-                        <Input
-                        label="City/Town No. of Households (2011 Census)"
-                        type="number"
-                        value={formData.cityTownNoHouseholds || ""}
-                        onChange={(e) => handleInputChange("cityTownNoHouseholds", parseInt(e.target.value) || 0)}
-                        required
-                        name="cityTownNoHouseholds"
-                        error={getFieldError('cityTownNoHouseholds')}
+                    name="cityTownNoHouseholds"
+                    error={getFieldError('cityTownNoHouseholds')}
                         />
-                    </div>
                 </div>
             </div>
             )}
@@ -3337,18 +3117,15 @@ export default function SlumSurveyPage() {
                 Part B: City/Town Slum Profile
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Select
+                    <Input
                     label="Slum Type"
                     value={formData.slumType || ""}
                     onChange={(e) => handleInputChange("slumType", e.target.value)}
                     required
                     name="slumType"
                     error={getFieldError('slumType')}
-                    options={[
-                        { value: "NOTIFIED", label: "Notified" },
-                        { value: "NON_NOTIFIED", label: "Non-Notified" },
-                        { value: "NEW_IDENTIFIED", label: "New Identified" },
-                    ]}
+                    readOnly
+                    className="bg-slate-800/50 cursor-not-allowed opacity-75"
                     />
                     <Input
                     label="Slum ID"
@@ -3357,6 +3134,8 @@ export default function SlumSurveyPage() {
                     required
                     name="slumIdField"
                     error={getFieldError('slumIdField')}
+                    readOnly
+                    className="bg-slate-800/50 cursor-not-allowed opacity-75"
                     />
                     <div className="md:col-span-2">
                         <Input
@@ -3374,7 +3153,7 @@ export default function SlumSurveyPage() {
                     name="ownershipLand"
                     error={getFieldError('ownershipLand')}
                     options={[
-                        { value: "LOCAL_BODY", label: "Local Body" },
+                        { value: "MUNICIPAL_CORPORATION", label: "Municipal Corporation" },
                         { value: "STATE_GOVERNMENT", label: "State Government" },
                         { value: "CENTRAL_GOVERNMENT", label: "Central Government" },
                         { value: "PRIVATE", label: "Private" },
@@ -3389,6 +3168,8 @@ export default function SlumSurveyPage() {
                     required
                     name="areaSqMtrs"
                     error={getFieldError('areaSqMtrs')}
+                    readOnly
+                    className="bg-slate-800/50 cursor-not-allowed opacity-75"
                     />
                     <Input
                     label="Slum Population"
@@ -3441,6 +3222,8 @@ export default function SlumSurveyPage() {
                     value={formData.surveyorName || user?.name || ""}
                     onChange={(e) => handleInputChange("surveyorName", e.target.value)}
                     required
+                    readOnly
+                    className="bg-slate-800/50 cursor-not-allowed opacity-75"
                     />
                     <Input
                     label="Survey Date"
@@ -3451,49 +3234,6 @@ export default function SlumSurveyPage() {
                     name="surveyDate"
                     error={getFieldError('surveyDate')}
                     />
-                    <Input
-                    label="Receipt of Questionnaire Date"
-                    type="date"
-                    value={formData.receiptQuestionnaireDate || ""}
-                    onChange={(e) => handleInputChange("receiptQuestionnaireDate", e.target.value)}
-                    required
-                    name="receiptQuestionnaireDate"
-                    error={getFieldError('receiptQuestionnaireDate')}
-                    />
-                    <Input
-                    label="Scrutiny Date"
-                    type="date"
-                    value={formData.scrutinyDate || ""}
-                    onChange={(e) => handleInputChange("scrutinyDate", e.target.value)}
-                    required
-                    name="scrutinyDate"
-                    error={getFieldError('scrutinyDate')}
-                    />
-                    <Input
-                    label="Receipt by Nodal Cell Date"
-                    type="date"
-                    value={formData.receiptByNodalCellDate || ""}
-                    onChange={(e) => handleInputChange("receiptByNodalCellDate", e.target.value)}
-                    required
-                    name="receiptByNodalCellDate"
-                    error={getFieldError('receiptByNodalCellDate')}
-                    />
-                    <div className="md:col-span-2">
-                        <Input
-                        label="Remarks by Investigator"
-                        value={formData.remarksInvestigator || ""}
-                        onChange={(e) => handleInputChange("remarksInvestigator", e.target.value)}
-                        placeholder="Enter remarks by investigator..."
-                        />
-                    </div>
-                    <div className="md:col-span-2">
-                        <Input
-                        label="Comments by Supervisor"
-                        value={formData.commentsSupervisor || ""}
-                        onChange={(e) => handleInputChange("commentsSupervisor", e.target.value)}
-                        placeholder="Enter comments by supervisor..."
-                        />
-                    </div>
                 </div>
             </div>
             )}
@@ -3505,20 +3245,34 @@ export default function SlumSurveyPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
-                    label="Slum Code"
-                    value={formData.slumCode || ""}
-                    onChange={(e) => handleInputChange("slumCode", e.target.value)}
+                    label="Ward Number"
+                    value={formData.wardNumber || ""}
+                    onChange={(e) => handleInputChange("wardNumber", e.target.value)}
                     required
-                    name="slumCode"
-                    error={getFieldError('slumCode')}
+                    name="wardNumber"
+                    error={getFieldError('wardNumber')}
+                    readOnly
+                    className="bg-slate-800/50 cursor-not-allowed opacity-75"
                     />
                     <Input
-                    label="Location Ward"
-                    value={formData.locationWard || ""}
-                    onChange={(e) => handleInputChange("locationWard", e.target.value)}
+                    label="Ward Name"
+                    value={formData.wardName || ""}
+                    onChange={(e) => handleInputChange("wardName", e.target.value)}
                     required
-                    name="locationWard"
-                    error={getFieldError('locationWard')}
+                    name="wardName"
+                    error={getFieldError('wardName')}
+                    readOnly
+                    className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                    />
+                    <Input
+                    label="Zone Number"
+                    value={formData.zoneNumber || ""}
+                    onChange={(e) => handleInputChange("zoneNumber", e.target.value)}
+                    required
+                    name="zoneNumber"
+                    error={getFieldError('zoneNumber')}
+                    readOnly
+                    className="bg-slate-800/50 cursor-not-allowed opacity-75"
                     />
                     <Input
                     label="Age of Slum (Years)"
@@ -3528,15 +3282,6 @@ export default function SlumSurveyPage() {
                     required
                     name="ageSlumYears"
                     error={getFieldError('ageSlumYears')}
-                    />
-                    <Input
-                    label="Area of Slum (sq Mtrs)"
-                    type="number"
-                    value={formData.areaSlumSqMtrs || ""}
-                    onChange={(e) => handleInputChange("areaSlumSqMtrs", parseFloat(e.target.value) || 0)}
-                    required
-                    name="areaSlumSqMtrs"
-                    error={getFieldError('areaSlumSqMtrs')}
                     />
                     <Select
                     label="Location - Core City/Town or Fringe Area"
@@ -3583,29 +3328,6 @@ export default function SlumSurveyPage() {
                         { value: "OTHERS_NON_HAZARDOUS", label: "Others (Non-Hazardous/Non-objectionable) - 08" },
                     ]}
                     />
-                    <Select
-                    label="Is Slum Notified?"
-                    value={formData.isSlumNotified || ""}
-                    onChange={(e) => handleInputChange("isSlumNotified", e.target.value)}
-                    required
-                    name="isSlumNotified"
-                    error={getFieldError('isSlumNotified')}
-                    options={[
-                        { value: "YES", label: "Yes" },
-                        { value: "NO", label: "No" },
-                    ]}
-                    />
-                    {formData.isSlumNotified === "YES" && (
-                    <Input
-                        label="Year of Notification"
-                        type="number"
-                        value={formData.yearOfNotification || ""}
-                        onChange={(e) => handleInputChange("yearOfNotification", parseInt(e.target.value) || 0)}
-                        required
-                        name="yearOfNotification"
-                        error={getFieldError('yearOfNotification')}
-                    />
-                    )}
                 </div>
             </div>
             )}
@@ -3624,7 +3346,7 @@ export default function SlumSurveyPage() {
                     name="ownershipLandDetail"
                     error={getFieldError('ownershipLandDetail')}
                     options={[
-                        { value: "LOCAL_BODY", label: "Public: Local Body" },
+                        { value: "MUNICIPAL_CORPORATION", label: "Public: Municipal Corporation" },
                         { value: "STATE_GOVERNMENT", label: "Public: State Government" },
                         { value: "RAILWAYS", label: "Public: Railways" },
                         { value: "DEFENSE", label: "Public: Defense" },
@@ -3636,6 +3358,7 @@ export default function SlumSurveyPage() {
                     ]}
                     />
                     <div className="md:col-span-2">
+                        {formData.ownershipLandDetail === "OTHER" && (
                         <Input
                         label="Specify Ownership (if Other)"
                         value={formData.ownershipLandSpecify || ""}
@@ -3644,6 +3367,7 @@ export default function SlumSurveyPage() {
                         name="ownershipLandSpecify"
                         error={getFieldError('ownershipLandSpecify')}
                         />
+                        )}
                     </div>
                 </div>
             </div>
@@ -3652,7 +3376,7 @@ export default function SlumSurveyPage() {
             {currentStep === 5 && (
             <div className="space-y-6">
                 <h2 className="text-xl font-bold text-white border-b border-slate-800 pb-4">
-                Part F: Demographic Profile
+                Part F: Demographic Profile (Population)
                 </h2>
                 <div className="space-y-6">
 
@@ -4825,45 +4549,86 @@ export default function SlumSurveyPage() {
             {currentStep === 6 && (
             <div className="space-y-6">
                 <h2 className="text-xl font-bold text-white border-b border-slate-800 pb-4">
-                Part G: Housing Status
+                Part G: Housing Status (No. of Households)
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input
-                    label="Dwelling Units - Pucca"
-                    type="number"
-                    value={formData.dwellingUnitsPucca || ""}
-                    onChange={(e) => handleInputChange("dwellingUnitsPucca", parseInt(e.target.value) || 0)}
-                    required
-                    name="dwellingUnitsPucca"
-                    error={getFieldError('dwellingUnitsPucca')}
-                    />
-                    <Input
-                    label="Dwelling Units - Semi-Pucca"
-                    type="number"
-                    value={formData.dwellingUnitsSemiPucca || ""}
-                    onChange={(e) => handleInputChange("dwellingUnitsSemiPucca", parseInt(e.target.value) || 0)}
-                    required
-                    name="dwellingUnitsSemiPucca"
-                    error={getFieldError('dwellingUnitsSemiPucca')}
-                    />
-                    <Input
-                    label="Dwelling Units - Katcha"
-                    type="number"
-                    value={formData.dwellingUnitsKatcha || ""}
-                    onChange={(e) => handleInputChange("dwellingUnitsKatcha", parseInt(e.target.value) || 0)}
-                    required
-                    name="dwellingUnitsKatcha"
-                    error={getFieldError('dwellingUnitsKatcha')}
-                    />
-                    <Input
-                    label="Dwelling Units - Total"
-                    type="number"
-                    value={formData.dwellingUnitsTotal || ""}
-                    onChange={(e) => handleInputChange("dwellingUnitsTotal", parseInt(e.target.value) || 0)}
-                    required
-                    name="dwellingUnitsTotal"
-                    error={getFieldError('dwellingUnitsTotal')}
-                    />
+                    <div className="md:col-span-2">
+                        <h3 className="text-lg font-semibold text-white mb-4">Dwelling Units</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Input
+                            label="Pucca"
+                            type="number"
+                            value={formData.dwellingUnitsPucca || ""}
+                            onChange={(e) => handleInputChange("dwellingUnitsPucca", parseInt(e.target.value) || 0)}
+                            required
+                            name="dwellingUnitsPucca"
+                            error={getFieldError('dwellingUnitsPucca')}
+                            />
+                            <Input
+                            label="Semi Pucca"
+                            type="number"
+                            value={formData.dwellingUnitsSemiPucca || ""}
+                            onChange={(e) => handleInputChange("dwellingUnitsSemiPucca", parseInt(e.target.value) || 0)}
+                            required
+                            name="dwellingUnitsSemiPucca"
+                            error={getFieldError('dwellingUnitsSemiPucca')}
+                            />
+                            <Input
+                            label="Katcha"
+                            type="number"
+                            value={formData.dwellingUnitsKatcha || ""}
+                            onChange={(e) => handleInputChange("dwellingUnitsKatcha", parseInt(e.target.value) || 0)}
+                            required
+                            name="dwellingUnitsKatcha"
+                            error={getFieldError('dwellingUnitsKatcha')}
+                            />
+                            <Input
+                            label="Total"
+                            type="number"
+                            value={formData.dwellingUnitsTotal || ""}
+                            onChange={(e) => handleInputChange("dwellingUnitsTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="dwellingUnitsTotal"
+                            error={getFieldError('dwellingUnitsTotal')}
+                            />
+                            <Input
+                            label="Electricity Pucca"
+                            type="number"
+                            value={formData.dwellingUnitsWithElectricityPucca || ""}
+                            onChange={(e) => handleInputChange("dwellingUnitsWithElectricityPucca", parseInt(e.target.value) || 0)}
+                            required
+                            name="dwellingUnitsWithElectricityPucca"
+                            error={getFieldError('dwellingUnitsWithElectricityPucca')}
+                            />
+                            <Input
+                            label="Electricity Semi Pucca"
+                            type="number"
+                            value={formData.dwellingUnitsWithElectricitySemiPucca || ""}
+                            onChange={(e) => handleInputChange("dwellingUnitsWithElectricitySemiPucca", parseInt(e.target.value) || 0)}
+                            required
+                            name="dwellingUnitsWithElectricitySemiPucca"
+                            error={getFieldError('dwellingUnitsWithElectricitySemiPucca')}
+                            />
+                            <Input
+                            label="Electricity Katcha"
+                            type="number"
+                            value={formData.dwellingUnitsWithElectricityKatcha || ""}
+                            onChange={(e) => handleInputChange("dwellingUnitsWithElectricityKatcha", parseInt(e.target.value) || 0)}
+                            required
+                            name="dwellingUnitsWithElectricityKatcha"
+                            error={getFieldError('dwellingUnitsWithElectricityKatcha')}
+                            />
+                            <Input
+                            label="Total"
+                            type="number"
+                            value={formData.dwellingUnitsWithElectricityTotal || ""}
+                            onChange={(e) => handleInputChange("dwellingUnitsWithElectricityTotal", parseInt(e.target.value) || 0)}
+                            required
+                            name="dwellingUnitsWithElectricityTotal"
+                            error={getFieldError('dwellingUnitsWithElectricityTotal')}
+                            />
+                        </div>
+                    </div>
                     <div className="md:col-span-2">
                         <h3 className="text-lg font-semibold text-white mb-4">Land Tenure</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -4939,7 +4704,7 @@ export default function SlumSurveyPage() {
             {currentStep === 7 && (
             <div className="space-y-6">
                 <h2 className="text-xl font-bold text-white border-b border-slate-800 pb-4">
-                Part H: Economic Status of Households
+                Part H: Economic Status of Households (No. of Households)
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
@@ -5003,7 +4768,7 @@ export default function SlumSurveyPage() {
             {currentStep === 8 && (
             <div className="space-y-6">
                 <h2 className="text-xl font-bold text-white border-b border-slate-800 pb-4">
-                Part I: Occupation Status of Households
+                Part I: Occupation Status of Households (No. of Households)
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
@@ -5350,7 +5115,7 @@ export default function SlumSurveyPage() {
             {currentStep === 10 && (
             <div className="space-y-6">
                 <h2 className="text-xl font-bold text-white border-b border-slate-800 pb-4">
-                Part K: Education Facilities (Questions 26-30)
+                Part K: Education Facilities
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -5614,7 +5379,7 @@ export default function SlumSurveyPage() {
             {currentStep === 11 && (
             <div className="space-y-6">
                 <h2 className="text-xl font-bold text-white border-b border-slate-800 pb-4">
-                Part L: Health Facilities (Question 31)
+                Part L: Health Facilities
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Select
@@ -5694,7 +5459,7 @@ export default function SlumSurveyPage() {
             {currentStep === 12 && (
             <div className="space-y-6">
                 <h2 className="text-xl font-bold text-white border-b border-slate-800 pb-4">
-                Part M: Social Development/Welfare (Questions 32-36c)
+                Part M: Social Development/Welfare
                 </h2>
                 <div className="space-y-6">
                     <div>
@@ -5844,31 +5609,25 @@ export default function SlumSurveyPage() {
                     <div>
                         <h3 className="text-lg font-semibold text-white mb-4">37. Water Supply</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Select
+                            <Input
                             label="Pipelines (Rmts) - Existing"
+                            type="number"
                             value={formData.waterSupplyPipelinesExisting || ""}
                             onChange={(e) => handleInputChange("waterSupplyPipelinesExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="waterSupplyPipelinesExisting"
                             error={getFieldError("waterSupplyPipelinesExisting")}
                             />
-                            <Select
+                            <Input
                             label="Pipelines (Rmts) - Additional Requirement"
+                            type="number"
                             value={formData.waterSupplyPipelinesAdditional || ""}
                             onChange={(e) => handleInputChange("waterSupplyPipelinesAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="waterSupplyPipelinesAdditional"
                             error={getFieldError("waterSupplyPipelinesAdditional")}
                             />
-                            {formData.waterSupplyPipelinesAdditional === "Yes" && (
+                            {formData.waterSupplyPipelinesAdditional || 0 > 0 && (
                             <Input
                             label="Pipelines (Rmts) - Estimated Cost"
                             type="number"
@@ -5879,31 +5638,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Individual Taps (Nos.) - Existing"
+                            type="number"
                             value={formData.waterSupplyIndividualTapsExisting || ""}
                             onChange={(e) => handleInputChange("waterSupplyIndividualTapsExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="waterSupplyIndividualTapsExisting"
                             error={getFieldError("waterSupplyIndividualTapsExisting")}
                             />
-                            <Select
+                            <Input
                             label="Individual Taps (Nos.) - Additional Requirement"
+                            type="number"
                             value={formData.waterSupplyIndividualTapsAdditional || ""}
                             onChange={(e) => handleInputChange("waterSupplyIndividualTapsAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="waterSupplyIndividualTapsAdditional"
                             error={getFieldError("waterSupplyIndividualTapsAdditional")}
                             />
-                            {formData.waterSupplyIndividualTapsAdditional === "Yes" && (
+                            {formData.waterSupplyIndividualTapsAdditional || 0 > 0 && (
                             <Input
                             label="Individual Taps (Nos.) - Estimated Cost"
                             type="number"
@@ -5914,31 +5667,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Borewells (Nos.) - Existing"
+                            type="number"
                             value={formData.waterSupplyBorewellsExisting || ""}
                             onChange={(e) => handleInputChange("waterSupplyBorewellsExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="waterSupplyBorewellsExisting"
                             error={getFieldError("waterSupplyBorewellsExisting")}
                             />
-                            <Select
+                            <Input
                             label="Borewells (Nos.) - Additional Requirement"
+                            type="number"
                             value={formData.waterSupplyBorewellsAdditional || ""}
                             onChange={(e) => handleInputChange("waterSupplyBorewellsAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="waterSupplyBorewellsAdditional"
                             error={getFieldError("waterSupplyBorewellsAdditional")}
                             />
-                            {formData.waterSupplyBorewellsAdditional === "Yes" && (
+                            {formData.waterSupplyBorewellsAdditional || 0 > 0 && (
                             <Input
                             label="Borewells (Nos.) - Estimated Cost"
                             type="number"
@@ -5949,31 +5696,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Connectivity to Trunk Lines (Rmts) - Existing"
+                            type="number"
                             value={formData.waterSupplyConnectivityTrunkLinesExisting || ""}
                             onChange={(e) => handleInputChange("waterSupplyConnectivityTrunkLinesExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="waterSupplyConnectivityTrunkLinesExisting"
                             error={getFieldError("waterSupplyConnectivityTrunkLinesExisting")}
                             />
-                            <Select
+                            <Input
                             label="Connectivity to Trunk Lines (Rmts) - Additional Requirement"
+                            type="number"
                             value={formData.waterSupplyConnectivityTrunkLinesAdditional || ""}
                             onChange={(e) => handleInputChange("waterSupplyConnectivityTrunkLinesAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="waterSupplyConnectivityTrunkLinesAdditional"
                             error={getFieldError("waterSupplyConnectivityTrunkLinesAdditional")}
                             />
-                            {formData.waterSupplyConnectivityTrunkLinesAdditional === "Yes" && (
+                            {formData.waterSupplyConnectivityTrunkLinesAdditional || 0 > 0 && (
                             <Input
                             label="Connectivity to Trunk Lines (Rmts) - Estimated Cost"
                             type="number"
@@ -5990,31 +5731,25 @@ export default function SlumSurveyPage() {
                     <div>
                         <h3 className="text-lg font-semibold text-white mb-4">38. Drainage/Sewerage</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Select
+                            <Input
                             label="Stormwater Drainage (Rmts.) - Existing"
+                            type="number"
                             value={formData.drainageStormwaterDrainageExisting || ""}
                             onChange={(e) => handleInputChange("drainageStormwaterDrainageExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="drainageStormwaterDrainageExisting"
                             error={getFieldError("drainageStormwaterDrainageExisting")}
                             />
-                            <Select
+                            <Input
                             label="Stormwater Drainage (Rmts.) - Additional Requirement"
+                            type="number"
                             value={formData.drainageStormwaterDrainageAdditional || ""}
                             onChange={(e) => handleInputChange("drainageStormwaterDrainageAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="drainageStormwaterDrainageAdditional"
                             error={getFieldError("drainageStormwaterDrainageAdditional")}
                             />
-                            {formData.drainageStormwaterDrainageAdditional === "Yes" && (
+                            {formData.drainageStormwaterDrainageAdditional || 0 > 0 && (
                             <Input
                             label="Stormwater Drainage (Rmts.) - Estimated Cost"
                             type="number"
@@ -6025,31 +5760,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Connectivity to Main Drains (Rmts) - Existing"
+                            type="number"
                             value={formData.drainageConnectivityMainDrainsExisting || ""}
                             onChange={(e) => handleInputChange("drainageConnectivityMainDrainsExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="drainageConnectivityMainDrainsExisting"
                             error={getFieldError("drainageConnectivityMainDrainsExisting")}
                             />
-                            <Select
+                            <Input
                             label="Connectivity to Main Drains (Rmts) - Additional Requirement"
+                            type="number"
                             value={formData.drainageConnectivityMainDrainsAdditional || ""}
                             onChange={(e) => handleInputChange("drainageConnectivityMainDrainsAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="drainageConnectivityMainDrainsAdditional"
                             error={getFieldError("drainageConnectivityMainDrainsAdditional")}
                             />
-                            {formData.drainageConnectivityMainDrainsAdditional === "Yes" && (
+                            {formData.drainageConnectivityMainDrainsAdditional || 0 > 0 && (
                             <Input
                             label="Connectivity to Main Drains (Rmts) - Estimated Cost"
                             type="number"
@@ -6060,31 +5789,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Sewer Lines (Rmts) - Existing"
+                            type="number"
                             value={formData.drainageSewerLinesExisting || ""}
                             onChange={(e) => handleInputChange("drainageSewerLinesExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="drainageSewerLinesExisting"
                             error={getFieldError("drainageSewerLinesExisting")}
                             />
-                            <Select
+                            <Input
                             label="Sewer Lines (Rmts) - Additional Requirement"
+                            type="number"
                             value={formData.drainageSewerLinesAdditional || ""}
                             onChange={(e) => handleInputChange("drainageSewerLinesAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="drainageSewerLinesAdditional"
                             error={getFieldError("drainageSewerLinesAdditional")}
                             />
-                            {formData.drainageSewerLinesAdditional === "Yes" && (
+                            {formData.drainageSewerLinesAdditional || 0 > 0 && (
                             <Input
                             label="Sewer Lines (Rmts) - Estimated Cost"
                             type="number"
@@ -6095,31 +5818,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Connectivity to Trunk Sewers (Rmts) - Existing"
+                            type="number"
                             value={formData.drainageConnectivityTrunkSewersExisting || ""}
                             onChange={(e) => handleInputChange("drainageConnectivityTrunkSewersExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="drainageConnectivityTrunkSewersExisting"
                             error={getFieldError("drainageConnectivityTrunkSewersExisting")}
                             />
-                            <Select
+                            <Input
                             label="Connectivity to Trunk Sewers (Rmts) - Additional Requirement"
+                            type="number"
                             value={formData.drainageConnectivityTrunkSewersAdditional || ""}
                             onChange={(e) => handleInputChange("drainageConnectivityTrunkSewersAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="drainageConnectivityTrunkSewersAdditional"
                             error={getFieldError("drainageConnectivityTrunkSewersAdditional")}
                             />
-                            {formData.drainageConnectivityTrunkSewersAdditional === "Yes" && (
+                            {formData.drainageConnectivityTrunkSewersAdditional || 0 > 0 && (
                             <Input
                             label="Connectivity to Trunk Sewers (Rmts) - Estimated Cost"
                             type="number"
@@ -6136,31 +5853,25 @@ export default function SlumSurveyPage() {
                     <div>
                         <h3 className="text-lg font-semibold text-white mb-4">39. Roads</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Select
+                            <Input
                             label="Internal Roads -CC (Rmts) - Existing"
+                            type="number"
                             value={formData.roadsInternalRoadsCCExisting || ""}
                             onChange={(e) => handleInputChange("roadsInternalRoadsCCExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="roadsInternalRoadsCCExisting"
                             error={getFieldError("roadsInternalRoadsCCExisting")}
                             />
-                            <Select
+                            <Input
                             label="Internal Roads -CC (Rmts) - Additional Requirement"
+                            type="number"
                             value={formData.roadsInternalRoadsCCAdditional || ""}
                             onChange={(e) => handleInputChange("roadsInternalRoadsCCAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="roadsInternalRoadsCCAdditional"
                             error={getFieldError("roadsInternalRoadsCCAdditional")}
                             />
-                            {formData.roadsInternalRoadsCCAdditional === "Yes" && (
+                            {formData.roadsInternalRoadsCCAdditional || 0 > 0 && (
                             <Input
                             label="Internal Roads -CC (Rmts) - Estimated Cost"
                             type="number"
@@ -6171,31 +5882,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Internal Roads - BT (Rmts.) - Existing"
+                            type="number"
                             value={formData.roadsInternalRoadsBTExisting || ""}
                             onChange={(e) => handleInputChange("roadsInternalRoadsBTExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="roadsInternalRoadsBTExisting"
                             error={getFieldError("roadsInternalRoadsBTExisting")}
                             />
-                            <Select
+                            <Input
                             label="Internal Roads - BT (Rmts.) - Additional Requirement"
+                            type="number"
                             value={formData.roadsInternalRoadsBTAdditional || ""}
                             onChange={(e) => handleInputChange("roadsInternalRoadsBTAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="roadsInternalRoadsBTAdditional"
                             error={getFieldError("roadsInternalRoadsBTAdditional")}
                             />
-                            {formData.roadsInternalRoadsBTAdditional === "Yes" && (
+                            {formData.roadsInternalRoadsBTAdditional || 0 > 0 && (
                             <Input
                             label="Internal Roads - BT (Rmts.) - Estimated Cost"
                             type="number"
@@ -6206,31 +5911,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Internal Roads - Others (Rmts) - Existing"
+                            type="number"
                             value={formData.roadsInternalRoadsOthersExisting || ""}
                             onChange={(e) => handleInputChange("roadsInternalRoadsOthersExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="roadsInternalRoadsOthersExisting"
                             error={getFieldError("roadsInternalRoadsOthersExisting")}
                             />
-                            <Select
+                            <Input
                             label="Internal Roads - Others (Rmts) - Additional Requirement"
+                            type="number"
                             value={formData.roadsInternalRoadsOthersAdditional || ""}
                             onChange={(e) => handleInputChange("roadsInternalRoadsOthersAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="roadsInternalRoadsOthersAdditional"
                             error={getFieldError("roadsInternalRoadsOthersAdditional")}
                             />
-                            {formData.roadsInternalRoadsOthersAdditional === "Yes" && (
+                            {formData.roadsInternalRoadsOthersAdditional || 0 > 0 && (
                             <Input
                             label="Internal Roads - Others (Rmts) - Estimated Cost"
                             type="number"
@@ -6241,31 +5940,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Approach Roads -CC (Rmts) - Existing"
+                            type="number"
                             value={formData.roadsApproachRoadsCCExisting || ""}
                             onChange={(e) => handleInputChange("roadsApproachRoadsCCExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="roadsApproachRoadsCCExisting"
                             error={getFieldError("roadsApproachRoadsCCExisting")}
                             />
-                            <Select
+                            <Input
                             label="Approach Roads -CC (Rmts) - Additional Requirement"
+                            type="number"
                             value={formData.roadsApproachRoadsCCAdditional || ""}
                             onChange={(e) => handleInputChange("roadsApproachRoadsCCAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="roadsApproachRoadsCCAdditional"
                             error={getFieldError("roadsApproachRoadsCCAdditional")}
                             />
-                            {formData.roadsApproachRoadsCCAdditional === "Yes" && (
+                            {formData.roadsApproachRoadsCCAdditional || 0 > 0 && (
                             <Input
                             label="Approach Roads -CC (Rmts) - Estimated Cost"
                             type="number"
@@ -6276,31 +5969,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Approach Roads - Others (Rmts) - Existing"
+                            type="number"
                             value={formData.roadsApproachRoadsOthersExisting || ""}
                             onChange={(e) => handleInputChange("roadsApproachRoadsOthersExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="roadsApproachRoadsOthersExisting"
                             error={getFieldError("roadsApproachRoadsOthersExisting")}
                             />
-                            <Select
+                            <Input
                             label="Approach Roads - Others (Rmts) - Additional Requirement"
+                            type="number"
                             value={formData.roadsApproachRoadsOthersAdditional || ""}
                             onChange={(e) => handleInputChange("roadsApproachRoadsOthersAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="roadsApproachRoadsOthersAdditional"
                             error={getFieldError("roadsApproachRoadsOthersAdditional")}
                             />
-                            {formData.roadsApproachRoadsOthersAdditional === "Yes" && (
+                            {formData.roadsApproachRoadsOthersAdditional || 0 > 0 && (
                             <Input
                             label="Approach Roads - Others (Rmts) - Estimated Cost"
                             type="number"
@@ -6317,31 +6004,25 @@ export default function SlumSurveyPage() {
                     <div>
                         <h3 className="text-lg font-semibold text-white mb-4">40. Street Lighting</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Select
+                            <Input
                             label="Street Light Poles (Nos.) - Existing"
+                            type="number"
                             value={formData.streetLightingPolesExisting || ""}
                             onChange={(e) => handleInputChange("streetLightingPolesExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="streetLightingPolesExisting"
                             error={getFieldError("streetLightingPolesExisting")}
                             />
-                            <Select
+                            <Input
                             label="Street Light Poles (Nos.) - Additional Requirement"
+                            type="number"
                             value={formData.streetLightingPolesAdditional || ""}
                             onChange={(e) => handleInputChange("streetLightingPolesAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="streetLightingPolesAdditional"
                             error={getFieldError("streetLightingPolesAdditional")}
                             />
-                            {formData.streetLightingPolesAdditional === "Yes" && (
+                            {formData.streetLightingPolesAdditional || 0 > 0 && (
                             <Input
                             label="Street Light Poles (Nos.) - Estimated Cost"
                             type="number"
@@ -6352,31 +6033,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Street Lights (Nos) - Existing"
+                            type="number"
                             value={formData.streetLightingLightsExisting || ""}
                             onChange={(e) => handleInputChange("streetLightingLightsExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="streetLightingLightsExisting"
                             error={getFieldError("streetLightingLightsExisting")}
                             />
-                            <Select
+                            <Input
                             label="Street Lights (Nos) - Additional Requirement"
+                            type="number"
                             value={formData.streetLightingLightsAdditional || ""}
                             onChange={(e) => handleInputChange("streetLightingLightsAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="streetLightingLightsAdditional"
                             error={getFieldError("streetLightingLightsAdditional")}
                             />
-                            {formData.streetLightingLightsAdditional === "Yes" && (
+                            {formData.streetLightingLightsAdditional || 0 > 0 && (
                             <Input
                             label="Street Lights (Nos) - Estimated Cost"
                             type="number"
@@ -6393,31 +6068,25 @@ export default function SlumSurveyPage() {
                     <div>
                         <h3 className="text-lg font-semibold text-white mb-4">41. Sanitation</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Select
+                            <Input
                             label="Individual Toilets (Nos) - Existing"
+                            type="number"
                             value={formData.sanitationIndividualToiletsExisting || ""}
                             onChange={(e) => handleInputChange("sanitationIndividualToiletsExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="sanitationIndividualToiletsExisting"
                             error={getFieldError("sanitationIndividualToiletsExisting")}
                             />
-                            <Select
+                            <Input
                             label="Individual Toilets (Nos) - Additional Requirement"
+                            type="number"
                             value={formData.sanitationIndividualToiletsAdditional || ""}
                             onChange={(e) => handleInputChange("sanitationIndividualToiletsAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="sanitationIndividualToiletsAdditional"
                             error={getFieldError("sanitationIndividualToiletsAdditional")}
                             />
-                            {formData.sanitationIndividualToiletsAdditional === "Yes" && (
+                            {formData.sanitationIndividualToiletsAdditional || 0 > 0 && (
                             <Input
                             label="Individual Toilets (Nos) - Estimated Cost"
                             type="number"
@@ -6428,31 +6097,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Community Toilets (Nos) - Existing"
                             value={formData.sanitationCommunityToiletsExisting || ""}
+                            type="number"
                             onChange={(e) => handleInputChange("sanitationCommunityToiletsExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="sanitationCommunityToiletsExisting"
                             error={getFieldError("sanitationCommunityToiletsExisting")}
                             />
-                            <Select
+                            <Input
                             label="Community Toilets (Nos) - Additional Requirement"
+                            type="number"
                             value={formData.sanitationCommunityToiletsAdditional || ""}
                             onChange={(e) => handleInputChange("sanitationCommunityToiletsAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="sanitationCommunityToiletsAdditional"
                             error={getFieldError("sanitationCommunityToiletsAdditional")}
                             />
-                            {formData.sanitationCommunityToiletsAdditional === "Yes" && (
+                            {formData.sanitationCommunityToiletsAdditional || 0 > 0 && (
                             <Input
                             label="Community Toilets (Nos) - Estimated Cost"
                             type="number"
@@ -6463,31 +6126,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Seats in Community Toilets (Nos.) - Existing"
+                            type="number"
                             value={formData.sanitationSeatsCommunityToiletsExisting || ""}
                             onChange={(e) => handleInputChange("sanitationSeatsCommunityToiletsExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="sanitationSeatsCommunityToiletsExisting"
                             error={getFieldError("sanitationSeatsCommunityToiletsExisting")}
                             />
-                            <Select
+                            <Input
                             label="Seats in Community Toilets (Nos.) - Additional Requirement"
+                            type="number"
                             value={formData.sanitationSeatsCommunityToiletsAdditional || ""}
                             onChange={(e) => handleInputChange("sanitationSeatsCommunityToiletsAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="sanitationSeatsCommunityToiletsAdditional"
                             error={getFieldError("sanitationSeatsCommunityToiletsAdditional")}
                             />
-                            {formData.sanitationSeatsCommunityToiletsAdditional === "Yes" && (
+                            {formData.sanitationSeatsCommunityToiletsAdditional || 0 > 0 && (
                             <Input
                             label="Seats in Community Toilets (Nos.) - Estimated Cost"
                             type="number"
@@ -6498,31 +6155,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Dumper Bins (Nos) - Existing"
+                            type="number"
                             value={formData.sanitationDumperBinsExisting || ""}
                             onChange={(e) => handleInputChange("sanitationDumperBinsExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="sanitationDumperBinsExisting"
                             error={getFieldError("sanitationDumperBinsExisting")}
                             />
-                            <Select
+                            <Input
                             label="Dumper Bins (Nos) - Additional Requirement"
+                            type="number"
                             value={formData.sanitationDumperBinsAdditional || ""}
                             onChange={(e) => handleInputChange("sanitationDumperBinsAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="sanitationDumperBinsAdditional"
                             error={getFieldError("sanitationDumperBinsAdditional")}
                             />
-                            {formData.sanitationDumperBinsAdditional === "Yes" && (
+                            {formData.sanitationDumperBinsAdditional || 0 > 0 && (
                             <Input
                             label="Dumper Bins (Nos) - Estimated Cost"
                             type="number"
@@ -6539,31 +6190,25 @@ export default function SlumSurveyPage() {
                     <div>
                         <h3 className="text-lg font-semibold text-white mb-4">42. Community Facilities</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Select
+                            <Input
                             label="Community Halls (No of Rooms) - Existing"
+                            type="number"
                             value={formData.communityHallsExisting || ""}
                             onChange={(e) => handleInputChange("communityHallsExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityHallsExisting"
                             error={getFieldError("communityHallsExisting")}
                             />
-                            <Select
+                            <Input
                             label="Community Halls (No of Rooms) - Additional Requirement"
+                            type="number"
                             value={formData.communityHallsAdditional || ""}
                             onChange={(e) => handleInputChange("communityHallsAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityHallsAdditional"
                             error={getFieldError("communityHallsAdditional")}
                             />
-                            {formData.communityHallsAdditional === "Yes" && (
+                            {formData.communityHallsAdditional || 0 > 0 && (
                             <Input
                             label="Community Halls (No of Rooms) - Estimated Cost"
                             type="number"
@@ -6574,31 +6219,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Livelihood / Production Centres (Noof Rooms) - Existing"
+                            type="number"
                             value={formData.communityLivelihoodCentresExisting || ""}
                             onChange={(e) => handleInputChange("communityLivelihoodCentresExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityLivelihoodCentresExisting"
                             error={getFieldError("communityLivelihoodCentresExisting")}
                             />
-                            <Select
+                            <Input
                             label="Livelihood / Production Centres (Noof Rooms) - Additional Requirement"
+                            type="number"
                             value={formData.communityLivelihoodCentresAdditional || ""}
                             onChange={(e) => handleInputChange("communityLivelihoodCentresAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityLivelihoodCentresAdditional"
                             error={getFieldError("communityLivelihoodCentresAdditional")}
                             />
-                            {formData.communityLivelihoodCentresAdditional === "Yes" && (
+                            {formData.communityLivelihoodCentresAdditional || 0 > 0 && (
                             <Input
                             label="Livelihood / Production Centres (Noof Rooms) - Estimated Cost"
                             type="number"
@@ -6609,31 +6248,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Anganwadis /Pre-schools (No ofRooms) - Existing"
+                            type="number"
                             value={formData.communityAnganwadisExisting || ""}
                             onChange={(e) => handleInputChange("communityAnganwadisExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityAnganwadisExisting"
                             error={getFieldError("communityAnganwadisExisting")}
                             />
-                            <Select
+                            <Input
                             label="Anganwadis /Pre-schools (No ofRooms) - Additional Requirement"
+                            type="number"
                             value={formData.communityAnganwadisAdditional || ""}
                             onChange={(e) => handleInputChange("communityAnganwadisAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityAnganwadisAdditional"
                             error={getFieldError("communityAnganwadisAdditional")}
                             />
-                            {formData.communityAnganwadisAdditional === "Yes" && (
+                            {formData.communityAnganwadisAdditional || 0 > 0 && (
                             <Input
                             label="Anganwadis /Pre-schools (No ofRooms) - Estimated Cost"
                             type="number"
@@ -6644,31 +6277,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Primary Schools (No of Class Rooms) - Existing"
+                            type="number"
                             value={formData.communityPrimarySchoolsExisting || ""}
                             onChange={(e) => handleInputChange("communityPrimarySchoolsExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityPrimarySchoolsExisting"
                             error={getFieldError("communityPrimarySchoolsExisting")}
                             />
-                            <Select
+                            <Input
                             label="Primary Schools (No of Class Rooms) - Additional Requirement"
+                            type="number"
                             value={formData.communityPrimarySchoolsAdditional || ""}
                             onChange={(e) => handleInputChange("communityPrimarySchoolsAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityPrimarySchoolsAdditional"
                             error={getFieldError("communityPrimarySchoolsAdditional")}
                             />
-                            {formData.communityPrimarySchoolsAdditional === "Yes" && (
+                            {formData.communityPrimarySchoolsAdditional || 0 > 0 && (
                             <Input
                             label="Primary Schools (No of Class Rooms) - Estimated Cost"
                             type="number"
@@ -6679,31 +6306,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Health Centres (No. of Rooms) - Existing"
+                            type="number"
                             value={formData.communityHealthCentresExisting || ""}
                             onChange={(e) => handleInputChange("communityHealthCentresExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityHealthCentresExisting"
                             error={getFieldError("communityHealthCentresExisting")}
                             />
-                            <Select
+                            <Input
                             label="Health Centres (No. of Rooms) - Additional Requirement"
+                            type="number"
                             value={formData.communityHealthCentresAdditional || ""}
                             onChange={(e) => handleInputChange("communityHealthCentresAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityHealthCentresAdditional"
                             error={getFieldError("communityHealthCentresAdditional")}
                             />
-                            {formData.communityHealthCentresAdditional === "Yes" && (
+                            {formData.communityHealthCentresAdditional || 0 > 0 && (
                             <Input
                             label="Health Centres (No. of Rooms) - Estimated Cost"
                             type="number"
@@ -6714,31 +6335,25 @@ export default function SlumSurveyPage() {
                             />
                             )}
                             
-                            <Select
+                            <Input
                             label="Others (Specify) - Existing"
+                            type="number"
                             value={formData.communityOthersExisting || ""}
                             onChange={(e) => handleInputChange("communityOthersExisting", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityOthersExisting"
                             error={getFieldError("communityOthersExisting")}
                             />
-                            <Select
+                            <Input
                             label="Others (Specify) - Additional Requirement"
+                            type="number"
                             value={formData.communityOthersAdditional || ""}
                             onChange={(e) => handleInputChange("communityOthersAdditional", e.target.value)}
-                            options={[
-                                { value: "Yes", label: "Yes" },
-                                { value: "No", label: "No" },
-                            ]}
                             required
                             name="communityOthersAdditional"
                             error={getFieldError("communityOthersAdditional")}
                             />
-                            {formData.communityOthersAdditional === "Yes" && (
+                            {formData.communityOthersAdditional || 0 > 0 && (
                             <Input
                             label="Others (Specify) - Estimated Cost"
                             type="number"
@@ -6757,25 +6372,25 @@ export default function SlumSurveyPage() {
                     <h3 className="text-lg font-semibold text-white mb-4">43. Standalone Infrastructure Requirements</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Electricity */}
-                        <Select
+                        <Input
                         label="Electricity - Existing"
+                        type="number"
                         value={formData.electricityExisting || ""}
                         onChange={(e) => handleInputChange("electricityExisting", e.target.value)}
-                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
                         required
                         name="electricityExisting"
                         error={getFieldError("electricityExisting")}
                         />
-                        <Select
+                        <Input
                         label="Electricity - Additional Requirement"
+                        type="number"
                         value={formData.electricityAdditional || ""}
                         onChange={(e) => handleInputChange("electricityAdditional", e.target.value)}
-                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
                         required
                         name="electricityAdditional"
                         error={getFieldError("electricityAdditional")}
                         />
-                        {formData.electricityAdditional === "Yes" && (
+                        {formData.electricityAdditional || 0 > 0 && (
                         <Input
                         label="Electricity - Estimated Cost"
                         type="number"
@@ -6787,25 +6402,25 @@ export default function SlumSurveyPage() {
                         )}
                         
                         {/* Healthcare */}
-                        <Select
+                        <Input
                         label="Healthcare - Existing"
+                        type="number"
                         value={formData.healthcareExisting || ""}
                         onChange={(e) => handleInputChange("healthcareExisting", e.target.value)}
-                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
                         required
                         name="healthcareExisting"
                         error={getFieldError("healthcareExisting")}
                         />
-                        <Select
+                        <Input
                         label="Healthcare - Additional Requirement"
+                        type="number"
                         value={formData.healthcareAdditional || ""}
                         onChange={(e) => handleInputChange("healthcareAdditional", e.target.value)}
-                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
                         required
                         name="healthcareAdditional"
                         error={getFieldError("healthcareAdditional")}
                         />
-                        {formData.healthcareAdditional === "Yes" && (
+                        {formData.healthcareAdditional || 0 > 0 && (
                         <Input
                         label="Healthcare - Estimated Cost"
                         type="number"
@@ -6817,25 +6432,25 @@ export default function SlumSurveyPage() {
                         )}
                         
                         {/* Toilets */}
-                        <Select
+                        <Input
                         label="Toilets - Existing"
+                        type="number"
                         value={formData.toiletsExisting || ""}
                         onChange={(e) => handleInputChange("toiletsExisting", e.target.value)}
-                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
                         required
                         name="toiletsExisting"
                         error={getFieldError("toiletsExisting")}
                         />
-                        <Select
+                        <Input
                         label="Toilets - Additional Requirement"
+                        type="number"
                         value={formData.toiletsAdditional || ""}
                         onChange={(e) => handleInputChange("toiletsAdditional", e.target.value)}
-                        options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]}
                         required
                         name="toiletsAdditional"
                         error={getFieldError("toiletsAdditional")}
                         />
-                        {formData.toiletsAdditional === "Yes" && (
+                        {formData.toiletsAdditional || 0 > 0 && (
                         <Input
                         label="Toilets - Estimated Cost"
                         type="number"
@@ -6865,9 +6480,9 @@ export default function SlumSurveyPage() {
                         <div className="p-2 bg-slate-800 rounded"><strong>State Name:</strong> {formData.stateName || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>District Code:</strong> {formData.districtCode || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>District Name:</strong> {formData.districtName || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>ULB Code:</strong> {formData.ulbCode || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>ULB Name:</strong> {formData.ulbName || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>City/Town Code:</strong> {formData.cityTownCode || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>City/Town Name:</strong> {formData.cityTownName || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>City/Town:</strong> {formData.cityTownName || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>No. of Households in City/Town:</strong> {formData.cityTownNoHouseholds || 'N/A'}</div>
                     </div>
                 </div>
@@ -6894,11 +6509,6 @@ export default function SlumSurveyPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-2 bg-slate-800 rounded"><strong>Surveyor Name:</strong> {formData.surveyorName || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Survey Date:</strong> {formData.surveyDate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Receipt of Questionnaire:</strong> {formData.receiptQuestionnaireDate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Scrutiny Date:</strong> {formData.scrutinyDate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Receipt by Nodal Cell:</strong> {formData.receiptByNodalCellDate || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Remarks by Investigator:</strong> {formData.remarksInvestigator || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Comments by Supervisor:</strong> {formData.commentsSupervisor || 'N/A'}</div>
                     </div>
                 </div>
                 
@@ -6906,16 +6516,13 @@ export default function SlumSurveyPage() {
                 <div className="mb-6">
                     <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">4. Basic Information of Slum</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-2 bg-slate-800 rounded"><strong>Slum Name:</strong> {formData.slumNameBasicInfo || formData.slumName || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Slum Code:</strong> {formData.slumCode || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Location Ward:</strong> {formData.locationWard || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Ward Number:</strong> {formData.wardNumber || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Ward Name:</strong> {formData.wardName || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Zone Number:</strong> {formData.zoneNumber || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Age of Slum (years):</strong> {formData.ageSlumYears || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Area of Slum (sq mtrs):</strong> {formData.areaSlumSqMtrs || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Location (Core/Fringe):</strong> {formData.locationCoreOrFringe || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Type of Area Surrounding:</strong> {formData.typeAreaSurrounding || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Physical Location of Slum:</strong> {formData.physicalLocationSlum || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Is Slum Notified:</strong> {formData.isSlumNotified || 'N/A'}</div>
-                        <div className="p-2 bg-slate-800 rounded"><strong>Year of Notification:</strong> {formData.yearOfNotification || 'N/A'}</div>
                     </div>
                 </div>
                 
@@ -7140,6 +6747,7 @@ export default function SlumSurveyPage() {
                         <div className="p-2 bg-slate-800 rounded"><strong>Approach Road Type:</strong> {formData.approachRoadType || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Distance to Nearest Motorable Road:</strong> {formData.distanceToNearestMotorableRoad || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Internal Road Type:</strong> {formData.internalRoadType || 'N/A'}</div>
+                        <div className="p-2 bg-slate-800 rounded"><strong>Street Light Availability:</strong> {formData.streetLightAvailable || 'N/A'}</div>
                     </div>
                 </div>
                 
@@ -7203,97 +6811,97 @@ export default function SlumSurveyPage() {
                     <h3 className="text-lg font-medium mb-3 bg-gray-500 p-2 rounded text-black-800">14. Additional Infrastructure Requirements</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Water Supply */}
-                        <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Water Supply</strong></div>
+                        <div className="p-2 bg-blue-500 rounded col-span-2"><strong>Water Supply</strong></div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Pipelines Existing:</strong> {formData.waterSupplyPipelinesExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Pipelines Additional:</strong> {formData.waterSupplyPipelinesAdditional || 'N/A'}</div>
-                        {formData.waterSupplyPipelinesAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Pipelines Estimated Cost:</strong> {formData.waterSupplyPipelinesCost || 'N/A'}</div>}
+                        {formData.waterSupplyPipelinesAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Pipelines Estimated Cost:</strong> {formData.waterSupplyPipelinesCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Individual Taps Existing:</strong> {formData.waterSupplyIndividualTapsExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Individual Taps Additional:</strong> {formData.waterSupplyIndividualTapsAdditional || 'N/A'}</div>
-                        {formData.waterSupplyIndividualTapsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Individual Taps Estimated Cost:</strong> {formData.waterSupplyIndividualTapsCost || 'N/A'}</div>}
+                        {formData.waterSupplyIndividualTapsAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Individual Taps Estimated Cost:</strong> {formData.waterSupplyIndividualTapsCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Borewells Existing:</strong> {formData.waterSupplyBorewellsExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Borewells Additional:</strong> {formData.waterSupplyBorewellsAdditional || 'N/A'}</div>
-                        {formData.waterSupplyBorewellsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Borewells Estimated Cost:</strong> {formData.waterSupplyBorewellsCost || 'N/A'}</div>}
+                        {formData.waterSupplyBorewellsAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Borewells Estimated Cost:</strong> {formData.waterSupplyBorewellsCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Trunk Lines Existing:</strong> {formData.waterSupplyConnectivityTrunkLinesExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Trunk Lines Additional:</strong> {formData.waterSupplyConnectivityTrunkLinesAdditional || 'N/A'}</div>
-                        {formData.waterSupplyConnectivityTrunkLinesAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Connectivity Trunk Lines Estimated Cost:</strong> {formData.waterSupplyConnectivityTrunkLinesCost || 'N/A'}</div>}
+                        {formData.waterSupplyConnectivityTrunkLinesAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Connectivity Trunk Lines Estimated Cost:</strong> {formData.waterSupplyConnectivityTrunkLinesCost || 'N/A'}</div>}
                         
                         {/* Drainage/Sewerage */}
-                        <div className="p-2 bg-slate-800 rounded col-span-2 mt-4"><strong>Drainage/Sewerage</strong></div>
+                        <div className="p-2 bg-blue-500 rounded col-span-2 mt-4"><strong>Drainage/Sewerage</strong></div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Stormwater Drainage Existing:</strong> {formData.drainageStormwaterDrainageExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Stormwater Drainage Additional:</strong> {formData.drainageStormwaterDrainageAdditional || 'N/A'}</div>
-                        {formData.drainageStormwaterDrainageAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Stormwater Drainage Estimated Cost:</strong> {formData.drainageStormwaterDrainageCost || 'N/A'}</div>}
+                        {formData.drainageStormwaterDrainageAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Stormwater Drainage Estimated Cost:</strong> {formData.drainageStormwaterDrainageCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Main Drains Existing:</strong> {formData.drainageConnectivityMainDrainsExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Main Drains Additional:</strong> {formData.drainageConnectivityMainDrainsAdditional || 'N/A'}</div>
-                        {formData.drainageConnectivityMainDrainsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Connectivity Main Drains Estimated Cost:</strong> {formData.drainageConnectivityMainDrainsCost || 'N/A'}</div>}
+                        {formData.drainageConnectivityMainDrainsAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Connectivity Main Drains Estimated Cost:</strong> {formData.drainageConnectivityMainDrainsCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Sewer Lines Existing:</strong> {formData.drainageSewerLinesExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Sewer Lines Additional:</strong> {formData.drainageSewerLinesAdditional || 'N/A'}</div>
-                        {formData.drainageSewerLinesAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Sewer Lines Estimated Cost:</strong> {formData.drainageSewerLinesCost || 'N/A'}</div>}
+                        {formData.drainageSewerLinesAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Sewer Lines Estimated Cost:</strong> {formData.drainageSewerLinesCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Trunk Sewers Existing:</strong> {formData.drainageConnectivityTrunkSewersExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Connectivity Trunk Sewers Additional:</strong> {formData.drainageConnectivityTrunkSewersAdditional || 'N/A'}</div>
-                        {formData.drainageConnectivityTrunkSewersAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Connectivity Trunk Sewers Estimated Cost:</strong> {formData.drainageConnectivityTrunkSewersCost || 'N/A'}</div>}
+                        {formData.drainageConnectivityTrunkSewersAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Connectivity Trunk Sewers Estimated Cost:</strong> {formData.drainageConnectivityTrunkSewersCost || 'N/A'}</div>}
                         
                         {/* Roads */}
-                        <div className="p-2 bg-slate-800 rounded col-span-2 mt-4"><strong>Roads</strong></div>
+                        <div className="p-2 bg-blue-500 rounded col-span-2 mt-4"><strong>Roads</strong></div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads CC Existing:</strong> {formData.roadsInternalRoadsCCExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads CC Additional:</strong> {formData.roadsInternalRoadsCCAdditional || 'N/A'}</div>
-                        {formData.roadsInternalRoadsCCAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Internal Roads CC Estimated Cost:</strong> {formData.roadsInternalRoadsCCCost || 'N/A'}</div>}
+                        {formData.roadsInternalRoadsCCAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Internal Roads CC Estimated Cost:</strong> {formData.roadsInternalRoadsCCCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads BT Existing:</strong> {formData.roadsInternalRoadsBTExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads BT Additional:</strong> {formData.roadsInternalRoadsBTAdditional || 'N/A'}</div>
-                        {formData.roadsInternalRoadsBTAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Internal Roads BT Estimated Cost:</strong> {formData.roadsInternalRoadsBTCost || 'N/A'}</div>}
+                        {formData.roadsInternalRoadsBTAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Internal Roads BT Estimated Cost:</strong> {formData.roadsInternalRoadsBTCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads Others Existing:</strong> {formData.roadsInternalRoadsOthersExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Internal Roads Others Additional:</strong> {formData.roadsInternalRoadsOthersAdditional || 'N/A'}</div>
-                        {formData.roadsInternalRoadsOthersAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Internal Roads Others Estimated Cost:</strong> {formData.roadsInternalRoadsOthersCost || 'N/A'}</div>}
+                        {formData.roadsInternalRoadsOthersAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Internal Roads Others Estimated Cost:</strong> {formData.roadsInternalRoadsOthersCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Approach Roads CC Existing:</strong> {formData.roadsApproachRoadsCCExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Approach Roads CC Additional:</strong> {formData.roadsApproachRoadsCCAdditional || 'N/A'}</div>
-                        {formData.roadsApproachRoadsCCAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Approach Roads CC Estimated Cost:</strong> {formData.roadsApproachRoadsCCCost || 'N/A'}</div>}
+                        {formData.roadsApproachRoadsCCAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Approach Roads CC Estimated Cost:</strong> {formData.roadsApproachRoadsCCCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Approach Roads Others Existing:</strong> {formData.roadsApproachRoadsOthersExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Approach Roads Others Additional:</strong> {formData.roadsApproachRoadsOthersAdditional || 'N/A'}</div>
-                        {formData.roadsApproachRoadsOthersAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Approach Roads Others Estimated Cost:</strong> {formData.roadsApproachRoadsOthersCost || 'N/A'}</div>}
+                        {formData.roadsApproachRoadsOthersAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Approach Roads Others Estimated Cost:</strong> {formData.roadsApproachRoadsOthersCost || 'N/A'}</div>}
                         
                         {/* Street Lighting */}
-                        <div className="p-2 bg-slate-800 rounded col-span-2 mt-4"><strong>Street Lighting</strong></div>
+                        <div className="p-2 bg-blue-500 rounded col-span-2 mt-4"><strong>Street Lighting</strong></div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Poles Existing:</strong> {formData.streetLightingPolesExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Poles Additional:</strong> {formData.streetLightingPolesAdditional || 'N/A'}</div>
-                        {formData.streetLightingPolesAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Poles Estimated Cost:</strong> {formData.streetLightingPolesCost || 'N/A'}</div>}
+                        {formData.streetLightingPolesAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Poles Estimated Cost:</strong> {formData.streetLightingPolesCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Lights Existing:</strong> {formData.streetLightingLightsExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Lights Additional:</strong> {formData.streetLightingLightsAdditional || 'N/A'}</div>
-                        {formData.streetLightingLightsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Lights Estimated Cost:</strong> {formData.streetLightingLightsCost || 'N/A'}</div>}
+                        {formData.streetLightingLightsAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Lights Estimated Cost:</strong> {formData.streetLightingLightsCost || 'N/A'}</div>}
                         
                         {/* Sanitation */}
-                        <div className="p-2 bg-slate-800 rounded col-span-2 mt-4"><strong>Sanitation</strong></div>
+                        <div className="p-2 bg-blue-500 rounded col-span-2 mt-4"><strong>Sanitation</strong></div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Individual Toilets Existing:</strong> {formData.sanitationIndividualToiletsExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Individual Toilets Additional:</strong> {formData.sanitationIndividualToiletsAdditional || 'N/A'}</div>
-                        {formData.sanitationIndividualToiletsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Individual Toilets Estimated Cost:</strong> {formData.sanitationIndividualToiletsCost || 'N/A'}</div>}
+                        {formData.sanitationIndividualToiletsAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Individual Toilets Estimated Cost:</strong> {formData.sanitationIndividualToiletsCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Community Toilets Existing:</strong> {formData.sanitationCommunityToiletsExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Community Toilets Additional:</strong> {formData.sanitationCommunityToiletsAdditional || 'N/A'}</div>
-                        {formData.sanitationCommunityToiletsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Community Toilets Estimated Cost:</strong> {formData.sanitationCommunityToiletsCost || 'N/A'}</div>}
+                        {formData.sanitationCommunityToiletsAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Community Toilets Estimated Cost:</strong> {formData.sanitationCommunityToiletsCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Seats in Community Toilets Existing:</strong> {formData.sanitationSeatsCommunityToiletsExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Seats in Community Toilets Additional:</strong> {formData.sanitationSeatsCommunityToiletsAdditional || 'N/A'}</div>
-                        {formData.sanitationSeatsCommunityToiletsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Seats in Community Toilets Estimated Cost:</strong> {formData.sanitationSeatsCommunityToiletsCost || 'N/A'}</div>}
+                        {formData.sanitationSeatsCommunityToiletsAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Seats in Community Toilets Estimated Cost:</strong> {formData.sanitationSeatsCommunityToiletsCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Dumper Bins Existing:</strong> {formData.sanitationDumperBinsExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Dumper Bins Additional:</strong> {formData.sanitationDumperBinsAdditional || 'N/A'}</div>
-                        {formData.sanitationDumperBinsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Dumper Bins Estimated Cost:</strong> {formData.sanitationDumperBinsCost || 'N/A'}</div>}
+                        {formData.sanitationDumperBinsAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Dumper Bins Estimated Cost:</strong> {formData.sanitationDumperBinsCost || 'N/A'}</div>}
                         
                         {/* Community Facilities */}
-                        <div className="p-2 bg-slate-800 rounded col-span-2 mt-4"><strong>Community Facilities</strong></div>
+                        <div className="p-2 bg-blue-500 rounded col-span-2 mt-4"><strong>Community Facilities</strong></div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Community Halls Existing:</strong> {formData.communityHallsExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Community Halls Additional:</strong> {formData.communityHallsAdditional || 'N/A'}</div>
-                        {formData.communityHallsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Community Halls Estimated Cost:</strong> {formData.communityHallsCost || 'N/A'}</div>}
+                        {formData.communityHallsAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Community Halls Estimated Cost:</strong> {formData.communityHallsCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Livelihood Centres Existing:</strong> {formData.communityLivelihoodCentresExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Livelihood Centres Additional:</strong> {formData.communityLivelihoodCentresAdditional || 'N/A'}</div>
-                        {formData.communityLivelihoodCentresAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Livelihood Centres Estimated Cost:</strong> {formData.communityLivelihoodCentresCost || 'N/A'}</div>}
+                        {formData.communityLivelihoodCentresAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Livelihood Centres Estimated Cost:</strong> {formData.communityLivelihoodCentresCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Anganwadis Existing:</strong> {formData.communityAnganwadisExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Anganwadis Additional:</strong> {formData.communityAnganwadisAdditional || 'N/A'}</div>
-                        {formData.communityAnganwadisAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Anganwadis Estimated Cost:</strong> {formData.communityAnganwadisCost || 'N/A'}</div>}
+                        {formData.communityAnganwadisAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Anganwadis Estimated Cost:</strong> {formData.communityAnganwadisCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Primary Schools Existing:</strong> {formData.communityPrimarySchoolsExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Primary Schools Additional:</strong> {formData.communityPrimarySchoolsAdditional || 'N/A'}</div>
-                        {formData.communityPrimarySchoolsAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Primary Schools Estimated Cost:</strong> {formData.communityPrimarySchoolsCost || 'N/A'}</div>}
+                        {formData.communityPrimarySchoolsAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Primary Schools Estimated Cost:</strong> {formData.communityPrimarySchoolsCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Health Centres Existing:</strong> {formData.communityHealthCentresExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Health Centres Additional:</strong> {formData.communityHealthCentresAdditional || 'N/A'}</div>
-                        {formData.communityHealthCentresAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Health Centres Estimated Cost:</strong> {formData.communityHealthCentresCost || 'N/A'}</div>}
+                        {formData.communityHealthCentresAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Health Centres Estimated Cost:</strong> {formData.communityHealthCentresCost || 'N/A'}</div>}
                         <div className="p-2 bg-slate-800 rounded"><strong>Others Existing:</strong> {formData.communityOthersExisting || 'N/A'}</div>
                         <div className="p-2 bg-slate-800 rounded"><strong>Others Additional:</strong> {formData.communityOthersAdditional || 'N/A'}</div>
-                        {formData.communityOthersAdditional === 'Yes' && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Others Estimated Cost:</strong> {formData.communityOthersCost || 'N/A'}</div>}
+                        {formData.communityOthersAdditional || 0 > 0 && <div className="p-2 bg-slate-800 rounded col-span-2"><strong>Others Estimated Cost:</strong> {formData.communityOthersCost || 'N/A'}</div>}
                     </div>
                 </div>
             </div>

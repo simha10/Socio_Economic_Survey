@@ -11,7 +11,7 @@ PART-B
 Slum Type(Notified / Non-Notified / New Identified):    
 Slum ID: 
 Slum Name:
-Ownership of Land where Slum is located (Local Body -01, State Government - 02, Central Government – 03, Private -04, Other - 05): 
+Ownership of Land where Slum is located (Municipal Corporation -01, State Government - 02, Central Government – 03, Private -04, Other - 05): 
 Area in sq Mtrs: 
 Slum population: 
 No. of slum House Holds: 
@@ -27,7 +27,7 @@ PART-C
 (a) Survey:
 (b) Receipt of Questionnaire:
 (c) Scrutiny:
-(d) Receipt by Nodal Cell in Urban Local Body:
+(d) Receipt by Nodal Cell in Urban Municipal Corporation:
 10. Remarks by Investigator/Surveyor:
 11. Comments by the Supervisor
 
@@ -55,7 +55,7 @@ On River/ Water Body Bed -06, Others (Hazardous or Objectionable) - 07, Others
 **II. LAND STATUS**
 
 10. Ownership of Land where Slum is located
-Public: Local Body -01, State Government - 02, Railways - 03, Defense - 04, Airport -
+Public: Municipal Corporation -01, State Government - 02, Railways - 03, Defense - 04, Airport -
 05, Government of India other than Railways, Defense or Airport - 06; Private - 07,
 Others -49, Not known - 99
 11. Please specify Ownership of Land (To whom land belongs): 

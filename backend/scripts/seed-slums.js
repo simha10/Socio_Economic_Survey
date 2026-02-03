@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const Slum = require('../src/models/Slum');
 const User = require('../src/models/User');
+const Ward = require('../src/models/Ward');
 
 // Load environment variables
 require('dotenv').config();
@@ -65,6 +66,14 @@ const seedSlums = async () => {
       process.exit(1);
     }
 
+    // Get all wards to create mapping from ward number to ward ID
+    const wards = await Ward.find({});
+    const wardMap = {};
+    wards.forEach(ward => {
+      wardMap[ward.number] = ward._id;
+    });
+    console.log(`Loaded ${wards.length} wards for mapping`);
+
     // Transform and seed slums data - First pass: only unique SLUM_IDs
     const slumIdCounts = {};
     const slumsToInsert = [];
@@ -84,18 +93,28 @@ const seedSlums = async () => {
       if (records.length === 1) {
         // Unique record - add to main insertion list
         const slum = records[0];
+        const wardId = wardMap[slum.WARD_NO?.toString()];
+        
+        if (!wardId) {
+          console.warn(`Warning: Ward ${slum.WARD_NO} not found for slum ${slum.SLUM_NAME}`);
+          problematicRecords.push(slum);
+          return;
+        }
+        
         slumsToInsert.push({
-          name: slum.SLUM_NAME?.trim() || '',
           slumId: slum.SLUM_ID,
-          stateCode: slum.STATE_CODE?.trim() || '',
-          distCode: slum.DIST_CODE?.trim() || '',
-          city: slum.CITY_TOWN_NAME?.trim() || '',
-          ward: slum.WARD_NO,
-          slumType: slum.SLUM_TYPE?.trim().toUpperCase().replace(' ', '_') || 'NON_NOTIFIED',
+          slumName: slum.SLUM_NAME?.trim() || '',
+          stateCode: slum.STATE_CODE?.toString() || '',
+          distCode: slum.DIST_CODE?.toString() || '',
+          ulbCode: slum.ULB_CODE?.toString() || '',
+          ulbName: slum.ULB_NAME?.trim() || '',
+          cityTownCode: slum.CITY_TOWN_CODE?.toString() || '',
+          ward: wardId,
+          slumType: slum.SLUM_TYPE?.trim().toUpperCase().replace(' ', '_').replace('-', '_') || 'NON_NOTIFIED',
           village: slum.VILLAGE?.trim() || '',
+          area: slum.Area ? parseFloat(slum.Area) || 0 : 0,
           landOwnership: slum.LAND_OWNERSHIP?.trim() || '',
           totalHouseholds: slum.TOTAL_HOUSE_HOLDS ? parseInt(slum.TOTAL_HOUSE_HOLDS) || 0 : 0,
-          area: slum.Area ? parseFloat(slum.Area) || 0 : 0,
           createdBy: adminUser._id
       });
       } else {
@@ -108,6 +127,7 @@ const seedSlums = async () => {
     console.log(`\n=== SEEDING REPORT ===`);
     console.log(`Unique records to insert: ${slumsToInsert.length}`);
     console.log(`Duplicate records found: ${duplicateRecords.length}`);
+    console.log(`Problematic records (ward not found): ${problematicRecords.length}`);
     console.log(`Total source records: ${slumsData.length}`);
     console.log(`=====================\n`);
         
@@ -144,6 +164,16 @@ const seedSlums = async () => {
         });
       });
       console.log(`========================\n`);
+    }
+
+    // Handle problematic records (ward not found)
+    if (problematicRecords.length > 0) {
+      console.log(`\n=== PROBLEMATIC RECORDS DETAIL ===`);
+      console.log('These records have wards that could not be mapped:');
+      problematicRecords.forEach((record, index) => {
+        console.log(`  ${index + 1}. ${record.SLUM_NAME} - Ward: ${record.WARD_NO}, District: ${record.DIST_CODE}`);
+      });
+      console.log(`==================================\n`);
     }
 
     // Verify the data

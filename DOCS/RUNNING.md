@@ -121,7 +121,7 @@ Surveyor:
    City: Mumbai
    Ward: Ward 10
    Slum Type: NOTIFIED
-   Land Ownership: Local Body
+   Land Ownership: Municipal Corporation
    Total Households: 50
    ```
 6. Click "Create Slum"

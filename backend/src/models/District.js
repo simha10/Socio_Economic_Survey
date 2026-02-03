@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
 
 const districtSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'District name is required'],
-    trim: true,
-    uppercase: true
-  },
   code: {
     type: String,
     required: [true, 'District code is required'],
     unique: true,
+    uppercase: true
+  },
+  name: {
+    type: String,
+    required: [true, 'District name is required'],
+    trim: true,
     uppercase: true
   },
   state: {
