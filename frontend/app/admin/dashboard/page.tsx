@@ -118,7 +118,7 @@ export default function AdminDashboardPage() {
         totalAssignments = assignments.length;
         activeAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'ACTIVE').length;
         completedAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'COMPLETED').length;
-        inProgressAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'IN_PROGRESS').length;
+        inProgressAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'IN PROGRESS').length;
         pendingAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'PENDING' || a.status === 'ASSIGNED').length;
         
         // Count unique slums with assignments

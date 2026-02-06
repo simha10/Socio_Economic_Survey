@@ -6,6 +6,16 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
+// Import all models to register them with Mongoose
+require('./models/User');
+require('./models/State');
+require('./models/District');
+require('./models/Ward');
+require('./models/Slum');
+require('./models/Assignment');
+require('./models/SlumSurvey');
+require('./models/HouseholdSurvey');
+
 const app = express();
 
 // Logging middleware

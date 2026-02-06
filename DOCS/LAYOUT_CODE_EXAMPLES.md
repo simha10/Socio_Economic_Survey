@@ -496,7 +496,7 @@ return (
                   className={`text-xs px-2 py-1 rounded-full ${
                     assignment.surveyStatus === "COMPLETED"
                       ? "bg-green-900/30 text-green-300"
-                      : assignment.surveyStatus === "IN_PROGRESS"
+                      : assignment.surveyStatus === "IN PROGRESS"
                         ? "bg-yellow-900/30 text-yellow-300"
                         : "bg-slate-700 text-slate-300"
                   }`}

@@ -20,7 +20,14 @@ router.get('/slum-surveys', auth, authorize('ADMIN', 'SUPERVISOR'), async (req, 
     }
 
     const surveys = await SlumSurvey.find(filter)
-      .populate('slum', 'name location city ward')
+      .populate({
+        path: 'slum',
+        select: 'slumName location city ward',
+        populate: {
+          path: 'ward',
+          select: 'number name zone'
+        }
+      })
       .populate('surveyor', 'name username')
       .sort({ createdAt: -1 });
 
@@ -61,10 +68,13 @@ router.get('/slum-surveys', auth, authorize('ADMIN', 'SUPERVISOR'), async (req, 
 
     // Prepare data for CSV
     const csvData = surveys.map(survey => ({
-      slumName: survey.slum?.name || '',
+      slumName: survey.slum?.slumName || '',
       location: survey.slum?.location || '',
       city: survey.slum?.city || '',
-      ward: survey.slum?.ward || '',
+      ward: survey.slum?.ward ? 
+        (typeof survey.slum.ward === 'object' ? 
+          `${survey.slum.ward.number} - ${survey.slum.ward.name}` : 
+          survey.slum.ward) || '' : '',
       surveyor: survey.surveyor?.name || '',
       totalArea: survey.slumProfile?.totalArea || '',
       population: survey.slumProfile?.population || '',

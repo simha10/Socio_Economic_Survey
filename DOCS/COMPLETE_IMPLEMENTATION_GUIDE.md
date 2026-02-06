@@ -162,8 +162,8 @@ GET    /api/surveys/household-survey/:id   Get household survey
   supervisor: ObjectId (ref: User),
   assignmentType: "FULL_SLUM" | "HOUSEHOLD_ONLY",
   assignedBy: ObjectId (ref: User),
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED",
-  slumSurveyStatus: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED",
+  status: "PENDING" | "IN PROGRESS" | "COMPLETED",
+  slumSurveyStatus: "NOT_STARTED" | "IN PROGRESS" | "COMPLETED",
   householdSurveyProgress: {
     completed: Number,
     total: Number
@@ -193,7 +193,7 @@ GET    /api/surveys/household-survey/:id   Get household survey
   infrastructure: { ...form fields },
   educationFacilities: { ...form fields },
 
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED",
+  status: "PENDING" | "IN PROGRESS" | "COMPLETED",
   submittedAt: Date,
   createdAt: Date,
   updatedAt: Date
@@ -219,7 +219,7 @@ GET    /api/surveys/household-survey/:id   Get household survey
   migration: { ...form fields },
   incomeExpenditure: { ...form fields },
 
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED",
+  status: "PENDING" | "IN PROGRESS" | "COMPLETED",
   submittedAt: Date,
   createdAt: Date,
   updatedAt: Date
@@ -436,19 +436,19 @@ Surveyor:
 ### Slum Survey Status
 
 - `NOT_STARTED`: Awaiting surveyor action
-- `IN_PROGRESS`: Surveyor has begun
+- `IN PROGRESS`: Surveyor has begun
 - `COMPLETED`: Survey submitted
 
 ### Household Survey Status (Per household)
 
 - `PENDING`: Not started
-- `IN_PROGRESS`: Started by surveyor
+- `IN PROGRESS`: Started by surveyor
 - `COMPLETED`: Submitted
 
 ### Assignment Status
 
 - `PENDING`: Recently assigned
-- `IN_PROGRESS`: Surveyor started surveys
+- `IN PROGRESS`: Surveyor started surveys
 - `COMPLETED`: All surveys finished
 
 ## 📈 Future Enhancements

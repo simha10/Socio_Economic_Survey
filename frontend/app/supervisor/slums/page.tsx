@@ -25,12 +25,17 @@ interface User {
 
 interface Slum {
   _id: string;
-  name: string;
+  slumName: string;
   slumId: number;
   stateCode: string;
   distCode: string;
   city: string;
-  ward: number;
+  ward: {
+    _id: string;
+    number: string;
+    name: string;
+    zone: string;
+  } | number;
   slumType: string;
   village: string;
   landOwnership: string;
@@ -98,11 +103,6 @@ export default function SupervisorSlumsPage() {
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
-
-  const handleCreateSlum = () => {
-    setSelectedSlum(null);
-    setIsFormOpen(true);
-  };
 
   const handleEditSlum = (slum: Slum) => {
     console.log('SupervisorSlumsPage: Opening edit form for slum', slum);
@@ -184,13 +184,6 @@ export default function SupervisorSlumsPage() {
               Create, edit, and manage slum information
             </p>
           </div>
-          <Button
-            onClick={handleCreateSlum}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Create New Slum
-          </Button>
         </div>
 
         {/* Success Message */}
@@ -203,7 +196,7 @@ export default function SupervisorSlumsPage() {
         <ModernTable
           data={slums}
           keyField="_id"
-          searchPlaceholder="Search slums by name, location..."
+          searchPlaceholder="Search slums by name, location, zone, or ward..."
           onRowClick={(row) => handleViewSlum(row._id)}
           columns={[
             {
@@ -214,13 +207,29 @@ export default function SupervisorSlumsPage() {
             },
             {
               header: "Name",
-              accessorKey: "name",
+              accessorKey: "slumName",
               sortable: true,
               className: "font-medium text-white",
             },
             {
+              header: "Zone",
+              accessorKey: (row) => {
+                if (typeof row.ward === 'object' && row.ward !== null) {
+                  return row.ward.zone || 'N/A';
+                }
+                return 'N/A';
+              },
+              sortable: true,
+              className: "text-center",
+            },
+            {
               header: "Ward",
-              accessorKey: "ward",
+              accessorKey: (row) => {
+                if (typeof row.ward === 'object' && row.ward !== null) {
+                  return `${row.ward.number} - ${row.ward.name}`;
+                }
+                return row.ward?.toString() || 'N/A';
+              },
               sortable: true,
               className: "text-center",
             },
@@ -291,7 +300,7 @@ export default function SupervisorSlumsPage() {
         <DeleteConfirmationDialog
           isOpen={isDeleteDialogOpen}
           title="Delete Slum"
-          message={`Are you sure you want to delete "${slumToDelete?.name}"? This action cannot be undone.`}
+          message={`Are you sure you want to delete "${slumToDelete?.slumName}"? This action cannot be undone.`}
           onConfirm={handleConfirmDelete}
           onCancel={() => {
             setIsDeleteDialogOpen(false);

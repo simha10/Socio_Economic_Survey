@@ -1,6 +1,8 @@
 const Assignment = require('../../models/Assignment');
 const User = require('../../models/User');
 const Slum = require('../../models/Slum');
+const SlumSurvey = require('../../models/SlumSurvey');
+const { initializeAssignmentStatus } = require('../../utils/statusSyncHelper');
 
 // Assign slum to surveyor
 const assignSlumToSurveyor = async (req, res) => {
@@ -66,10 +68,13 @@ const assignSlumToSurveyor = async (req, res) => {
 
     await assignment.save();
 
+    // Initialize assignment status
+    await initializeAssignmentStatus(assignment._id);
+
     // Populate references before returning
     const populatedAssignment = await Assignment.findById(assignment._id)
       .populate('surveyor', 'name username role')
-      .populate('slum', 'name location city ward')
+      .populate('slum', 'name village ward slumType totalHouseholds')
       .populate('assignedBy', 'name username role');
 
     res.status(201).json({
@@ -107,7 +112,14 @@ const getAllAssignments = async (req, res) => {
 
     const assignments = await Assignment.find(filter)
       .populate('surveyor', 'name username role')
-      .populate('slum', 'name location city ward')
+      .populate({
+        path: 'slum',
+        select: 'slumName village ward',
+        populate: {
+          path: 'ward',
+          select: 'number name zone'
+        }
+      })
       .populate('assignedBy', 'name username role')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
@@ -136,7 +148,14 @@ const getAssignmentById = async (req, res) => {
   try {
     const assignment = await Assignment.findById(req.params.id)
       .populate('surveyor', 'name username role')
-      .populate('slum', 'name location city ward')
+      .populate({
+        path: 'slum',
+        select: 'slumName village ward',
+        populate: {
+          path: 'ward',
+          select: 'number name zone'
+        }
+      })
       .populate('assignedBy', 'name username role');
 
     if (!assignment) {
@@ -172,7 +191,7 @@ const getMyAssignmentsFormatted = async (req, res) => {
       slumId: assignment.slum._id,
       slumName: assignment.slum.name,
       householdCount: assignment.slum.totalHouseholds || 0,
-      surveyStatus: assignment.slumSurveyStatus,
+      surveyStatus: assignment.slumSurveyStatus, // Now this will be properly synchronized
       householdProgress: assignment.householdSurveyProgress || { completed: 0, total: 0 }
     }));
 
@@ -197,7 +216,14 @@ const getMyAssignments = async (req, res) => {
     const Slum = require('../../models/Slum');
 
     const assignments = await Assignment.find({ surveyor: req.user._id })
-      .populate('slum', 'name location city ward slumType totalHouseholds')
+      .populate({
+        path: 'slum',
+        select: 'slumName village ward slumType totalHouseholds',
+        populate: {
+          path: 'ward',
+          select: 'number name zone'
+        }
+      })
       .sort({ createdAt: -1 });
 
     // Calculate survey progress for each assignment
@@ -213,20 +239,19 @@ const getMyAssignments = async (req, res) => {
 
       let slumSurveyCompletion = 0;
       if (slumSurvey) {
-        slumSurveyStatus = slumSurvey.surveyStatus || 'COMPLETED';
+        slumSurveyStatus = slumSurvey.surveyStatus || 'DRAFT';
         slumSurveyCompletion = slumSurvey.completionPercentage || 0;
-        if (slumSurveyCompletion >= 100) {
-          slumSurveyStatus = 'COMPLETED';
-        } else if (slumSurveyCompletion > 0) {
-          slumSurveyStatus = 'IN_PROGRESS';
-        }
+        
+        // Use the assignment's stored status which should be kept in sync
+        // This ensures we use the authoritative status from the assignment record
+        slumSurveyStatus = assignment.slumSurveyStatus || slumSurveyStatus;
       }
 
       // Check Household Survey progress
       const householdSurveys = await HouseholdSurvey.find({
         surveyor: req.user._id,
         slum: assignment.slum._id
-      }).populate('slum', 'name totalHouseholds');
+      }).populate('slum', 'slumName totalHouseholds');
 
       // All surveys are already filtered by slum, so count them directly
       const slumHouseholdSurveys = householdSurveys;
@@ -338,7 +363,14 @@ const getAssignmentsForSurveyor = async (req, res) => {
     }
 
     const assignments = await Assignment.find({ surveyor: userId })
-      .populate('slum', 'name location city ward slumType')
+      .populate({
+        path: 'slum',
+        select: 'slumName village ward slumType totalHouseholds',
+        populate: {
+          path: 'ward',
+          select: 'number name zone'
+        }
+      })
       .sort({ createdAt: -1 });
 
     res.json({
@@ -391,7 +423,7 @@ const updateAssignment = async (req, res) => {
     // Populate the updated assignment with user and slum data
     const populatedAssignment = await Assignment.findById(assignment._id)
       .populate('surveyor', 'name username role')
-      .populate('slum', 'name location city ward')
+      .populate('slum', 'name village ward slumType totalHouseholds')
       .populate('assignedBy', 'name username role');
 
     res.json({
@@ -407,6 +439,8 @@ const updateAssignment = async (req, res) => {
     });
   }
 };
+
+
 
 const deleteAssignment = async (req, res) => {
   try {

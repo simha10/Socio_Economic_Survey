@@ -20,7 +20,7 @@ interface Assignment {
   } | null;
   slum: {
     _id: string;
-    name: string;
+    slumName: string;
     location: string;
   } | null;
   status: string;
@@ -41,7 +41,7 @@ interface Surveyor {
 
 interface Slum {
   _id: string;
-  name: string;
+  slumName: string;
   location: string;
   slumId: number;
 }
@@ -115,7 +115,11 @@ export default function SupervisorAssignmentsPage() {
           setAvailableUsers(surveyorsRes.data || []); // Also set available users for editing
         }
         if (slumsRes.success) {
-          const sortedSlums = [...(slumsRes.data || [])].sort((a, b) => a.name.localeCompare(b.name));
+          const sortedSlums = [...(slumsRes.data || [])].sort((a, b) => {
+            const nameA = a.slumName || '';
+            const nameB = b.slumName || '';
+            return nameA.localeCompare(nameB);
+          });
           setSlums(sortedSlums);
           setAvailableSlumsList(sortedSlums); // Also set available slums for editing
         }
@@ -175,7 +179,11 @@ export default function SupervisorAssignmentsPage() {
   // Filter slums to only show those not yet assigned
   const availableSlums = slums
     .filter((slum) => !assignedSlumIds.has(slum._id))
-    .sort((a, b) => a.name.localeCompare(b.name)); // Sort slums alphabetically by name
+    .sort((a, b) => {
+      const nameA = a.slumName || '';
+      const nameB = b.slumName || '';
+      return nameA.localeCompare(nameB);
+    }); // Sort slums alphabetically by name
 
   const handleEditAssignment = (assignment: Assignment) => {
     setAssignmentToEdit(assignment);
@@ -424,7 +432,7 @@ export default function SupervisorAssignmentsPage() {
                 onChange={(value) => setNewAssignment({ ...newAssignment, slumId: value })}
                 options={availableSlums.map((s) => ({
                   value: s._id,
-                  label: `${s.name} (${s.slumId})`,
+                  label: `${s.slumName} (${s.slumId})`,
                 }))}
                 placeholder="Select a slum..."
                 disabled={availableSlums.length === 0}
@@ -447,7 +455,7 @@ export default function SupervisorAssignmentsPage() {
         {editingAssignment && (
           <Card>
             <h2 className="text-xl font-bold text-white mb-4">
-              Edit Assignment: {editingAssignment.surveyor?.name || 'N/A'} - {editingAssignment.slum?.name || 'N/A'}
+              Edit Assignment: {editingAssignment.surveyor?.name || 'N/A'} - {editingAssignment.slum?.slumName || 'N/A'}
             </h2>
             <form onSubmit={handleUpdateAssignment} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -477,7 +485,7 @@ export default function SupervisorAssignmentsPage() {
                   </label>
                   <input
                     type="text"
-                    value={`${editingAssignment?.slum?.name || 'N/A'} - ${editingAssignment?.slum?.location || 'N/A'}`}
+                    value={`${editingAssignment?.slum?.slumName || 'N/A'} - ${editingAssignment?.slum?.location || 'N/A'}`}
                     readOnly
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
                   />
@@ -552,7 +560,7 @@ export default function SupervisorAssignmentsPage() {
               },
               {
                 header: "Slum",
-                accessorKey: (row) => row.slum?.name || "Unknown",
+                accessorKey: (row) => row.slum?.slumName || "Unknown",
                 sortable: true,
               },
               {
@@ -562,7 +570,7 @@ export default function SupervisorAssignmentsPage() {
                       className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         row.status === "COMPLETED"
                           ? "bg-green-500/20 text-green-400"
-                          : row.status === "IN_PROGRESS"
+                          : row.status === "IN PROGRESS"
                             ? "bg-blue-500/20 text-blue-400"
                             : "bg-yellow-500/20 text-yellow-400"
                       }`}

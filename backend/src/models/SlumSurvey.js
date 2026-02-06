@@ -53,7 +53,7 @@ const slumSurveySchema = new mongoose.Schema({
     slumPopulation: Number,
     noSlumHouseholds: Number,
     bplPopulation: Number,
-    noBplHouseholdsSlum: Number
+    bplHouseholds: Number
   },
 
   // SECTION 3: PARTICULARS OF SURVEY OPERATION
@@ -66,6 +66,7 @@ const slumSurveySchema = new mongoose.Schema({
   basicInformation: {
     slumNameBasicInfo: String,
     wardNumber: String,
+    wardName: String,
     zoneNumber: String,
     ageSlumYears: Number,
     locationCoreOrFringe: String,
@@ -275,14 +276,12 @@ const slumSurveySchema = new mongoose.Schema({
 
   // SECTION 8: ECONOMIC STATUS OF HOUSEHOLDS
   economicStatus: {
-    economicStatusData: {
-      lessThan500: Number,
-      rs500to1000: Number,
-      rs1000to1500: Number,
-      rs1500to2000: Number,
-      rs2000to3000: Number,
-      moreThan3000: Number
-    }
+    lessThan500: Number,
+    rs500to1000: Number,
+    rs1000to1500: Number,
+    rs1500to2000: Number,
+    rs2000to3000: Number,
+    moreThan3000: Number
   },
 
   // SECTION 9: EMPLOYMENT AND OCCUPATION STATUS
@@ -571,7 +570,7 @@ const slumSurveySchema = new mongoose.Schema({
   // Survey Metadata
   surveyStatus: {
     type: String,
-    enum: ['DRAFT', 'IN_PROGRESS', 'SUBMITTED', 'COMPLETED'],
+    enum: ['DRAFT', 'IN PROGRESS', 'SUBMITTED', 'COMPLETED'],
     default: 'DRAFT'
   },
   completionPercentage: {

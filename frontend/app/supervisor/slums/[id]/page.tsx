@@ -9,7 +9,7 @@ import Button from '@/components/Button';
 
 interface Slum {
   _id: string;
-  name: string;
+  slumName: string;
   location: string;
   district: string;
   state: string;
@@ -78,7 +78,7 @@ export default function SupervisorSlumDetailPage() {
     <SupervisorAdminLayout role="SUPERVISOR">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">{slum.name}</h1>
+          <h1 className="text-2xl font-bold text-primary">{slum.slumName}</h1>
           <Button variant="secondary" onClick={() => router.back()}>
             Back
           </Button>

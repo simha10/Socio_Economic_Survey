@@ -21,8 +21,14 @@ interface Assignment {
   _id: string;
   slum: {
     _id: string;
-    name: string;
-    location: string;
+    slumName: string;
+    village: string;
+    ward: {
+      _id: string;
+      number: string;
+      name: string;
+      zone: string;
+    } | string;
     totalHouseholds?: number;
   };
   surveyor: {
@@ -50,7 +56,7 @@ export default function SurveyorDashboard() {
     type: 'slum' | 'household';
     assignmentId: string;
     slumName: string;
-    surveyStatus?: "DRAFT" | "IN_PROGRESS" | "SUBMITTED" | "COMPLETED";
+    surveyStatus?: "DRAFT" | "IN PROGRESS" | "SUBMITTED" | "COMPLETED";
   } | null>(null);
   const [surveyData, setSurveyData] = useState<Record<string, any>>({});
   const [showEditConfirm, setShowEditConfirm] = useState(false);
@@ -119,7 +125,7 @@ export default function SurveyorDashboard() {
       type: 'slum',
       assignmentId,
       slumName,
-      surveyStatus: surveyStatus as "DRAFT" | "IN_PROGRESS" | "SUBMITTED" | "COMPLETED"
+      surveyStatus: surveyStatus as "DRAFT" | "IN PROGRESS" | "SUBMITTED" | "COMPLETED"
     });
     setShowConfirmation(true);
   };
@@ -212,7 +218,7 @@ export default function SurveyorDashboard() {
     (a) => a.status === "PENDING",
   ).length;
   const inProgressSurveys = assignments.filter(
-    (a) => a.status === "IN_PROGRESS",
+    (a) => a.status === "IN PROGRESS",
   ).length;
   return (
     <SurveyorLayout username={user?.name || user?.username}>
@@ -301,13 +307,21 @@ export default function SurveyorDashboard() {
               <div className="bg-slate-800/80 px-6 py-4 border-b border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">
-                    {assignment.slum?.name || "Unknown Slum"}
+                    {assignment.slum?.slumName || "Unknown Slum"}
                   </h3>
-                  <div className="flex items-center gap-2 text-slate-400 text-sm">
-                    <MapPin className="w-4 h-4" />
-                    <span>
-                      {assignment.slum?.location || "Unknown Location"}
-                    </span>
+                  <div className="flex flex-col gap-1 text-slate-400 text-sm">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>
+                        {assignment.slum?.village || "Unknown Village"}
+                      </span>
+                    </div>
+                    {assignment.slum?.ward && typeof assignment.slum.ward === 'object' && (
+                      <div className="flex items-center gap-2">
+                        <span className="w-4 h-4 flex items-center justify-center">🏘️</span>
+                        <span>{assignment.slum.ward.zone} : Ward {assignment.slum.ward.number} ({assignment.slum.ward.name})</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -315,7 +329,7 @@ export default function SurveyorDashboard() {
                     className={`px-3 py-1 rounded-full text-xs font-medium border ${
                       assignment.status === "COMPLETED"
                         ? "bg-green-500/10 text-green-400 border-green-500/20"
-                        : assignment.status === "IN_PROGRESS"
+                        : assignment.status === "IN PROGRESS"
                           ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
                           : "bg-slate-700/50 text-slate-400 border-slate-600"
                     }`}
@@ -413,7 +427,7 @@ export default function SurveyorDashboard() {
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={() =>
-                      handleSlumSurveyClick(assignment._id, assignment.slum?.name || "Unknown Slum")
+                      handleSlumSurveyClick(assignment._id, assignment.slum?.slumName || "Unknown Slum")
                     }
                     className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-all"
                   >
@@ -421,7 +435,7 @@ export default function SurveyorDashboard() {
                   </button>
                   <button
                     onClick={() =>
-                      handleHouseholdSurveyClick(assignment._id, assignment.slum?.name || "Unknown Slum")
+                      handleHouseholdSurveyClick(assignment._id, assignment.slum?.slumName || "Unknown Slum")
                     }
                     className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-900/20"
                   >

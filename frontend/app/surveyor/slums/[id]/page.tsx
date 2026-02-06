@@ -12,7 +12,7 @@ import SurveyConfirmationDialog from "@/components/SurveyConfirmationDialog";
 
 interface Slum {
   _id: string;
-  name: string;
+  slumName: string;
   location: string;
   population?: number;
   area?: string;
@@ -70,7 +70,7 @@ export default function SlumDetailsPage() {
     // Check the survey status to determine the message
     const surveyStatus = slumSurvey?.surveyStatus || "DRAFT";
     
-    if (surveyStatus === "DRAFT" || surveyStatus === "IN_PROGRESS") {
+    if (surveyStatus === "DRAFT" || surveyStatus === "IN PROGRESS") {
       // Show start/continue confirmation
       setShowSlumSurveyConfirm(true);
     } else if (surveyStatus === "SUBMITTED" || surveyStatus === "COMPLETED") {
@@ -94,7 +94,7 @@ export default function SlumDetailsPage() {
   };
 
   const handleSlumSurveyEdit = () => {
-    if (window.confirm(`Are you sure you want to edit the Slum Survey for ${slum?.name}?`)) {
+    if (window.confirm(`Are you sure you want to edit the Slum Survey for ${slum?.slumName}?`)) {
       setShowSlumSurveyConfirm(false);
       router.push(`/surveyor/slum-survey/${slumId}`);
     }
@@ -134,7 +134,7 @@ export default function SlumDetailsPage() {
         >
           ← Back
         </button>
-        <h1 className="text-2xl font-bold mb-2">{slum.name}</h1>
+        <h1 className="text-2xl font-bold mb-2">{slum.slumName}</h1>
         <p className="text-sm opacity-90">{slum.location}</p>
       </Card>
 
@@ -198,8 +198,8 @@ export default function SlumDetailsPage() {
           <SurveyConfirmationDialog
             isOpen={showSlumSurveyConfirm}
             surveyType="slum"
-            slumName={slum?.name || ""}
-            surveyStatus={slumSurvey?.surveyStatus as "DRAFT" | "IN_PROGRESS" | "SUBMITTED" | "COMPLETED" | undefined}
+            slumName={slum?.slumName || ""}
+            surveyStatus={slumSurvey?.surveyStatus as "DRAFT" | "IN PROGRESS" | "SUBMITTED" | "COMPLETED" | undefined}
             onConfirm={handleSlumSurveyConfirm}
             onCancel={handleSlumSurveyCancel}
             onPreview={handleSlumSurveyPreview}

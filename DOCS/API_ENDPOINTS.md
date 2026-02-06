@@ -232,7 +232,7 @@ Response: {
     slumId: ObjectId,
     slumName: string,
     householdCount: number,
-    surveyStatus: "PENDING" | "IN_PROGRESS" | "COMPLETED",
+    surveyStatus: "PENDING" | "IN PROGRESS" | "COMPLETED",
     householdProgress: {
       completed: number,
       total: number
@@ -255,7 +255,7 @@ Response: { success: true, data: [...] }
 PUT /api/surveys/assignments/:id/status
 Headers: Authorization: Bearer {token}
 Body: {
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED",
+  status: "PENDING" | "IN PROGRESS" | "COMPLETED",
   progress?: number (0-100)
 }
 Response: { success: true, data: {...} }
@@ -267,7 +267,7 @@ Response: { success: true, data: {...} }
 PUT /api/surveys/assignments/:assignmentId/slum-survey
 Headers: Authorization: Bearer {token}
 Body: {
-  status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED"
+  status: "NOT_STARTED" | "IN PROGRESS" | "COMPLETED"
 }
 Response: { success: true, data: {...} }
 ```

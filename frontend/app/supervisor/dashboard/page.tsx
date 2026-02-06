@@ -71,7 +71,7 @@ export default function SupervisorDashboardPage() {
         const assignments: Assignment[] = assignmentsResponse.data;
         const totalAssignments = assignments.length;
         const completedAssignments = assignments.filter((a: Assignment) => a.status === 'COMPLETED').length;
-        const inProgressAssignments = assignments.filter((a: Assignment) => a.status === 'IN_PROGRESS').length;
+        const inProgressAssignments = assignments.filter((a: Assignment) => a.status === 'IN PROGRESS').length;
         const pendingAssignments = assignments.filter((a: Assignment) => a.status === 'ASSIGNED').length;
         
         // Count unique slums with assignments

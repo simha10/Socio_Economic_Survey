@@ -64,7 +64,7 @@ export default function SupervisorReportsPage() {
         const assignments: Assignment[] = assignmentsResponse.data;
         const totalAssignments = assignments.length;
         const completedAssignments = assignments.filter((a: Assignment) => a.status === 'COMPLETED').length;
-        const inProgressAssignments = assignments.filter((a: Assignment) => a.status === 'IN_PROGRESS').length;
+        const inProgressAssignments = assignments.filter((a: Assignment) => a.status === 'IN PROGRESS').length;
         const pendingAssignments = assignments.filter((a: Assignment) => a.status === 'PENDING' || a.status === 'ASSIGNED').length;
         
         // Calculate additional metrics

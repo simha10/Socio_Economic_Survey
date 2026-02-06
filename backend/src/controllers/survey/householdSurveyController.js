@@ -1,5 +1,6 @@
 const HouseholdSurvey = require('../../models/HouseholdSurvey');
 const Slum = require('../../models/Slum');
+const { updateStatusesFromHouseholdSurvey } = require('../../utils/statusSyncHelper');
 const { sendSuccess, sendError } = require('../../utils/helpers/responseHelper');
 const { v4: uuidv4 } = require('uuid');
 
@@ -46,7 +47,7 @@ exports.createOrGetHouseholdSurvey = async (req, res) => {
     }
 
     await survey.populate([
-      { path: 'slum', select: 'name location ward' },
+      { path: 'slum', select: 'slumName location ward' },
       { path: 'surveyor', select: 'name email' },
     ]);
 
@@ -65,7 +66,7 @@ exports.getHouseholdSurvey = async (req, res) => {
     const { surveyId } = req.params;
 
     const survey = await HouseholdSurvey.findById(surveyId).populate([
-      { path: 'slum', select: 'name location ward' },
+      { path: 'slum', select: 'slumName village ward' },
       { path: 'surveyor', select: 'name email' },
     ]);
 
@@ -130,7 +131,7 @@ exports.updateHouseholdSurvey = async (req, res) => {
 
     await survey.save();
     await survey.populate([
-      { path: 'slum', select: 'name location ward' },
+      { path: 'slum', select: 'slumName village ward' },
       { path: 'surveyor', select: 'name email' },
     ]);
 
@@ -241,9 +242,12 @@ exports.submitHouseholdSurvey = async (req, res) => {
     }
     
     await survey.populate([
-      { path: 'slum', select: 'name location ward' },
+      { path: 'slum', select: 'slumName location ward' },
       { path: 'surveyor', select: 'name email' },
     ]);
+
+    // Update related statuses after successful submission
+    await updateStatusesFromHouseholdSurvey(surveyId);
 
     console.log(`Submitted household survey ${surveyId}`);
     sendSuccess(res, survey, 'Survey submitted successfully', 200);
@@ -282,7 +286,7 @@ exports.getHouseholdSurveyByHouseholdId = async (req, res) => {
       houseDoorNo: houseDoorNo,
       surveyor: userId,
     }).populate([
-      { path: 'slum', select: 'name location ward' },
+      { path: 'slum', select: 'slumName location ward' },
       { path: 'surveyor', select: 'name email' },
     ]);
 
@@ -370,13 +374,13 @@ exports.updateSurveySection = async (req, res) => {
         survey[section] = data;
       }
     }
-    survey.surveyStatus = 'IN_PROGRESS';
+    survey.surveyStatus = 'IN PROGRESS';
     survey.lastModifiedBy = userId;
     survey.lastModifiedAt = new Date();
 
     await survey.save();
     await survey.populate([
-      { path: 'slum', select: 'name location ward' },
+      { path: 'slum', select: 'slumName location ward' },
       { path: 'surveyor', select: 'name email' },
     ]);
 
@@ -403,13 +407,13 @@ exports.getSurveysSummary = async (req, res) => {
 
     const surveys = await HouseholdSurvey.find(query)
       .select('slum houseDoorNo householdId surveyStatus createdAt submittedAt')
-      .populate('slum', 'name location ward')
+      .populate('slum', 'slumName location ward')
       .sort({ createdAt: -1 });
 
     const summary = {
       total: surveys.length,
       draft: surveys.filter(s => s.surveyStatus === 'DRAFT').length,
-      inProgress: surveys.filter(s => s.surveyStatus === 'IN_PROGRESS').length,
+      inProgress: surveys.filter(s => s.surveyStatus === 'IN PROGRESS').length,
       submitted: surveys.filter(s => s.surveyStatus === 'SUBMITTED').length,
       completed: surveys.filter(s => s.surveyStatus === 'COMPLETED').length,
       surveys: surveys

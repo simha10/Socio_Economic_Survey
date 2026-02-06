@@ -43,7 +43,7 @@ New comprehensive schema with fields for:
   - Economic Status (income, expenditure, debt)
   - Welfare & Assets (durables, livestock, pension, insurance)
   - Migration Details (years of stay, type, reason)
-- **Status Tracking**: surveyStatus (DRAFT/IN_PROGRESS/SUBMITTED/COMPLETED)
+- **Status Tracking**: surveyStatus (DRAFT/IN PROGRESS/SUBMITTED/COMPLETED)
 - **Audit Fields**: submittedBy, submittedAt, lastModifiedBy, lastModifiedAt
 
 ### Backend Controllers
@@ -86,7 +86,7 @@ Features:
   - Total Members
 - Household table with status badges
 - Links to start/view household survey
-- Color-coded status indicators (DRAFT/IN_PROGRESS/SUBMITTED/COMPLETED)
+- Color-coded status indicators (DRAFT/IN PROGRESS/SUBMITTED/COMPLETED)
 - Mark survey as complete button
 
 #### Existing: Slum Survey Page
@@ -214,7 +214,7 @@ Quick form to create household records before survey
 ```
 DRAFT 
   ↓ (User starts editing)
-IN_PROGRESS
+IN PROGRESS
   ↓ (User submits form)
 SUBMITTED
   ↓ (Supervisor approves - future feature)
@@ -225,7 +225,7 @@ COMPLETED
 ```
 ASSIGNED
   ↓ (Surveyor starts survey)
-IN_PROGRESS
+IN PROGRESS
   ↓ (All households completed)
 COMPLETED
 ```

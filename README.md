@@ -523,7 +523,7 @@ npm start
   _id: ObjectId,
   surveyorId: ObjectId (ref: User),
   slumId: ObjectId (ref: Slum),
-  status: Enum ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED'],
+  status: Enum ['ASSIGNED', 'IN PROGRESS', 'COMPLETED'],
   assignedDate: Date,
   completedDate: Date,
   createdAt: Date,
@@ -546,7 +546,7 @@ npm start
   wastePlacement: String,
   sanitationFacilities: [String],
   notes: String,
-  status: Enum ['COMPLETED', 'IN_PROGRESS', 'NOT_STARTED'],
+  status: Enum ['COMPLETED', 'IN PROGRESS', 'NOT_STARTED'],
   submittedDate: Date,
   createdAt: Date
 }

@@ -12,12 +12,17 @@ import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
 
 interface Slum {
   _id: string;
-  name: string;
+  slumName: string;
   slumId: number;
   stateCode: string;
   distCode: string;
   city: string;
-  ward: number;
+  ward: {
+    _id: string;
+    number: string;
+    name: string;
+    zone: string;
+  } | number;
   slumType: string;
   village: string;
   landOwnership: string;
@@ -148,10 +153,14 @@ export default function AdminSlumsPage() {
     }
     
     const filtered = slums.filter((slum) =>
-      slum.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      slum.slumName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       slum.slumId.toString().includes(searchQuery) ||
       slum.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       slum.village?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (typeof slum.ward === 'object' && slum.ward !== null && 
+        (slum.ward.number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         slum.ward.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         slum.ward.zone?.toLowerCase().includes(searchQuery.toLowerCase()))) ||
       slum.ward.toString().includes(searchQuery)
     );
     setFilteredSlums(filtered);
@@ -200,7 +209,7 @@ export default function AdminSlumsPage() {
         <ModernTable
           data={filteredSlums}
           keyField="_id"
-          searchPlaceholder="Search by name, ID, city, village, or ward..."
+          searchPlaceholder="Search by name, ID, city, village, zone, or ward..."
           columns={[
             {
               header: "Slum ID",
@@ -210,13 +219,29 @@ export default function AdminSlumsPage() {
             },
             {
               header: "Name",
-              accessorKey: "name",
+              accessorKey: "slumName",
               sortable: true,
               className: "font-medium text-white",
             },
             {
+              header: "Zone",
+              accessorKey: (row) => {
+                if (typeof row.ward === 'object' && row.ward !== null) {
+                  return row.ward.zone || 'N/A';
+                }
+                return 'N/A';
+              },
+              sortable: true,
+              className: "text-center",
+            },
+            {
               header: "Ward",
-              accessorKey: "ward",
+              accessorKey: (row) => {
+                if (typeof row.ward === 'object' && row.ward !== null) {
+                  return `${row.ward.number} - ${row.ward.name}`;
+                }
+                return row.ward?.toString() || 'N/A';
+              },
               sortable: true,
               className: "text-center",
             },
@@ -287,7 +312,7 @@ export default function AdminSlumsPage() {
         <DeleteConfirmationDialog
           isOpen={isDeleteDialogOpen}
           title="Delete Slum"
-          message={`Are you sure you want to delete "${slumToDelete?.name}"? This action cannot be undone.`}
+          message={`Are you sure you want to delete "${slumToDelete?.slumName}"? This action cannot be undone.`}
           onConfirm={handleConfirmDelete}
           onCancel={() => {
             setIsDeleteDialogOpen(false);

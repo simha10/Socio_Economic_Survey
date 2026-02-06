@@ -1,7 +1,7 @@
 # Slum Status Filter Feature
 
 ## Overview
-Added a dropdown filter to the Supervisor Slums Management page to filter slums by their survey status (DRAFT, ASSIGNED, IN_PROGRESS, COMPLETED).
+Added a dropdown filter to the Supervisor Slums Management page to filter slums by their survey status (DRAFT, ASSIGNED, IN PROGRESS, COMPLETED).
 
 ## Features Implemented
 
@@ -59,7 +59,7 @@ const getStatusCounts = () => {
     total: allSlums.length,
     draft: allSlums.filter(s => s.surveyStatus === 'DRAFT').length,
     assigned: allSlums.filter(s => s.surveyStatus === 'ASSIGNED').length,
-    inProgress: allSlums.filter(s => s.surveyStatus === 'IN_PROGRESS').length,
+    inProgress: allSlums.filter(s => s.surveyStatus === 'IN PROGRESS').length,
     completed: allSlums.filter(s => s.surveyStatus === 'COMPLETED').length,
   };
 };
@@ -69,7 +69,7 @@ const getStatusBadgeColor = (status: string) => {
   switch(status) {
     case 'DRAFT': return 'bg-gray-900/50 text-gray-300';
     case 'ASSIGNED': return 'bg-blue-900/50 text-blue-300';
-    case 'IN_PROGRESS': return 'bg-purple-900/50 text-purple-300';
+    case 'IN PROGRESS': return 'bg-purple-900/50 text-purple-300';
     case 'COMPLETED': return 'bg-green-900/50 text-green-300';
     default: return 'bg-gray-900/50 text-gray-300';
   }
@@ -141,26 +141,26 @@ const fetchSlumSurveys = async () => {
 
 A slum's status typically follows this progression:
 ```
-DRAFT → ASSIGNED → IN_PROGRESS → COMPLETED
+DRAFT → ASSIGNED → IN PROGRESS → COMPLETED
 ```
 
 - **DRAFT**: Initial state, supervisor enters basic details
 - **ASSIGNED**: Supervisor assigns to a surveyor via Manage Assignments page
-- **IN_PROGRESS**: Surveyor starts filling the survey form
+- **IN PROGRESS**: Surveyor starts filling the survey form
 - **COMPLETED**: All surveys for the slum are done and marked as complete
 
 ## Related Features
 
 - **Slum Creation**: Create new slums in DRAFT status
 - **Slum Assignment**: Assign DRAFT slums to surveyors (changes status to ASSIGNED)
-- **Survey Progress**: Track which slums are being surveyed (IN_PROGRESS)
+- **Survey Progress**: Track which slums are being surveyed (IN PROGRESS)
 - **Completion Tracking**: See which slums are done (COMPLETED)
 
 ## Database Schema
 The `surveyStatus` field in the Slum model supports these values:
 - `DRAFT` - String
 - `ASSIGNED` - String
-- `IN_PROGRESS` - String
+- `IN PROGRESS` - String
 - `COMPLETED` - String
 - `SUBMITTED` - String
 

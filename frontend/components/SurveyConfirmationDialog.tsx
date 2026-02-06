@@ -7,7 +7,7 @@ interface SurveyConfirmationDialogProps {
   isOpen: boolean;
   surveyType: "slum" | "household";
   slumName: string;
-  surveyStatus?: "DRAFT" | "IN_PROGRESS" | "SUBMITTED" | "COMPLETED";
+  surveyStatus?: "DRAFT" | "IN PROGRESS" | "SUBMITTED" | "COMPLETED";
   onConfirm: () => void;
   onCancel: () => void;
   onPreview?: () => void;
@@ -31,7 +31,7 @@ export default function SurveyConfirmationDialog({
   const getTitle = () => {
     if (surveyStatus === "SUBMITTED" || surveyStatus === "COMPLETED") {
       return "Survey Already Submitted";
-    } else if (surveyStatus === "IN_PROGRESS") {
+    } else if (surveyStatus === "IN PROGRESS") {
       return "Continue Survey";
     } else {
       return surveyType === "slum" 
@@ -43,7 +43,7 @@ export default function SurveyConfirmationDialog({
   const getMessage = () => {
     if (surveyStatus === "SUBMITTED" || surveyStatus === "COMPLETED") {
       return `This ${surveyType} survey has already been submitted. Would you like to preview it or edit it?`;
-    } else if (surveyStatus === "IN_PROGRESS") {
+    } else if (surveyStatus === "IN PROGRESS") {
       return `You have an in-progress ${surveyType} survey for "${slumName}". Would you like to continue filling the form?`;
     } else {
       return surveyType === "slum"
@@ -115,8 +115,8 @@ export default function SurveyConfirmationDialog({
                 className={`${getButtonColor()} w-full sm:w-auto`}
               >
                 {loading 
-                  ? (surveyStatus === "IN_PROGRESS" ? "Continuing..." : "Starting...") 
-                  : (surveyStatus === "IN_PROGRESS" ? "Continue Survey" : "Start Survey")}
+                  ? (surveyStatus === "IN PROGRESS" ? "Continuing..." : "Starting...") 
+                  : (surveyStatus === "IN PROGRESS" ? "Continue Survey" : "Start Survey")}
               </Button>
               <Button
                 variant="secondary"

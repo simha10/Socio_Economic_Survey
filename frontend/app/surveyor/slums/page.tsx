@@ -10,7 +10,7 @@ import { useToast } from "@/components/Toast";
 
 interface Slum {
   _id: string;
-  name: string;
+  slumName: string;
   location: string;
   population?: number;
   area?: string;
@@ -71,7 +71,7 @@ export default function SlumsPage() {
   const columns = [
     {
       header: "Name",
-      accessorKey: "name" as keyof Slum,
+      accessorKey: "slumName" as keyof Slum,
       sortable: true,
       className: "font-medium text-white",
     },

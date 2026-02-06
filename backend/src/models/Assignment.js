@@ -27,13 +27,13 @@ const assignmentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED'],
+    enum: ['PENDING', 'IN PROGRESS', 'COMPLETED'],
     default: 'PENDING'
   },
   slumSurveyStatus: {
     type: String,
-    enum: ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'],
-    default: 'NOT_STARTED'
+    enum: ['NOT STARTED', 'IN PROGRESS', 'SUBMITTED'],
+    default: 'NOT STARTED'
   },
   householdSurveyProgress: {
     completed: { type: Number, default: 0 },
