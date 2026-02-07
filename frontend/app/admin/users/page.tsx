@@ -189,7 +189,7 @@ export default function AdminUsersPage() {
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white py-2 px-4 rounded-lg font-medium flex items-center gap-2 transition-all"
+            className="bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white py-2 px-4 rounded-lg font-medium flex items-center gap-2 transition-all"
           >
             <Plus className="w-5 h-5" /> Create User
           </button>
@@ -286,7 +286,7 @@ export default function AdminUsersPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all"
+                  className="bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all"
                 >
                   {submitting ? "Creating..." : "Create User"}
                 </button>
@@ -405,7 +405,7 @@ export default function AdminUsersPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all"
+                  className="bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all"
                 >
                   {submitting ? "Updating..." : "Update User"}
                 </button>

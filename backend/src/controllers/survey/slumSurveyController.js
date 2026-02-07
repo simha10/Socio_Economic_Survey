@@ -4,7 +4,7 @@ const Ward = require('../../models/Ward');
 const District = require('../../models/District');
 const State = require('../../models/State');
 const Assignment = require('../../models/Assignment');
-const { updateSlumStatus, updateAssignmentStatusFromSlumSurvey } = require('../../utils/statusSyncHelper');
+const { updateSlumStatus, updateAssignmentStatusFromSlumSurvey, updateAssignmentMainStatus } = require('../../utils/statusSyncHelper');
 const { sendSuccess, sendError } = require('../../utils/helpers/responseHelper');
 
 /**
@@ -635,14 +635,8 @@ exports.submitSlumSurvey = async (req, res) => {
             throw saveError;
         }
                 
-        // Update assignment status based on slum survey status after submission
+        // Update all statuses based on slum survey status after submission
         await updateAssignmentStatusFromSlumSurvey(surveyId);
-        
-        // Update slum status based on comprehensive logic
-        const slumSurvey = await SlumSurvey.findById(surveyId).populate('slum');
-        if (slumSurvey) {
-          await updateSlumStatus(slumSurvey.slum._id);
-        }
                 
         console.log(`Final completion after submission: ${survey.completedSections.length}/16 = ${survey.completionPercentage}%`);
         await survey.populate([
@@ -1493,14 +1487,8 @@ exports.updateSurveySection = async (req, res) => {
             { path: 'surveyor', select: 'name' },
         ]);
 
-        // Update assignment status based on slum survey status
+        // Update all statuses based on slum survey status
         await updateAssignmentStatusFromSlumSurvey(surveyId);
-        
-        // Update slum status based on comprehensive logic
-        const slumSurvey = await SlumSurvey.findById(surveyId).populate('slum');
-        if (slumSurvey) {
-          await updateSlumStatus(slumSurvey.slum._id);
-        }
 
         console.log(`Updated survey section: ${section} for survey ${surveyId}. Completion: ${completionPercentage}%`);
         console.log(`Section data saved:`, JSON.stringify(survey[section], null, 2));

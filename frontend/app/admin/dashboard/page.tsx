@@ -200,9 +200,6 @@ export default function AdminDashboardPage() {
           <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">
             Dashboard
           </h2>
-          <p className="text-slate-400 text-base leading-relaxed max-w-2xl">
-            Monitor system-wide survey progress, manage users, and track overall performance
-          </p>
         </div>
         <div className="flex gap-3">
           <button
@@ -212,7 +209,7 @@ export default function AdminDashboardPage() {
           >
             {statsLoading ? (
               <>
-                <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-2 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
                 Refreshing...
               </>
             ) : (

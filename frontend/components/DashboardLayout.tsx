@@ -13,6 +13,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useEffect } from "react";
+import LogoutConfirmationDialog from "./LogoutConfirmationDialog";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -24,8 +25,9 @@ export default function DashboardLayout({
   role,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{name?: string; username?: string; role?: string} | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -120,6 +122,19 @@ export default function DashboardLayout({
     router.push("/login");
   };
 
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutDialog(false);
+    handleLogout();
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutDialog(false);
+  };
+
   // Surveyor uses bottom nav instead of sidebar
   if (role === "SURVEYOR") {
     return (
@@ -127,7 +142,7 @@ export default function DashboardLayout({
         <main className="pb-24 min-h-screen">{children}</main>
         {/* Bottom Nav */}
         <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex items-center justify-around h-20 z-40">
-          {navItems.map((item) => {
+          {navItems.map((item: {name: string; href: string; icon: React.ReactNode}) => {
             const isActive = pathname === item.href;
             return (
               <Link
@@ -143,7 +158,7 @@ export default function DashboardLayout({
             );
           })}
           <button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className="flex flex-col items-center gap-1 px-4 py-2 text-slate-400 hover:text-red-400 transition-colors"
           >
             <LogOut className="w-5 h-5" />
@@ -174,7 +189,7 @@ export default function DashboardLayout({
 
           {/* Nav Links */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            {navItems.map((item) => {
+            {navItems.map((item: {name: string; href: string; icon: React.ReactNode}) => {
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -217,7 +232,7 @@ export default function DashboardLayout({
               </div>
             </div>
             <button
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-red-600/20 text-slate-400 hover:text-red-400 rounded-xl font-medium transition-colors"
             >
               <LogOut className="w-4 h-4" />
@@ -250,6 +265,11 @@ export default function DashboardLayout({
         {/* Page Content - This is where your Dashboard components go */}
         <main className="p-8 min-h-[calc(100vh-64px)]">{children}</main>
       </div>
+      <LogoutConfirmationDialog 
+        isOpen={showLogoutDialog}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
     </div>
   );
 }

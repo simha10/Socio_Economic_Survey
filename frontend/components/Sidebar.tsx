@@ -7,6 +7,7 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { LogOut, Menu, X, LayoutDashboard, Map, ClipboardList, TrendingUp, Users, CheckSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import LogoutConfirmationDialog from "@/components/LogoutConfirmationDialog";
 
 interface SidebarProps {
   role: "SUPERVISOR" | "ADMIN" | "SURVEYOR";
@@ -43,17 +44,57 @@ export default function Sidebar({ role, username }: SidebarProps) {
         ? supervisorItems
         : surveyorItems;
 
-  const { isSidebarOpen, toggleSidebar } = useSidebar();
+  // Fallback state for sidebar if context fails
+  const [isSidebarOpenState, setIsSidebarOpenState] = useState(true);
+  
+  let isSidebarOpen, toggleSidebar;
+  try {
+    const sidebarContext = useSidebar();
+    isSidebarOpen = sidebarContext.isSidebarOpen;
+    toggleSidebar = sidebarContext.toggleSidebar;
+  } catch (error) {
+    console.warn('Sidebar context not available, using fallback state');
+    isSidebarOpen = isSidebarOpenState;
+    toggleSidebar = () => setIsSidebarOpenState(prev => !prev);
+  }
   const [mobileIsOpen, setMobileIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const handleLogout = async () => {
-    setIsLoggingOut(true);
-    // Simulate a brief delay for UX smoothness if needed, or just proceed.
-    // await new Promise(resolve => setTimeout(resolve, 500)); 
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    router.push("/login");
+    try {
+      setIsLoggingOut(true);
+      // Simulate a brief delay for UX smoothness if needed, or just proceed.
+      // await new Promise(resolve => setTimeout(resolve, 500)); 
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Fallback to traditional redirect if router fails
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+  };
+
+  const handleLogoutClick = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setShowLogoutDialog(true);
+  };
+
+  const handleLogoutConfirm = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setShowLogoutDialog(false);
+    handleLogout();
+  };
+
+  const handleLogoutCancel = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setShowLogoutDialog(false);
   };
 
   return (
@@ -125,15 +166,16 @@ export default function Sidebar({ role, username }: SidebarProps) {
                 </p>
               </div>
             )}
-            {isSidebarOpen && (
-              <button
-                onClick={handleLogout}
-                className="text-slate-500 hover:text-red-400 transition-colors"
-                title="Logout"
-              >
-                <LogOut size={16} />
-              </button>
-            )}
+            <button
+              onClick={handleLogoutClick}
+              className={cn(
+                "text-slate-500 hover:text-red-400 transition-colors",
+                isSidebarOpen ? "" : "mx-auto"  // Center the button when sidebar is collapsed
+              )}
+              title="Logout"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </aside>
@@ -148,7 +190,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
         onClick={() => setMobileIsOpen(!mobileIsOpen)}
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-slate-900 border border-slate-800 rounded-lg text-blue-500"
       >
-        {mobileIsOpen ? <X size={20} /> : <Menu size={20} />}
+        <Menu size={20} />
       </button>
 
       {/* Mobile Drawer */}
@@ -199,7 +241,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
                   </div>
                </div>
                <button
-                  onClick={handleLogout}
+                  onClick={handleLogoutClick}
                   className="w-full flex items-center justify-center gap-2 p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-900/50 hover:bg-red-900/10 transition-colors"
                 >
                   <LogOut size={16} />
@@ -209,6 +251,11 @@ export default function Sidebar({ role, username }: SidebarProps) {
           </div>
         </div>
       )}
+      <LogoutConfirmationDialog 
+        isOpen={showLogoutDialog}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
       {isLoggingOut && <LoadingSpinner fullScreen text="Logging out..." />}
     </>
   );

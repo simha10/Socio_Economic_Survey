@@ -1,9 +1,10 @@
 "use client";
 
-import React, { ReactNode } from "react";
+import React, { ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
+import LogoutConfirmationDialog from "./LogoutConfirmationDialog";
 
 interface SurveyorLayoutProps {
   children: ReactNode;
@@ -17,11 +18,25 @@ export default function SurveyorLayout({
   fullScreen = false,
 }: SurveyorLayoutProps) {
   const router = useRouter();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     router.push("/login");
+  };
+
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutDialog(false);
+    handleLogout();
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutDialog(false);
   };
 
   if (fullScreen) {
@@ -44,7 +59,7 @@ export default function SurveyorLayout({
             <span className="text-sm text-slate-400">Welcome back, <span className="text-white font-medium">{username || "Surveyor"}</span></span>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-300 hover:text-red-400 transition-colors"
             title="Logout"
           >
@@ -76,15 +91,14 @@ export default function SurveyorLayout({
             <span className="text-2xl">👤</span>
             <span className="text-xs font-medium">Profile</span>
           </Link>
-          <button
-            onClick={handleLogout}
-            className="flex flex-col items-center gap-1 px-4 py-2 transition-colors text-slate-400 hover:text-red-400"
-          >
-            <LogOut size={20} />
-            <span className="text-xs font-medium">Logout</span>
-          </button>
         </nav>
       </div>
+      
+      <LogoutConfirmationDialog 
+        isOpen={showLogoutDialog}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
     </div>
   );
 };

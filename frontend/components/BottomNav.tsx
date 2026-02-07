@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import React from "react";
+import React, { useState } from "react";
 import { LogOut } from "lucide-react";
+import LogoutConfirmationDialog from "./LogoutConfirmationDialog";
 
 const navItems = [
   { href: "/surveyor/dashboard", label: "Dashboard", icon: "📊" },
@@ -14,11 +15,25 @@ const navItems = [
 export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     router.push("/login");
+  };
+
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutDialog(false);
+    handleLogout();
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutDialog(false);
   };
 
   return (

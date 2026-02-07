@@ -21,7 +21,13 @@ interface Assignment {
   slum: {
     _id: string;
     slumName: string;
-    location: string;
+    slumId: number;
+    ward?: {
+      _id: string;
+      number: string;
+      name: string;
+      zone: string;
+    } | string;
   } | null;
   status: string;
   createdAt: string;
@@ -36,7 +42,6 @@ interface Surveyor {
 interface Slum {
   _id: string;
   slumName: string;
-  location: string;
   slumId: number;
 }
 
@@ -58,7 +63,6 @@ interface AssignmentFormData {
 export default function AssignmentsPage() {
   const router = useRouter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [surveyors, setSurveyors] = useState<Surveyor[]>([]);
   const [slums, setSlums] = useState<Slum[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +80,6 @@ export default function AssignmentsPage() {
     slum: '',
   });
   const [availableUsers, setAvailableUsers] = useState<Surveyor[]>([]);
-  const [availableSlumsList, setAvailableSlumsList] = useState<Slum[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
   const [showUpdateConfirm, setShowUpdateConfirm] = useState(false);
@@ -112,7 +115,6 @@ export default function AssignmentsPage() {
           setAssignments(assignmentsRes.data || []);
         }
         if (surveyorsRes.success) {
-          setSurveyors(surveyorsRes.data || []);
           setAvailableUsers(surveyorsRes.data || []);
         }
         if (slumsRes.success) {
@@ -122,7 +124,6 @@ export default function AssignmentsPage() {
             return nameA.localeCompare(nameB);
           });
           setSlums(sortedSlums);
-          setAvailableSlumsList(sortedSlums);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -441,6 +442,7 @@ export default function AssignmentsPage() {
                     label: `${s.name}`,
                   }))]
                 }
+                placeholder="Select a surveyor..."
               />
               <InfiniteScrollSelect
                 label="Slum"
@@ -501,7 +503,7 @@ export default function AssignmentsPage() {
                   </label>
                   <input
                     type="text"
-                    value={`${editingAssignment?.slum?.slumName || 'N/A'} - ${editingAssignment?.slum?.location || 'N/A'}`}
+                    value={`${editingAssignment?.slum?.slumName || 'N/A'}`}
                     readOnly
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
                   />
@@ -576,7 +578,21 @@ export default function AssignmentsPage() {
               },
               {
                 header: "Slum",
-                accessorKey: (row) => row.slum?.slumName || "Unknown",
+                accessorKey: (row) => `${row.slum?.slumName || "Unknown"} (${row.slum?.slumId || "Unknown"})` as string,
+                sortable: true,
+              },
+              {
+                header: "Ward",
+                accessorKey: (row) => {
+                  if (row.slum?.ward) {
+                    if (typeof row.slum.ward === 'object') {
+                      return `Ward ${row.slum.ward.number} (${row.slum.ward.name})`;
+                    } else {
+                      return "Unknown Ward";
+                    }
+                  }
+                  return "Unknown Ward";
+                },
                 sortable: true,
               },
               {
@@ -591,12 +607,12 @@ export default function AssignmentsPage() {
                             : "bg-yellow-500/20 text-yellow-400"
                       }`}
                     >
-                      {row.status?.replace('_', ' ')}
+                      {row.status}
                     </span>
                 ),
               },
               {
-                header: "Created",
+                header: "Assigned",
                 accessorKey: (row) => new Date(row.createdAt).toLocaleDateString(),
                 sortable: true,
               },

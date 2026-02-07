@@ -24,6 +24,8 @@ async function updateSlumStatus(slumId) {
       return false;
     }
 
+    console.log(`[STATUS_SYNC] Current slum status: ${slum.surveyStatus}, Slum name: ${slum.slumName}`);
+
     // Get the slum survey for this slum
     const slumSurvey = await SlumSurvey.findOne({ slum: slumId });
     if (!slumSurvey) {
@@ -36,6 +38,8 @@ async function updateSlumStatus(slumId) {
       }
       return true;
     }
+
+    console.log(`[STATUS_SYNC] Found slum survey with status: ${slumSurvey.surveyStatus}`);
 
     // Get all household surveys for this slum
     const householdSurveys = await HouseholdSurvey.find({ slum: slumId });
@@ -73,11 +77,14 @@ async function updateSlumStatus(slumId) {
       }
     }
 
+    console.log(`[STATUS_SYNC] Determined new slum status: ${newStatus}`);
+
     // Update slum status if it changed
     if (slum.surveyStatus !== newStatus) {
+      const oldStatus = slum.surveyStatus;
       slum.surveyStatus = newStatus;
       await slum.save();
-      console.log(`[STATUS_SYNC] Slum status updated from ${slum.surveyStatus} to ${newStatus}`);
+      console.log(`[STATUS_SYNC] Slum status updated from ${oldStatus} to ${newStatus}`);
     } else {
       console.log(`[STATUS_SYNC] Slum status unchanged: ${newStatus}`);
     }
@@ -105,6 +112,8 @@ async function updateAssignmentStatusFromSlumSurvey(slumSurveyId) {
       return false;
     }
 
+    console.log(`[STATUS_SYNC] SlumSurvey status: ${slumSurvey.surveyStatus}, Slum: ${slumSurvey.slum?.slumName}`);
+
     // Map surveyStatus to slumSurveyStatus for assignment
     let assignmentStatus;
     switch (slumSurvey.surveyStatus) {
@@ -129,13 +138,24 @@ async function updateAssignmentStatusFromSlumSurvey(slumSurveyId) {
     });
 
     if (assignment) {
+      console.log(`[STATUS_SYNC] Found assignment ID: ${assignment._id}, Current slumSurveyStatus: ${assignment.slumSurveyStatus}, New: ${assignmentStatus}`);
+      
       if (assignment.slumSurveyStatus !== assignmentStatus) {
         assignment.slumSurveyStatus = assignmentStatus;
         await assignment.save();
-        console.log(`[STATUS_SYNC] Assignment status updated from ${assignment.slumSurveyStatus} to ${assignmentStatus}`);
+        console.log(`[STATUS_SYNC] Assignment slumSurveyStatus updated from ${assignment.slumSurveyStatus} to ${assignmentStatus}`);
       } else {
-        console.log(`[STATUS_SYNC] Assignment status unchanged: ${assignmentStatus}`);
+        console.log(`[STATUS_SYNC] Assignment slumSurveyStatus unchanged: ${assignmentStatus}`);
       }
+      
+      // Also update the main assignment status
+      console.log(`[STATUS_SYNC] Triggering main assignment status update`);
+      await updateAssignmentMainStatus(assignment._id);
+      
+      // Update the slum status as well
+      console.log(`[STATUS_SYNC] Triggering slum status update`);
+      await updateSlumStatus(slumSurvey.slum._id);
+      
       return true;
     } else {
       console.error(`[STATUS_SYNC] Assignment not found for slum: ${slumSurvey.slum._id} and surveyor: ${slumSurvey.surveyor}`);
@@ -187,12 +207,123 @@ async function updateStatusesFromHouseholdSurvey(householdSurveyId) {
         
         // Update assignment status as well
         await updateAssignmentStatusFromSlumSurvey(slumSurvey._id);
+        // Update main assignment status
+        const assignment = await Assignment.findOne({
+          slum: slumId,
+          surveyor: slumSurvey.surveyor
+        });
+        if (assignment) {
+          await updateAssignmentMainStatus(assignment._id);
+        }
       }
     }
 
     return result;
   } catch (error) {
     console.error(`[STATUS_SYNC] Error updating statuses from household survey ${householdSurveyId}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Update Assignment main status based on survey completion
+ * This updates the primary assignment.status field used by the dashboard
+ * @param {string} assignmentId - The ID of the assignment
+ * @returns {Promise<boolean>} - Whether the update was successful
+ */
+async function updateAssignmentMainStatus(assignmentId) {
+  try {
+    console.log(`[STATUS_SYNC] Updating main assignment status for ID: ${assignmentId}`);
+    
+    const assignment = await Assignment.findById(assignmentId)
+      .populate('slum')
+      .populate('surveyor');
+
+    if (!assignment) {
+      console.error(`[STATUS_SYNC] Assignment not found: ${assignmentId}`);
+      return false;
+    }
+
+    console.log(`[STATUS_SYNC] Current assignment status: ${assignment.status}`);
+    console.log(`[STATUS_SYNC] Assignment slum: ${assignment.slum?.slumName}`);
+    console.log(`[STATUS_SYNC] Assignment surveyor: ${assignment.surveyor?.name}`);
+
+    // Get related surveys
+    const slumSurvey = await SlumSurvey.findOne({
+      slum: assignment.slum._id,
+      surveyor: assignment.surveyor._id
+    });
+
+    const householdSurveys = await HouseholdSurvey.find({
+      slum: assignment.slum._id,
+      surveyor: assignment.surveyor._id
+    });
+
+    const totalHouseholds = assignment.slum.totalHouseholds || 0;
+    const completedHouseholdCount = householdSurveys.filter(hs => 
+      hs.surveyStatus === 'SUBMITTED' || hs.surveyStatus === 'COMPLETED'
+    ).length;
+
+    console.log(`[STATUS_SYNC] Found ${householdSurveys.length} household surveys, ${completedHouseholdCount} completed`);
+    console.log(`[STATUS_SYNC] Slum survey exists: ${!!slumSurvey}`);
+    console.log(`[STATUS_SYNC] Slum survey status: ${slumSurvey?.surveyStatus || 'N/A'}`);
+
+    // Determine main assignment status based on comprehensive logic
+    let newMainStatus = 'PENDING'; // Default status
+
+    if (!slumSurvey && householdSurveys.length === 0) {
+      // No surveys started yet
+      newMainStatus = 'PENDING';
+      console.log(`[STATUS_SYNC] Condition 1: No surveys started - Status: PENDING`);
+    } else if (slumSurvey?.surveyStatus === 'DRAFT' && householdSurveys.length === 0) {
+      // Slum survey created but not started, no household surveys
+      newMainStatus = 'PENDING';
+      console.log(`[STATUS_SYNC] Condition 2: Draft with no HH surveys - Status: PENDING`);
+    } else if (
+      slumSurvey?.surveyStatus === 'IN PROGRESS' || 
+      householdSurveys.length > 0
+    ) {
+      // Work has started (either slum survey in progress or household surveys exist)
+      newMainStatus = 'IN PROGRESS';
+      console.log(`[STATUS_SYNC] Condition 3: Work started - Status: IN PROGRESS`);
+      console.log(`[STATUS_SYNC]   Slum survey IN PROGRESS: ${slumSurvey?.surveyStatus === 'IN PROGRESS'}`);
+      console.log(`[STATUS_SYNC]   Has household surveys: ${householdSurveys.length > 0}`);
+    } else if (
+      (slumSurvey?.surveyStatus === 'SUBMITTED' || slumSurvey?.surveyStatus === 'COMPLETED') &&
+      completedHouseholdCount > 0 && 
+      completedHouseholdCount === totalHouseholds
+    ) {
+      // Both slum survey and all household surveys are completed
+      newMainStatus = 'COMPLETED';
+      console.log(`[STATUS_SYNC] Condition 4: All surveys completed - Status: COMPLETED`);
+    } else if (
+      slumSurvey?.surveyStatus === 'SUBMITTED' || slumSurvey?.surveyStatus === 'COMPLETED'
+    ) {
+      // Slum survey completed but household surveys not done
+      newMainStatus = 'IN PROGRESS';
+      console.log(`[STATUS_SYNC] Condition 5: Slum survey done, HH pending - Status: IN PROGRESS`);
+    }
+
+    console.log(`[STATUS_SYNC] Calculated new main status: ${newMainStatus}`);
+
+    // Update assignment status if it changed
+    if (assignment.status !== newMainStatus) {
+      console.log(`[STATUS_SYNC] Status will change from ${assignment.status} to ${newMainStatus}`);
+      assignment.status = newMainStatus;
+      if (newMainStatus === 'COMPLETED') {
+        assignment.completedAt = new Date();
+      } else if (newMainStatus === 'PENDING') {
+        assignment.completedAt = null;
+      }
+      await assignment.save();
+      console.log(`[STATUS_SYNC] Assignment main status updated from ${assignment.status} to ${newMainStatus}`);
+    } else {
+      console.log(`[STATUS_SYNC] Assignment main status unchanged: ${newMainStatus} (current: ${assignment.status})`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`[STATUS_SYNC] Error updating assignment main status ${assignmentId}:`, error);
     return false;
   }
 }
@@ -217,9 +348,11 @@ async function initializeAssignmentStatus(assignmentId) {
 
     // Set initial slum survey status to NOT STARTED
     assignment.slumSurveyStatus = 'NOT STARTED';
+    // Set initial main status to PENDING
+    assignment.status = 'PENDING';
     await assignment.save();
     
-    console.log(`[STATUS_SYNC] Assignment initialized with slumSurveyStatus: NOT STARTED`);
+    console.log(`[STATUS_SYNC] Assignment initialized with slumSurveyStatus: NOT STARTED and status: PENDING`);
     return true;
   } catch (error) {
     console.error(`[STATUS_SYNC] Error initializing assignment status ${assignmentId}:`, error);
@@ -231,5 +364,6 @@ module.exports = {
   updateSlumStatus,
   updateAssignmentStatusFromSlumSurvey,
   updateStatusesFromHouseholdSurvey,
+  updateAssignmentMainStatus,
   initializeAssignmentStatus
 };
