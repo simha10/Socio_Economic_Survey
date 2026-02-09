@@ -151,7 +151,7 @@ const householdSurveySchema = new mongoose.Schema({
 
   // SECTION I: General Information
   slumName: String,
-  locationWard: String,
+  ward: String,
 
   // SECTION II: Household Level General Information
   headName: String,

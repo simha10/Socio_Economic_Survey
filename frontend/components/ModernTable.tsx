@@ -59,7 +59,20 @@ export default function ModernTable<T>({
 
     if (aValue === bValue) return 0;
     
-    const comparison = aValue > bValue ? 1 : -1;
+    // Handle mixed string/numeric values
+    const aStr = String(aValue);
+    const bStr = String(bValue);
+    const aNum = parseFloat(aStr);
+    const bNum = parseFloat(bStr);
+    
+    // If both can be converted to numbers, sort numerically
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+      const comparison = aNum > bNum ? 1 : -1;
+      return sortConfig.direction === "asc" ? comparison : -comparison;
+    }
+    
+    // Otherwise, sort as strings
+    const comparison = aStr > bStr ? 1 : -1;
     return sortConfig.direction === "asc" ? comparison : -comparison;
   });
 

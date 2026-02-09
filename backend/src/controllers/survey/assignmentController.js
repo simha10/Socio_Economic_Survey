@@ -114,7 +114,7 @@ const getAllAssignments = async (req, res) => {
       .populate('surveyor', 'name username role')
       .populate({
         path: 'slum',
-        select: 'slumName slumId village ward',
+        select: 'slumName slumId village ward slumType totalHouseholds area',
         populate: {
           path: 'ward',
           select: 'number name zone'
@@ -150,7 +150,7 @@ const getAssignmentById = async (req, res) => {
       .populate('surveyor', 'name username role')
       .populate({
         path: 'slum',
-        select: 'slumName slumId village ward',
+        select: 'slumName slumId village ward slumType totalHouseholds area',
         populate: {
           path: 'ward',
           select: 'number name zone'
@@ -218,7 +218,7 @@ const getMyAssignments = async (req, res) => {
     const assignments = await Assignment.find({ surveyor: req.user._id })
       .populate({
         path: 'slum',
-        select: 'slumName slumId village ward slumType totalHouseholds',
+        select: 'slumName slumId village ward slumType totalHouseholds area',
         populate: {
           path: 'ward',
           select: 'number name zone'
@@ -365,7 +365,7 @@ const getAssignmentsForSurveyor = async (req, res) => {
     const assignments = await Assignment.find({ surveyor: userId })
       .populate({
         path: 'slum',
-        select: 'slumName slumId village ward slumType totalHouseholds',
+        select: 'slumName slumId village ward slumType totalHouseholds area',
         populate: {
           path: 'ward',
           select: 'number name zone'

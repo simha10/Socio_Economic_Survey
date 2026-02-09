@@ -2,19 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Edit2, Eye } from "lucide-react";
 import apiService from "@/services/api";
 import SupervisorAdminLayout from "@/components/SupervisorAdminLayout";
 import ModernTable from "@/components/ModernTable";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import Button from "@/components/Button";
 import SlumForm from "@/components/SlumForm";
-import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
-
-interface LocationReference {
-  _id: string;
-  name: string;
-}
+import EditConfirmationDialog from "@/components/EditConfirmationDialog";
 
 interface User {
   _id: string;
@@ -29,7 +23,7 @@ interface Slum {
   slumId: number;
   stateCode: string;
   distCode: string;
-  city: string;
+  cityTownCode: string;
   ward: {
     _id: string;
     number: string;
@@ -54,9 +48,8 @@ export default function SupervisorSlumsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedSlum, setSelectedSlum] = useState<Slum | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [slumToDelete, setSlumToDelete] = useState<Slum | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [slumToEdit, setSlumToEdit] = useState<Slum | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
 
   const fetchSlums = async () => {
@@ -105,47 +98,24 @@ export default function SupervisorSlumsPage() {
   }, [successMessage]);
 
   const handleEditSlum = (slum: Slum) => {
-    console.log('SupervisorSlumsPage: Opening edit form for slum', slum);
-    setSelectedSlum(slum);
+    console.log('SupervisorSlumsPage: Opening edit confirmation for slum', slum);
+    setSlumToEdit(slum);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleConfirmEdit = () => {
+    console.log('SupervisorSlumsPage: Confirming edit for slum', slumToEdit);
+    if (!slumToEdit) return;
+    
+    setSelectedSlum(slumToEdit);
     setIsFormOpen(true);
+    setIsEditDialogOpen(false);
+    setSlumToEdit(null);
   };
 
-  const handleDeleteClick = (slum: Slum) => {
-    setSlumToDelete(slum);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    console.log('SupervisorSlumsPage: Confirming delete for slum', slumToDelete);
-    if (!slumToDelete) return;
-
-    setDeleteLoading(true);
-    try {
-      const response = await apiService.deleteSlum(slumToDelete._id);
-      console.log('SupervisorSlumsPage: Delete response received', response);
-      if (response.success) {
-        setSuccessMessage("Slum deleted successfully");
-        setIsDeleteDialogOpen(false);
-        setSlumToDelete(null);
-        setTimeout(() => {
-          console.log('SupervisorSlumsPage: Fetching slums after deletion');
-          fetchSlums();
-        }, 300); // Delay to prevent race conditions
-      } else {
-        console.log('SupervisorSlumsPage: Delete failed', response.message);
-        alert("Failed to delete slum: " + response.message);
-      }
-    } catch (error) {
-      console.error("Error deleting slum:", error);
-      alert("Error deleting slum");
-    } finally {
-      setDeleteLoading(false);
-      console.log('SupervisorSlumsPage: Delete loading state set to false');
-    }
-  };
-
-  const handleViewSlum = (id: string) => {
-    router.push(`/supervisor/slums/${id}`);
+  const handleViewSlum = (slum: Slum) => {
+    console.log('SupervisorSlumsPage: Redirecting to view slum', slum._id);
+    router.push(`/supervisor/slums/${slum._id}`);
   };
 
   const handleFormClose = () => {
@@ -180,9 +150,6 @@ export default function SupervisorSlumsPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-white">Manage Slums</h1>
-            <p className="text-slate-400 mt-2">
-              Create, edit, and manage slum information
-            </p>
           </div>
         </div>
 
@@ -196,20 +163,19 @@ export default function SupervisorSlumsPage() {
         <ModernTable
           data={slums}
           keyField="_id"
-          searchPlaceholder="Search slums by name, location, zone, or ward..."
-          onRowClick={(row) => handleViewSlum(row._id)}
+          searchPlaceholder="Search slums by ID, Name, Village..."
           columns={[
             {
               header: "Slum ID",
               accessorKey: "slumId",
               sortable: true,
-              className: "font-medium text-white text-center",
+              className: "font-medium text-white align-middle",
             },
             {
               header: "Name",
               accessorKey: "slumName",
               sortable: true,
-              className: "font-medium text-white",
+              className: "align-left w-50",
             },
             {
               header: "Zone",
@@ -220,7 +186,7 @@ export default function SupervisorSlumsPage() {
                 return 'N/A';
               },
               sortable: true,
-              className: "text-center",
+              className: "align-left",
             },
             {
               header: "Ward",
@@ -231,18 +197,19 @@ export default function SupervisorSlumsPage() {
                 return row.ward?.toString() || 'N/A';
               },
               sortable: true,
-              className: "text-center",
+              className: "align-left w-60",
             },
             {
               header: "Village",
               accessorKey: "village",
               sortable: true,
+              className: "align-middle w-40",
             },
             {
               header: "Type",
               accessorKey: (row) => (
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                  className={`px-1 py-1 rounded-full align-middle text-xs whitespace-nowrap w-20 ${
                     row.slumType === "NOTIFIED"
                       ? "bg-green-500/20 text-green-400"
                       : "bg-yellow-500/20 text-yellow-400"
@@ -256,31 +223,30 @@ export default function SupervisorSlumsPage() {
               header: "Households",
               accessorKey: (row) => row.totalHouseholds?.toString() || "0",
               sortable: true,
-              className: "text-center font-medium tabular-nums align-middle",
+              className: "text-center font-medium tabular-nums align-left w-4",
             },
             {
               header: "Area (sq.m)",
               accessorKey: (row) => row.area?.toFixed(2) || "0",
-              sortable: true,
-              className: "text-right font-medium tabular-nums align-middle",
+              className: "text-center font-medium tabular-nums",
             },
             {
               header: "Actions",
               accessorKey: (row) => (
                 <div className="flex gap-2 justify-left" onClick={(e) => e.stopPropagation()}>
                   <button
+                    onClick={() => handleViewSlum(row)}
+                    className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded-md transition-colors"
+                    title="View"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => handleEditSlum(row)}
                     className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClick(row)}
-                    className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ),
@@ -297,16 +263,15 @@ export default function SupervisorSlumsPage() {
           slum={selectedSlum}
         />
 
-        <DeleteConfirmationDialog
-          isOpen={isDeleteDialogOpen}
-          title="Delete Slum"
-          message={`Are you sure you want to delete "${slumToDelete?.slumName}"? This action cannot be undone.`}
-          onConfirm={handleConfirmDelete}
+        <EditConfirmationDialog
+          isOpen={isEditDialogOpen}
+          surveyType="slum"
+          slumName={slumToEdit?.slumName || ''}
+          onConfirm={handleConfirmEdit}
           onCancel={() => {
-            setIsDeleteDialogOpen(false);
-            setSlumToDelete(null);
+            setIsEditDialogOpen(false);
+            setSlumToEdit(null);
           }}
-          loading={deleteLoading}
         />
       </div>
     </SupervisorAdminLayout>

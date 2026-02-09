@@ -2,7 +2,7 @@ const Slum = require('../models/Slum');
 
 exports.createSlum = async (req, res) => {
   try {
-    const { name, slumId, stateCode, distCode, city, ward, slumType, village, landOwnership, totalHouseholds, area } = req.body;
+    const { name, slumId, stateCode, distCode, cityTownCode, ward, slumType, village, landOwnership, totalHouseholds, area } = req.body;
 
     // Verify user is admin or supervisor
     if (!['ADMIN', 'SUPERVISOR'].includes(req.user.role)) {
@@ -17,7 +17,7 @@ exports.createSlum = async (req, res) => {
       slumId,
       stateCode,
       distCode,
-      city,
+      cityTownCode,
       ward,
       slumType,
       village: village || '',
@@ -107,7 +107,7 @@ exports.getSlumById = async (req, res) => {
 exports.updateSlum = async (req, res) => {
   try {
     const { slumId } = req.params;
-    const { name, stateCode, distCode, city, ward, slumType, village, landOwnership, totalHouseholds, area } = req.body;
+    const { name, stateCode, distCode, cityTownCode, ward, slumType, village, landOwnership, totalHouseholds, area } = req.body;
 
     // Verify user is admin or supervisor
     if (!['ADMIN', 'SUPERVISOR'].includes(req.user.role)) {
@@ -119,7 +119,7 @@ exports.updateSlum = async (req, res) => {
 
     const slum = await Slum.findByIdAndUpdate(
       slumId,
-      { name, stateCode, distCode, city, ward, slumType, village, landOwnership, totalHouseholds, area },
+      { name, stateCode, distCode, cityTownCode, ward, slumType, village, landOwnership, totalHouseholds, area },
       { new: true }
     );
 

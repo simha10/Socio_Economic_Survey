@@ -29,12 +29,13 @@ export default function EditConfirmationDialog({
           <div className="bg-yellow-500/20 p-3 rounded-lg">
             <AlertTriangle className="w-5 h-5 text-yellow-400" />
           </div>
-          <h2 className="text-lg font-bold text-white">Edit {surveyType === "slum" ? "Slum" : "Household"} Survey</h2>
+          <h2 className="text-lg font-bold text-white">Edit {surveyType === "slum" ? "Slum Details" : "Household"} Survey</h2>
         </div>
 
         <p className="text-slate-400 mb-6">
-          Are you sure you want to edit the {surveyType} survey for &quot;{slumName}&quot;? 
-          This will allow you to modify the submitted survey data.
+          {surveyType === "slum" 
+            ? `Are you sure you want to edit the slum details for "${slumName}"? This will allow you to modify ward number, village, and land ownership information.`
+            : `Are you sure you want to edit the ${surveyType} survey for "${slumName}"? This will allow you to modify the submitted survey data.`}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3">          
@@ -45,7 +46,7 @@ export default function EditConfirmationDialog({
             disabled={loading}
             className="bg-yellow-600 hover:bg-yellow-700 w-full sm:w-auto"
           >
-            {loading ? "Editing..." : "Edit Survey"}
+            {loading ? "Editing..." : surveyType === "slum" ? "Edit Slum" : "Edit Survey"}
           </Button>
           <Button
             variant="secondary"

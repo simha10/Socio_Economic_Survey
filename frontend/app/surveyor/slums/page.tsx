@@ -10,10 +10,14 @@ import { useToast } from "@/components/Toast";
 
 interface Slum {
   _id: string;
+  slumId: string;
   slumName: string;
-  location: string;
-  population?: number;
-  area?: string;
+  ward?: {
+    number: string;
+    name: string;
+  } | string;
+  totalHouseholds?: number;
+  area?: number;
 }
 
 interface User {
@@ -70,23 +74,29 @@ export default function SlumsPage() {
 
   const columns = [
     {
+      header: "ID",
+      accessorKey: "slumId" as keyof Slum,
+      sortable: true,
+      className: "font-medium text-white",
+    },
+    {
       header: "Name",
       accessorKey: "slumName" as keyof Slum,
       sortable: true,
       className: "font-medium text-white",
     },
     {
-      header: "Location",
-      accessorKey: "location" as keyof Slum,
+      header: "Ward",
+      accessorKey: (row: Slum) => (row.ward ? (typeof row.ward === 'object' ? row.ward.number + " - " + row.ward.name : row.ward) : "-"),
       sortable: true,
     },
     {
-      header: "Population",
-      accessorKey: (row: Slum) => row.population?.toLocaleString() || "-",
+      header: "Households",
+      accessorKey: (row: Slum) => row.totalHouseholds?.toLocaleString() || "-",
     },
     {
       header: "Area",
-      accessorKey: (row: Slum) => row.area || "-",
+      accessorKey: (row: Slum) => (row.area !== undefined && row.area !== null) ? row.area.toLocaleString() : "-",
     },
   ];
 
@@ -123,7 +133,6 @@ export default function SlumsPage() {
             columns={columns}
             keyField="_id"
             searchPlaceholder="Search slums..."
-            onRowClick={(row) => router.push(`/surveyor/slums/${row._id}`)}
         />
       </div>
     </SurveyorLayout>
