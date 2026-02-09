@@ -17,7 +17,7 @@ interface HouseholdSurveyForm {
   householdId: string;
   // Section I - General Information
   slumName?: string;
-  locationWard?: string;
+  ward?: string;
   houseDoorNo?: string;
 
   // Section II - Household Level General Information
@@ -249,7 +249,7 @@ export default function HouseholdSurveyPage() {
             setFormData((prev) => ({
               ...prev,
               slumName: slumData.name || "",
-              locationWard: slumData.ward || "",
+              ward: slumData.ward || "",
             }));
 
             // Load households for this slum
@@ -395,12 +395,6 @@ export default function HouseholdSurveyPage() {
       newErrors.push({
         field: "familyMembersTotal",
         message: "Number of Family Members (Total) is required",
-      });
-    }
-    if (!formData.femaleHeadStatus) {
-      newErrors.push({
-        field: "femaleHeadStatus",
-        message: "Female Head Status is required",
       });
     }
     if (
@@ -831,7 +825,7 @@ export default function HouseholdSurveyPage() {
           householdId: "",
           houseDoorNo: "",
           slumName: slum?.name || "",
-          locationWard: slum?.ward || "",
+          ward: slum?.ward || "",
           // Reset all other fields to empty/default values
           headName: "",
           fatherName: "",
@@ -997,7 +991,7 @@ export default function HouseholdSurveyPage() {
                       <Input
                         label="2. Location - Ward No/Name"
                         placeholder="Enter ward"
-                        value={formData.locationWard || ""}
+                        value={formData.ward || ""}
                         readOnly
                         className="bg-slate-800/50 cursor-not-allowed opacity-75"
                       />
@@ -1104,14 +1098,13 @@ export default function HouseholdSurveyPage() {
                         ]}
                       />
                       <Select
-                        label="10. Female Head Status(if Female Headed Household)"
+                        label="10. Female Head Status (if Female Headed Household)"
                         value={formData.femaleHeadStatus || ""}
                         onChange={(e) =>
                           handleInputChange("femaleHeadStatus", e.target.value)
                         }
                         name="femaleHeadStatus"
                         error={getFieldError("femaleHeadStatus")}
-                        required
                         options={[
                           { value: "MARRIED", label: "Married" },
                           { value: "WIDOWED", label: "Widowed" },

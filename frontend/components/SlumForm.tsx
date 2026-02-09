@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { X } from "lucide-react";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import Select from "@/components/Select";
@@ -38,8 +37,8 @@ export default function SlumForm({
     slumId: 0,
     stateCode: "",
     distCode: "",
-    city: "",
-    ward: 0,
+    cityTownCode: "",
+    ward: "" as string | number,
     slumType: "NOTIFIED",
     village: "",
     landOwnership: "",
@@ -49,87 +48,45 @@ export default function SlumForm({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [states, setStates] = useState<State[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
-  const [loadingStates, setLoadingStates] = useState(false);
-  const [loadingDistricts, setLoadingDistricts] = useState(false);
-
-  const fetchStates = async () => {
-    setLoadingStates(true);
-    try {
-      const response = await apiService.getStates();
-      if (response.success && response.data) {
-        setStates(response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching states:', error);
-    } finally {
-      setLoadingStates(false);
-    }
-  };
-
-  const fetchDistricts = async (stateCode: string) => {
-    if (!stateCode) {
-      setDistricts([]);
-      return;
-    }
-    
-    setLoadingDistricts(true);
-    try {
-      const response = await apiService.getDistrictsByState(stateCode);
-      if (response.success && response.data) {
-        setDistricts(response.data);
-      } else {
-        setDistricts([]);
-      }
-    } catch (error) {
-      console.error('Error fetching districts:', error);
-      setDistricts([]);
-    } finally {
-      setLoadingDistricts(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchStates();
-    }
-  }, [isOpen]);
+  // Removed unused state and district loading logic since we're using Input components for display
 
   useEffect(() => {
     if (slum) {
+      // Handle ward field - it can be an object or a number/string
+      let wardValue: string | number = "";
+      if (typeof slum.ward === 'object' && slum.ward !== null) {
+        wardValue = slum.ward.number || "";
+      } else {
+        wardValue = slum.ward || "";
+      }
+      
       setFormData({
-        name: slum.name || "",
+        name: slum.slumName || slum.name || "",
         slumId: slum.slumId || 0,
         stateCode: slum.stateCode || "",
         distCode: slum.distCode || "",
-        city: slum.city || "",
-        ward: slum.ward || 0,
+        cityTownCode: slum.cityTownCode || slum.city || "",
+        ward: wardValue,
         slumType: slum.slumType || "NOTIFIED",
         village: slum.village || "",
         landOwnership: slum.landOwnership || "",
         totalHouseholds: slum.totalHouseholds || 0,
         area: slum.area || 0,
       });
-      // Load districts for the state when editing
-      if (slum.stateCode) {
-        fetchDistricts(slum.stateCode);
-      }
     } else {
       setFormData({
         name: "",
         slumId: 0,
         stateCode: "",
         distCode: "",
-        city: "",
-        ward: 0,
+        cityTownCode: "",
+        ward: "",
         slumType: "NOTIFIED",
         village: "",
         landOwnership: "",
         totalHouseholds: 0,
         area: 0,
       });
-      setDistricts([]); // Clear districts when creating new
     }
   }, [slum, isOpen]);
 
@@ -144,14 +101,7 @@ export default function SlumForm({
       [name]: isNumberField ? parseFloat(value) || 0 : value,
     }));
     
-    // When state changes, fetch districts and clear district selection
-    if (name === 'stateCode') {
-      setDistricts([]);
-      setFormData(prev => ({ ...prev, distCode: '' }));
-      if (value) {
-        fetchDistricts(value);
-      }
-    }
+    // Removed district loading logic since we're using Input components for display
     
     setError("");
   };
@@ -164,7 +114,7 @@ export default function SlumForm({
       !formData.slumId ||
       !formData.stateCode ||
       !formData.distCode ||
-      !formData.city ||
+      !formData.cityTownCode ||
       !formData.ward
     ) {
       setError("Please fill all required fields");
@@ -188,7 +138,7 @@ export default function SlumForm({
           slumId: 0,
           stateCode: "",
           distCode: "",
-          city: "",
+          cityTownCode: "",
           ward: 0,
           slumType: "NOTIFIED",
           village: "",
@@ -226,12 +176,6 @@ export default function SlumForm({
               {slum ? "Update the details below" : "Enter the required information to add a new slum"}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white hover:bg-slate-800 p-2 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
@@ -249,8 +193,10 @@ export default function SlumForm({
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g. Shantinagar"
+                placeholder="Enter Slum Name"
                 required
+                readOnly
+                className="bg-slate-800/50 cursor-not-allowed opacity-75"
               />
               <Input
                 label="Slum ID"
@@ -260,49 +206,44 @@ export default function SlumForm({
                 onChange={handleChange}
                 placeholder="Enter unique slum ID"
                 required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Select
-                label="State"
-                name="stateCode"
-                value={formData.stateCode}
-                onChange={handleChange}
-                options={[
-                  { value: "", label: loadingStates ? "Loading states..." : "Select state" },
-                  ...states.map(state => ({ 
-                    value: state.code, 
-                    label: `${state.name} (${state.code})` 
-                  }))
-                ]}
-                required
-              />
-              <Select
-                label="District"
-                name="distCode"
-                value={formData.distCode}
-                onChange={handleChange}
-                options={[
-                  { value: "", label: loadingDistricts ? "Loading districts..." : (formData.stateCode ? "Select district" : "Select state first") },
-                  ...districts.map(district => ({ 
-                    value: district.code, 
-                    label: `${district.name} (${district.code})` 
-                  }))
-                ]}
-                required
-                disabled={!formData.stateCode || loadingDistricts}
+                disabled
+                className="bg-slate-800/50 cursor-not-allowed opacity-75"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
-                label="City/Town"
-                name="city"
-                value={formData.city}
+                label="State Code"
+                name="stateCode"
+                value={formData.stateCode}
                 onChange={handleChange}
-                placeholder="Enter city name"
+                placeholder="State code"
                 required
+                readOnly
+                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+              />
+              <Input
+                label="District Code"
+                name="distCode"
+                value={formData.distCode}
+                onChange={handleChange}
+                placeholder="District code"
+                required
+                readOnly
+                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                label="City/Town Code"
+                name="cityTownCode"
+                value={formData.cityTownCode}
+                onChange={handleChange}
+                placeholder="Enter City/Town Code"
+                required
+                disabled
+                className="bg-slate-800/50 cursor-not-allowed opacity-75"
               />
               <Input
                 label="Ward Number"
@@ -316,16 +257,14 @@ export default function SlumForm({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Select
+              <Input
                 label="Slum Type"
                 name="slumType"
                 value={formData.slumType}
                 onChange={handleChange}
-                options={[
-                  { value: "NOTIFIED", label: "Notified" },
-                  { value: "NON-NOTIFIED", label: "Non-Notified" },
-                ]}
                 required
+                readOnly
+                className="bg-slate-800/50 cursor-not-allowed opacity-75"
               />
               <Input
                 label="Village"
@@ -352,6 +291,8 @@ export default function SlumForm({
                 onChange={handleChange}
                 placeholder="0"
                 min="0"
+                disabled
+                className="bg-slate-800/50 cursor-not-allowed opacity-75"
               />
             </div>
             
@@ -365,6 +306,8 @@ export default function SlumForm({
                 placeholder="0"
                 min="0"
                 step="0.01"
+                disabled
+                className="bg-slate-800/50 cursor-not-allowed opacity-75"
               />
             </div>
             

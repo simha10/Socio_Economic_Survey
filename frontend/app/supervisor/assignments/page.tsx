@@ -21,7 +21,13 @@ interface Assignment {
   slum: {
     _id: string;
     slumName: string;
-    location: string;
+    slumId: number;
+    ward?: {
+      _id: string;
+      number: string;
+      name: string;
+      zone: string;
+    } | string;
   } | null;
   status: string;
   createdAt: string;
@@ -42,77 +48,72 @@ interface Surveyor {
 interface Slum {
   _id: string;
   slumName: string;
-  location: string;
   slumId: number;
 }
 
 interface User {
   _id: string;
-  name: string;
   username: string;
-  role: string;
+  name: string;
+  role: "ADMIN" | "SUPERVISOR" | "SURVEYOR";
+  isActive: boolean;
+  createdAt: string;
 }
 
 export default function SupervisorAssignmentsPage() {
   const router = useRouter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [surveyors, setSurveyors] = useState<Surveyor[]>([]);
   const [slums, setSlums] = useState<Slum[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [newAssignment, setNewAssignment] = useState({
     surveyorId: "",
     slumId: "",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [editFormData, setEditFormData] = useState<AssignmentFormData>({
     status: 'PENDING',
     surveyor: '',
     slum: '',
   });
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
   const [availableUsers, setAvailableUsers] = useState<Surveyor[]>([]);
-  const [availableSlumsList, setAvailableSlumsList] = useState<Slum[]>([]);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
   const [showUpdateConfirm, setShowUpdateConfirm] = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
   const [assignmentToEdit, setAssignmentToEdit] = useState<Assignment | null>(null);
 
   useEffect(() => {
-    // Verify user is supervisor
-    const userStr = localStorage.getItem("user");
-    if (!userStr) {
-      router.push("/login");
-      return;
-    }
-
-    const userData = JSON.parse(userStr);
-    if (userData?.role !== "SUPERVISOR") {
-      router.push(`/${userData?.role?.toLowerCase()}/dashboard`);
-      return;
-    }
-
-    setUser(userData);
-    
     const fetchData = async () => {
       try {
-        // Fetch assignments, surveyors, and slums
+        // Get current user from localStorage
+        const userStr = localStorage.getItem("user");
+        if (!userStr) {
+          router.push("/login");
+          return;
+        }
+        
+        const userData = JSON.parse(userStr);
+        if (userData?.role !== "SUPERVISOR") {
+          router.push(`/${userData?.role?.toLowerCase()}/dashboard`);
+          return;
+        }
+        
+        setUser(userData);
+
+        // Load all data using the same API calls as Admin Panel
         const [surveyorsRes, slumsRes, assignmentsRes] = await Promise.all([
           apiService.getUsers("SURVEYOR"),
           apiService.getAllSlums(1, 10, undefined, true), // Load all slums
-          apiService.getAllAssignments(), // Use getAllAssignments for supervisors to see all assignments they created
+          apiService.getAllAssignments(),
         ]);
 
         if (assignmentsRes.success) {
-          console.log("Assignments data:", assignmentsRes.data);
           setAssignments(assignmentsRes.data || []);
         }
         if (surveyorsRes.success) {
-          setSurveyors(surveyorsRes.data || []);
-          setAvailableUsers(surveyorsRes.data || []); // Also set available users for editing
+          setAvailableUsers(surveyorsRes.data || []);
         }
         if (slumsRes.success) {
           const sortedSlums = [...(slumsRes.data || [])].sort((a, b) => {
@@ -121,18 +122,18 @@ export default function SupervisorAssignmentsPage() {
             return nameA.localeCompare(nameB);
           });
           setSlums(sortedSlums);
-          setAvailableSlumsList(sortedSlums); // Also set available slums for editing
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error('Error loading data:', error);
         setError("Failed to load data. Please refresh the page.");
+        router.push('/login');
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [router]);
 
   const handleCreateAssignment = async () => {
     try {
@@ -143,13 +144,9 @@ export default function SupervisorAssignmentsPage() {
       );
 
       if (response.success) {
-        // Refresh assignments list using getAllAssignments
+        // Refresh assignments list
         const assignmentsRes = await apiService.getAllAssignments();
         if (assignmentsRes.success) {
-          console.log(
-            "Updated assignments after creation:",
-            assignmentsRes.data,
-          );
           setAssignments(assignmentsRes.data || []);
         }
         // Reset form
@@ -157,6 +154,7 @@ export default function SupervisorAssignmentsPage() {
           surveyorId: "",
           slumId: "",
         });
+        setMessage("Assignment created successfully");
       } else {
         const errorMsg = response.error || "Unknown error occurred";
         console.error("Failed to create assignment:", errorMsg);
@@ -254,39 +252,6 @@ export default function SupervisorAssignmentsPage() {
     setShowUpdateConfirm(false);
   };
 
-  const handleDeleteAssignment = async (assignmentId: string) => {
-    setAssignmentToDelete(assignmentId);
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDeleteAssignment = async () => {
-    if (!assignmentToDelete) return;
-
-    try {
-      const response = await apiService.deleteAssignment(assignmentToDelete);
-      if (response.success) {
-        setMessage("Assignment deleted successfully");
-        // Refresh assignments to show updated data
-        const assignmentsRes = await apiService.getAllAssignments();
-        if (assignmentsRes.success) {
-          setAssignments(assignmentsRes.data || []);
-        }
-      } else {
-        setMessage(`Error: ${response.error || "Failed to delete assignment"}`);
-      }
-    } catch (error: unknown) {
-      setMessage(`Error: ${error instanceof Error ? error.message : "Failed to delete assignment"}`);
-    } finally {
-      setShowDeleteConfirm(false);
-      setAssignmentToDelete(null);
-    }
-  };
-
-  const cancelDeleteAssignment = () => {
-    setShowDeleteConfirm(false);
-    setAssignmentToDelete(null);
-  };
-
   const handleCancelEdit = () => {
     setEditingAssignment(null);
     setMessage("");
@@ -295,8 +260,26 @@ export default function SupervisorAssignmentsPage() {
   if (loading) {
     return (
       <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <LoadingSpinner size="lg" text="Loading assignments..." />
+        <div className="flex items-center justify-center min-h-96">
+          <LoadingSpinner />
+        </div>
+      </SupervisorAdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
+        <div className="bg-red-900/30 border border-red-700 rounded-lg p-6">
+          <h3 className="text-red-300 font-bold mb-2">Error</h3>
+          <p className="text-red-400">{error}</p>
+          <Button
+            onClick={() => window.location.reload()}
+            className="mt-4"
+            variant="secondary"
+          >
+            Retry
+          </Button>
         </div>
       </SupervisorAdminLayout>
     );
@@ -305,29 +288,6 @@ export default function SupervisorAssignmentsPage() {
   return (
     <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
       <div className="relative">
-        {/* Delete Confirmation Dialog */}
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-bold text-white mb-4">Confirm Deletion</h3>
-              <p className="text-slate-300 mb-6">Are you sure you want to delete this assignment? This action cannot be undone.</p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={cancelDeleteAssignment}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDeleteAssignment}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Update Confirmation Dialog */}
         {showUpdateConfirm && (
@@ -419,12 +379,12 @@ export default function SupervisorAssignmentsPage() {
                     surveyorId: e.target.value,
                   })
                 }
-                options={[
-                  ...surveyors.map((s) => ({
+                options={[...availableUsers.map((s) => ({
                     value: s._id,
                     label: `${s.name}`,
-                  })),
-                ]}
+                  }))]
+                }
+                placeholder="Select a surveyor..."
               />
               <InfiniteScrollSelect
                 label="Slum"
@@ -485,7 +445,7 @@ export default function SupervisorAssignmentsPage() {
                   </label>
                   <input
                     type="text"
-                    value={`${editingAssignment?.slum?.slumName || 'N/A'} - ${editingAssignment?.slum?.location || 'N/A'}`}
+                    value={`${editingAssignment?.slum?.slumName || 'N/A'} (${editingAssignment?.slum?.slumId || 'N/A'})`}
                     readOnly
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
                   />
@@ -560,7 +520,35 @@ export default function SupervisorAssignmentsPage() {
               },
               {
                 header: "Slum",
-                accessorKey: (row) => row.slum?.slumName || "Unknown",
+                accessorKey: (row) => `${row.slum?.slumName || "Unknown"} (${row.slum?.slumId || "Unknown"})` as string,
+                sortable: true,
+              },
+              {
+                header: "Zone",
+                accessorKey: (row) => {
+                  if (row.slum?.ward) {
+                    if (typeof row.slum.ward === 'object') {
+                      return `${row.slum.ward.zone}`;
+                    } else {
+                      return "Unknown Zone";
+                    }
+                  }
+                  return "Unknown Zone";
+                },
+                sortable: true,
+              },
+              {
+                header: "Ward",
+                accessorKey: (row) => {
+                  if (row.slum?.ward) {
+                    if (typeof row.slum.ward === 'object') {
+                      return `Ward ${row.slum.ward.number} (${row.slum.ward.name})`;
+                    } else {
+                      return "Unknown Ward";
+                    }
+                  }
+                  return "Unknown Ward";
+                },
                 sortable: true,
               },
               {
@@ -575,22 +563,21 @@ export default function SupervisorAssignmentsPage() {
                             : "bg-yellow-500/20 text-yellow-400"
                       }`}
                     >
-                      {row.status?.replace('_', ' ')}
+                      {row.status}
                     </span>
                 ),
               },
               {
-                header: "Created",
+                header: "Assigned",
                 accessorKey: (row) => new Date(row.createdAt).toLocaleDateString(),
-                sortable: true,
               },
               {
                 header: "Actions",
                 accessorKey: (row) => (
-                  <div className="flex gap-2 justify-left items-center">
+                  <div className="flex gap-2">
                     <button 
                       onClick={() => handleEditAssignment(row)}
-                      className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded-md transition-colors"
+                      className="text-cyan-400 hover:text-cyan-300 transition-colors align-center"
                       title="Edit"
                     >
                       <svg
@@ -607,28 +594,8 @@ export default function SupervisorAssignmentsPage() {
                         />
                       </svg>
                     </button>
-                    <button 
-                      onClick={() => handleDeleteAssignment(row._id)}
-                      className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-colors"
-                      title="Delete"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
                   </div>
                 ),
-                className: "text-center align-middle",
               }
             ]}
           />

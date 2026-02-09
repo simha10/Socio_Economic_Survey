@@ -22,6 +22,23 @@ interface Assignment {
   };
   slumSurveyStatus?: string;
   householdSurveyCount?: number;
+  householdSurveyProgress?: {
+    completed: number;
+    total: number;
+  };
+}
+
+interface DashboardStats {
+  totalSlums: number;
+  totalAssignments: number;
+  completedAssignments: number;
+  inProgressAssignments: number;
+  pendingAssignments: number;
+  totalSurveyors: number;
+  completedSlumSurveys: number;
+  totalHouseholdSurveys: number;
+  inProgressSlumSurveys: number;
+  totalInProgressHouseholdSurveys: number;
 }
 
 export default function SupervisorDashboardPage() {
@@ -29,7 +46,7 @@ export default function SupervisorDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [dashboardStats, setDashboardStats] = useState({
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     totalSlums: 0,
     totalAssignments: 0,
     completedAssignments: 0,
@@ -38,6 +55,8 @@ export default function SupervisorDashboardPage() {
     totalSurveyors: 0,
     completedSlumSurveys: 0,
     totalHouseholdSurveys: 0,
+    inProgressSlumSurveys: 0,
+    totalInProgressHouseholdSurveys: 0,
   });
 
   useEffect(() => {
@@ -77,16 +96,33 @@ export default function SupervisorDashboardPage() {
         // Count unique slums with assignments
         const uniqueSlums = new Set(assignments.map((a: Assignment) => a.slum?._id)).size;
         
-        // Count completed slum surveys
+        // Count completed slum surveys (Submitted or Completed)
         const completedSlumSurveys = assignments.filter((a: Assignment) => 
-          a.slumSurveyStatus === 'COMPLETED'
+          a.slumSurveyStatus === 'SUBMITTED' || a.slumSurveyStatus === 'COMPLETED'
         ).length;
         
-        // Count total household surveys
-        let totalHouseholdSurveys = 0;
+        // Count in-progress slum surveys
+        const inProgressSlumSurveys = assignments.filter((a: Assignment) => 
+          a.slumSurveyStatus === 'IN PROGRESS'
+        ).length;
+        
+        // Count completed household surveys
+        let totalCompletedHouseholdSurveys = 0;
         for (const assignment of assignments) {
-          if (assignment.householdSurveyCount) {
-            totalHouseholdSurveys += assignment.householdSurveyCount;
+          if (assignment.householdSurveyProgress) {
+            totalCompletedHouseholdSurveys += assignment.householdSurveyProgress.completed;
+          } else if (assignment.householdSurveyCount) {
+            totalCompletedHouseholdSurveys += assignment.householdSurveyCount;
+          }
+        }
+        
+        // Count in-progress household surveys (total - completed)
+        let totalInProgressHouseholdSurveys = 0;
+        for (const assignment of assignments) {
+          if (assignment.householdSurveyProgress) {
+            // In progress = total - completed
+            const inProgress = assignment.householdSurveyProgress.total - assignment.householdSurveyProgress.completed;
+            totalInProgressHouseholdSurveys += Math.max(0, inProgress);
           }
         }
         
@@ -99,7 +135,9 @@ export default function SupervisorDashboardPage() {
           totalSurveyors: usersResponse.success ? 
             usersResponse.data?.filter((u: User) => u.role === 'SURVEYOR').length : 0,
           completedSlumSurveys,
-          totalHouseholdSurveys,
+          totalHouseholdSurveys: totalCompletedHouseholdSurveys,
+          inProgressSlumSurveys, // Add new property
+          totalInProgressHouseholdSurveys, // Add new property
         });
       }
       
@@ -131,9 +169,6 @@ export default function SupervisorDashboardPage() {
           <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">
             Supervisor Dashboard
           </h2>
-          <p className="text-slate-400 text-base leading-relaxed max-w-2xl">
-            Monitor system-wide survey progress, manage assignments, and track team performance
-          </p>
         </div>
         <div className="flex gap-3">
           <button
@@ -160,7 +195,7 @@ export default function SupervisorDashboardPage() {
       <div className="mb-10">
         <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-blue-500" />
-          System Overview
+          Overview
         </h3>
         <DashboardStats
           stats={[
@@ -183,7 +218,7 @@ export default function SupervisorDashboardPage() {
               colorClass: "text-cyan-500 bg-cyan-500/20",
             },
             {
-              label: "Completed Surveys",
+              label: "Completed Slums",
               value: dashboardStats.completedAssignments,
               icon: <CheckCircle className="w-5 h-5" />,
               colorClass: "text-green-500 bg-green-500/20",
@@ -211,20 +246,20 @@ export default function SupervisorDashboardPage() {
               colorClass: "text-emerald-500 bg-emerald-500/20",
             },
             {
-              label: "Total Household Surveys",
-              value: dashboardStats.totalHouseholdSurveys,
-              icon: <Users className="w-5 h-5" />,
-              colorClass: "text-rose-500 bg-rose-500/20",
-            },
-            {
-              label: "In Progress",
-              value: dashboardStats.inProgressAssignments,
+              label: "In Progress Slum Surveys",
+              value: dashboardStats.inProgressSlumSurveys,
               icon: <Clock className="w-5 h-5" />,
               colorClass: "text-amber-500 bg-amber-500/20",
             },
             {
-              label: "Pending Assignments",
-              value: dashboardStats.pendingAssignments,
+              label: "Completed Household Surveys",
+              value: dashboardStats.totalHouseholdSurveys,
+              icon: <CheckCircle className="w-5 h-5" />,
+              colorClass: "text-emerald-500 bg-emerald-500/20",
+            },
+            {
+              label: "In Progress Household Surveys",
+              value: dashboardStats.totalInProgressHouseholdSurveys,
               icon: <Clock className="w-5 h-5" />,
               colorClass: "text-slate-500 bg-slate-500/20",
             },
