@@ -582,6 +582,20 @@ export default function AssignmentsPage() {
                 sortable: true,
               },
               {
+                header: "Zone",
+                accessorKey: (row) => {
+                  if (row.slum?.ward) {
+                    if (typeof row.slum.ward === 'object') {
+                      return `${row.slum.ward.zone}`;
+                    } else {
+                      return "Unknown Zone";
+                    }
+                  }
+                  return "Unknown Zone";
+                },
+                sortable: true,
+              },
+              {
                 header: "Ward",
                 accessorKey: (row) => {
                   if (row.slum?.ward) {

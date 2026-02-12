@@ -17,7 +17,6 @@ interface Slum {
     name: string;
   } | string;
   totalHouseholds?: number;
-  area?: number;
 }
 
 interface User {
@@ -93,10 +92,6 @@ export default function SlumsPage() {
     {
       header: "Households",
       accessorKey: (row: Slum) => row.totalHouseholds?.toLocaleString() || "-",
-    },
-    {
-      header: "Area",
-      accessorKey: (row: Slum) => (row.area !== undefined && row.area !== null) ? row.area.toLocaleString() : "-",
     },
   ];
 

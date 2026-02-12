@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye } from "lucide-react";
 import apiService from "@/services/api";
 import SupervisorAdminLayout from "@/components/SupervisorAdminLayout";
 import ModernTable from "@/components/ModernTable";
@@ -53,6 +53,8 @@ export default function AdminSlumsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [slumToDelete, setSlumToDelete] = useState<Slum | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [slumToEdit, setSlumToEdit] = useState<Slum | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [user, setUser] = useState<User | null>(null); // Added user state
 
@@ -104,8 +106,12 @@ export default function AdminSlumsPage() {
   };
 
   const handleEditSlum = (slum: Slum) => {
-    setSelectedSlum(slum);
-    setIsFormOpen(true);
+    setSlumToEdit(slum);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleViewSlum = (slum: Slum) => {
+    router.push(`/admin/slums/${slum._id}`);
   };
 
   const handleDeleteClick = (slum: Slum) => {
@@ -132,6 +138,15 @@ export default function AdminSlumsPage() {
       alert("Error deleting slum");
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleConfirmEdit = () => {
+    if (slumToEdit) {
+      setSelectedSlum(slumToEdit);
+      setIsFormOpen(true);
+      setIsEditDialogOpen(false);
+      setSlumToEdit(null);
     }
   };
 
@@ -168,7 +183,7 @@ export default function AdminSlumsPage() {
 
   if (loading) {
     return (
-      <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
+      <SupervisorAdminLayout role="ADMIN" username={user?.username || user?.username}>
         <div className="flex items-center justify-center min-h-96">
           <div className="text-2xl font-semibold text-slate-400">
             Loading slums...
@@ -179,7 +194,7 @@ export default function AdminSlumsPage() {
   }
 
   return (
-    <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
+    <SupervisorAdminLayout role="ADMIN" username={user?.username || user?.username}>
       <div className="space-y-6">
         {/* Header Section */}
         <div className="flex justify-between items-center">
@@ -215,13 +230,13 @@ export default function AdminSlumsPage() {
               header: "Slum ID",
               accessorKey: "slumId",
               sortable: true,
-              className: "font-medium text-white text-center",
+              className: "font-medium text-white text-left",
             },
             {
               header: "Name",
               accessorKey: "slumName",
               sortable: true,
-              className: "font-medium text-white",
+              className: "w-40",
             },
             {
               header: "Zone",
@@ -232,7 +247,7 @@ export default function AdminSlumsPage() {
                 return 'N/A';
               },
               sortable: true,
-              className: "text-center",
+              className: "text-left",
             },
             {
               header: "Ward",
@@ -243,12 +258,13 @@ export default function AdminSlumsPage() {
                 return row.ward?.toString() || 'N/A';
               },
               sortable: true,
-              className: "text-center",
+              className: "text-left w-50",
             },
             {
               header: "Village",
               accessorKey: "village",
               sortable: true,
+              className: "w-40",
             },
             {
               header: "Type",
@@ -281,14 +297,27 @@ export default function AdminSlumsPage() {
               accessorKey: (row) => (
                 <div className="flex gap-2 justify-left" onClick={(e) => e.stopPropagation()}>
                   <button
-                    onClick={() => handleEditSlum(row)}
+                    onClick={() => handleViewSlum(row)}
+                    className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded-md transition-colors"
+                    title="View"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditSlum(row);
+                    }}
                     className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDeleteClick(row)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(row);
+                    }}
                     className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-colors"
                     title="Delete"
                   >
@@ -307,6 +336,7 @@ export default function AdminSlumsPage() {
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
           slum={selectedSlum}
+          role={user?.role} // Pass the user's role to determine permissions
         />
 
         <DeleteConfirmationDialog
@@ -319,6 +349,18 @@ export default function AdminSlumsPage() {
             setSlumToDelete(null);
           }}
           loading={deleteLoading}
+        />
+
+        <DeleteConfirmationDialog
+          isOpen={isEditDialogOpen}
+          title="Edit Slum"
+          message={`Are you sure you want to edit "${slumToEdit?.slumName}"?`}
+          onConfirm={handleConfirmEdit}
+          onCancel={() => {
+            setIsEditDialogOpen(false);
+            setSlumToEdit(null);
+          }}
+          loading={false}
         />
       </div>
     </SupervisorAdminLayout>

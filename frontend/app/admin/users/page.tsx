@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SupervisorAdminLayout from "@/components/SupervisorAdminLayout";
 import apiService from "@/services/api";
-import { Plus, Trash2, Edit2, Eye } from "lucide-react";
+import { Plus, Trash2, Edit2} from "lucide-react";
+import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
 
 interface User {
   _id: string;
@@ -45,6 +46,11 @@ export default function AdminUsersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [user, setUser] = useState<User | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     // Verify user is admin
@@ -105,14 +111,23 @@ export default function AdminUsersPage() {
   };
 
   const handleEditUser = (user: User) => {
-    setEditingUser(user);
-    setEditFormData({
-      name: user.name,
-      username: user.username,
-      password: '', // Don't expose existing password for security
-      role: user.role,
-      isActive: user.isActive,
-    });
+    setUserToEdit(user);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleConfirmEdit = () => {
+    if (userToEdit) {
+      setEditingUser(userToEdit);
+      setEditFormData({
+        name: userToEdit.name,
+        username: userToEdit.username,
+        password: '', // Don't expose existing password for security
+        role: userToEdit.role,
+        isActive: userToEdit.isActive,
+      });
+      setIsEditDialogOpen(false);
+      setUserToEdit(null);
+    }
   };
 
   const handleUpdateUser = async (e: React.FormEvent) => {
@@ -151,21 +166,33 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) {
-      return;
-    }
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setIsDeleteDialogOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
+    setDeleteLoading(true);
     try {
-      const response = await apiService.deleteUser(userId);
+      const response = await apiService.deleteUser(userToDelete._id);
       if (response.success) {
         setMessage("User deleted successfully");
+        setIsDeleteDialogOpen(false);
+        setUserToDelete(null);
         loadUsers();
       } else {
         setMessage(`Error: ${response.error || "Failed to delete user"}`);
+        setIsDeleteDialogOpen(false);
+        setUserToDelete(null);
       }
     } catch (error) {
       setMessage(`Error: ${(error as Error).message || "Failed to delete user"}`);
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -482,14 +509,20 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="py-4 px-4 text-sm flex gap-2">
                         <button 
-                          onClick={() => handleEditUser(user)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditUser(user);
+                          }}
                           className="text-cyan-400 hover:text-cyan-300 transition-colors"
                           title="Edit"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => handleDeleteUser(user._id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(user);
+                          }}
                           className="text-red-400 hover:text-red-300 transition-colors"
                           title="Delete"
                         >
@@ -503,6 +536,32 @@ export default function AdminUsersPage() {
             </table>
           </div>
         </div>
+
+        {/* Edit Confirmation Dialog */}
+        <DeleteConfirmationDialog
+          isOpen={isEditDialogOpen}
+          title="Edit User"
+          message={`Are you sure you want to edit "${userToEdit?.name}"?`}
+          onConfirm={handleConfirmEdit}
+          onCancel={() => {
+            setIsEditDialogOpen(false);
+            setUserToEdit(null);
+          }}
+          loading={false}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteConfirmationDialog
+          isOpen={isDeleteDialogOpen}
+          title="Delete User"
+          message={`Are you sure you want to delete "${userToDelete?.name}"? This action cannot be undone.`}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            setIsDeleteDialogOpen(false);
+            setUserToDelete(null);
+          }}
+          loading={deleteLoading}
+        />
       </div>
     </SupervisorAdminLayout>
   );

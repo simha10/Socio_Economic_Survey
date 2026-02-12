@@ -19,11 +19,38 @@ interface District {
   state: string;
 }
 
+interface Slum {
+  _id?: string;
+  slumName?: string;
+  slumId?: number;
+  stateCode?: string;
+  distCode?: string;
+  cityTownCode?: string;
+  city?: string;
+  ward?: string | number | {
+    _id?: string;
+    number?: string;
+    name?: string;
+    zone?: string;
+  }; // Can be object or number
+  slumType?: string;
+  village?: string;
+  landOwnership?: string;
+  totalHouseholds?: number;
+  area?: number;
+  surveyStatus?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  name?: string;
+}
+
 interface SlumFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  slum?: any;
+  slum?: Slum | null; // Allow null for creating new slums
+  role?: string; // Add role prop to determine permissions
 }
 
 export default function SlumForm({
@@ -31,6 +58,7 @@ export default function SlumForm({
   onClose,
   onSuccess,
   slum,
+  role = "SUPERVISOR", // Default to supervisor permissions
 }: SlumFormProps) {
   const [formData, setFormData] = useState({
     name: "",
@@ -124,7 +152,7 @@ export default function SlumForm({
     setLoading(true);
     try {
       let response;
-      if (slum) {
+      if (slum && slum._id) {
         response = await apiService.updateSlum(slum._id, formData);
       } else {
         response = await apiService.createSlum(formData);
@@ -163,6 +191,9 @@ export default function SlumForm({
   };
 
   if (!isOpen) return null;
+
+  // Determine if the user has admin permissions
+  const isAdmin = role === "ADMIN";
 
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -263,8 +294,8 @@ export default function SlumForm({
                 value={formData.slumType}
                 onChange={handleChange}
                 required
-                readOnly
-                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                readOnly={!isAdmin} // Allow admin to edit
+                className={isAdmin ? "" : "bg-slate-800/50 cursor-not-allowed opacity-75"}
               />
               <Input
                 label="Village"
@@ -291,8 +322,8 @@ export default function SlumForm({
                 onChange={handleChange}
                 placeholder="0"
                 min="0"
-                disabled
-                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                disabled={!isAdmin} // Allow admin to edit
+                className={isAdmin ? "" : "bg-slate-800/50 cursor-not-allowed opacity-75"}
               />
             </div>
             
@@ -306,8 +337,8 @@ export default function SlumForm({
                 placeholder="0"
                 min="0"
                 step="0.01"
-                disabled
-                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                disabled={!isAdmin} // Allow admin to edit
+                className={isAdmin ? "" : "bg-slate-800/50 cursor-not-allowed opacity-75"}
               />
             </div>
             

@@ -36,9 +36,7 @@ interface User {
 interface Slum {
   _id: string;
   name: string;
-  location: string;
-  city: string;
-  ward: string;
+  cityTownCode: string;
   surveyStatus?: string;
   totalHouseholds?: number;
 }
@@ -58,15 +56,17 @@ export default function AdminDashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
+    totalSupervisors: 0,
+    totalSurveyors: 0,
     totalSlums: 0,
     totalAssignments: 0,
-    activeAssignments: 0,
-    completedAssignments: 0,
-    inProgressAssignments: 0,
+    activeAssignments: 0,  // Add this for In Progress assignments
     pendingAssignments: 0,
-    totalSurveyors: 0,
+    completedAssignments: 0,
+    inProgressSlumSurveys: 0,
     completedSlumSurveys: 0,
-    totalHouseholdSurveys: 0,
+    totalHouseholds: 0,
+    averageHouseholdsPerSlum: 0,
   });
 
   useEffect(() => {
@@ -97,6 +97,9 @@ export default function AdminDashboardPage() {
       const surveyorsCount = usersResponse.success && usersResponse.data 
         ? usersResponse.data.filter((user: User) => user.role === 'SURVEYOR').length 
         : 0;
+      const supervisorsCount = usersResponse.success && usersResponse.data
+        ? usersResponse.data.filter((user: User) => user.role === 'SUPERVISOR').length
+        : 0;
 
       // Fetch slums count
       const slumsResponse = await apiService.getAllSlums(1, 10, undefined, true); // Load all slums for count
@@ -105,49 +108,53 @@ export default function AdminDashboardPage() {
       // Fetch assignments count
       const assignmentsResponse = await apiService.getAllAssignments();
       let totalAssignments = 0;
-      let activeAssignmentsCount = 0;
       let completedAssignmentsCount = 0;
-      let inProgressAssignmentsCount = 0;
-      let pendingAssignmentsCount = 0;
-      let uniqueSlumsCount = 0;
+      let activeAssignmentsCount = 0;  // Active = not completed
+      let totalHouseholdsCount = 0;
       let completedSlumSurveysCount = 0;
-      let totalHouseholdSurveysCount = 0;
+      let inProgressSlumSurveysCount = 0;
+      let pendingAssignmentsCount = 0; // Unassigned slums
       
       if (assignmentsResponse.success && assignmentsResponse.data) {
         const assignments = assignmentsResponse.data;
         totalAssignments = assignments.length;
-        activeAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'ACTIVE').length;
         completedAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'COMPLETED').length;
-        inProgressAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'IN PROGRESS').length;
-        pendingAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'PENDING' || a.status === 'ASSIGNED').length;
-        
-        // Count unique slums with assignments
-        uniqueSlumsCount = new Set(assignments.map((a: Assignment) => a.slum?._id)).size;
-        
-        // Count completed slum surveys
-        completedSlumSurveysCount = assignments.filter((a: Assignment) => 
-          a.slum && a.slum.surveyStatus === 'COMPLETED'
-        ).length;
-        
-        // Count total household surveys
-        for (const assignment of assignments) {
-          if (assignment.slum && assignment.slum.totalHouseholds) {
-            totalHouseholdSurveysCount += assignment.slum.totalHouseholds;
+        activeAssignmentsCount = assignments.filter((a: Assignment) => a.status !== 'COMPLETED').length;  // Active = not completed
+      }
+      
+      // Calculate pending assignments (unassigned slums)
+      pendingAssignmentsCount = Math.max(0, slumsCount - totalAssignments);
+
+      // Process slums for survey status counts and household counts
+      if (slumsResponse.success && slumsResponse.data) {
+        for (const slum of slumsResponse.data) {
+          if (slum.surveyStatus === 'COMPLETED') {
+            completedSlumSurveysCount++;
+          } else if (slum.surveyStatus === 'IN PROGRESS') {
+            inProgressSlumSurveysCount++;
+          }
+          
+          if (slum.totalHouseholds) {
+            totalHouseholdsCount += slum.totalHouseholds;
           }
         }
       }
 
       setDashboardStats({
         totalUsers: usersCount,
-        totalSlums: slumsCount, // Use actual database count
+        totalSupervisors: supervisorsCount,
+        totalSurveyors: surveyorsCount,
+        totalSlums: slumsCount,
         totalAssignments: totalAssignments,
         activeAssignments: activeAssignmentsCount,
-        completedAssignments: completedAssignmentsCount,
-        inProgressAssignments: inProgressAssignmentsCount,
         pendingAssignments: pendingAssignmentsCount,
-        totalSurveyors: surveyorsCount,
+        completedAssignments: completedAssignmentsCount,
+        inProgressSlumSurveys: inProgressSlumSurveysCount,
         completedSlumSurveys: completedSlumSurveysCount,
-        totalHouseholdSurveys: totalHouseholdSurveysCount,
+        totalHouseholds: totalHouseholdsCount,
+        averageHouseholdsPerSlum: slumsCount > 0 
+          ? Math.round(totalHouseholdsCount / slumsCount)
+          : 0,
       });
 
       // Set placeholder stats for backward compatibility
@@ -165,8 +172,8 @@ export default function AdminDashboardPage() {
           color: "from-purple-600 to-purple-700",
         },
         {
-          title: "Active Assignments",
-          value: activeAssignmentsCount,
+          title: "Total Assignments",
+          value: totalAssignments,
           icon: <GitBranch className="w-6 h-6" />,
           color: "from-cyan-600 to-cyan-700",
         },
@@ -233,22 +240,22 @@ export default function AdminDashboardPage() {
               colorClass: "text-blue-500 bg-blue-500/20",
             },
             {
-              label: "Total Slums",
-              value: dashboardStats.totalSlums,
-              icon: <MapPin className="w-5 h-5" />,
+              label: "Total Supervisors",
+              value: dashboardStats.totalSupervisors,
+              icon: <Users className="w-5 h-5" />,
               colorClass: "text-purple-500 bg-purple-500/20",
             },
             {
-              label: "Total Assignments",
-              value: dashboardStats.totalAssignments,
-              icon: <GitBranch className="w-5 h-5" />,
-              colorClass: "text-cyan-500 bg-cyan-500/20",
-            },
-            {
-              label: "Surveyors",
+              label: "Total Surveyors",
               value: dashboardStats.totalSurveyors,
               icon: <Users className="w-5 h-5" />,
               colorClass: "text-indigo-500 bg-indigo-500/20",
+            },
+            {
+              label: "Total Slums",
+              value: dashboardStats.totalSlums,
+              icon: <MapPin className="w-5 h-5" />,
+              colorClass: "text-cyan-500 bg-cyan-500/20",
             },
           ]}
         />
@@ -259,10 +266,22 @@ export default function AdminDashboardPage() {
         <DashboardStats
           stats={[
             {
-              label: "Active Assignments",
-              value: dashboardStats.activeAssignments,
+              label: "Total Assignments",
+              value: dashboardStats.totalAssignments,
               icon: <GitBranch className="w-5 h-5" />,
               colorClass: "text-amber-500 bg-amber-500/20",
+            },
+            {
+              label: "Active Assignments",
+              value: dashboardStats.activeAssignments,
+              icon: <Clock className="w-5 h-5" />,
+              colorClass: "text-yellow-500 bg-yellow-500/20",
+            },
+            {
+              label: "Pending Assignments",
+              value: dashboardStats.pendingAssignments,
+              icon: <Clock className="w-5 h-5" />,
+              colorClass: "text-slate-500 bg-slate-500/20",
             },
             {
               label: "Completed Assignments",
@@ -274,18 +293,6 @@ export default function AdminDashboardPage() {
                 : "0% completion rate",
               trend: "up"
             },
-            {
-              label: "In Progress",
-              value: dashboardStats.inProgressAssignments,
-              icon: <Clock className="w-5 h-5" />,
-              colorClass: "text-yellow-500 bg-yellow-500/20",
-            },
-            {
-              label: "Pending Assignments",
-              value: dashboardStats.pendingAssignments,
-              icon: <Clock className="w-5 h-5" />,
-              colorClass: "text-slate-500 bg-slate-500/20",
-            },
           ]}
         />
       </div>
@@ -295,30 +302,26 @@ export default function AdminDashboardPage() {
         <DashboardStats
           stats={[
             {
+              label: "In Progress Slum Surveys",
+              value: dashboardStats.inProgressSlumSurveys,
+              icon: <Clock className="w-5 h-5" />,
+              colorClass: "text-yellow-500 bg-yellow-500/20",
+            },
+            {
               label: "Completed Slum Surveys",
               value: dashboardStats.completedSlumSurveys,
               icon: <CheckCircle className="w-5 h-5" />,
               colorClass: "text-emerald-500 bg-emerald-500/20",
             },
             {
-              label: "Total Household Surveys",
-              value: dashboardStats.totalHouseholdSurveys,
+              label: "Total Households",
+              value: dashboardStats.totalHouseholds,
               icon: <Users className="w-5 h-5" />,
               colorClass: "text-rose-500 bg-rose-500/20",
             },
             {
-              label: "Survey Completion Rate",
-              value: dashboardStats.totalAssignments > 0 
-                ? Math.round((dashboardStats.completedAssignments / dashboardStats.totalAssignments) * 100)
-                : 0,
-              icon: <BarChart3 className="w-5 h-5" />,
-              colorClass: "text-blue-500 bg-blue-500/20",
-            },
-            {
               label: "Average Households per Slum",
-              value: dashboardStats.totalSlums > 0 
-                ? Math.round(dashboardStats.totalHouseholdSurveys / dashboardStats.totalSlums)
-                : 0,
+              value: dashboardStats.averageHouseholdsPerSlum,
               icon: <Building2 className="w-5 h-5" />,
               colorClass: "text-violet-500 bg-violet-500/20",
             },
