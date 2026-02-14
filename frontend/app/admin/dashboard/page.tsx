@@ -9,9 +9,7 @@ import {
   Users,
   Building2,
   GitBranch,
-  ArrowRight,
   RefreshCw,
-  TrendingUp,
   MapPin,
   CheckCircle,
   Clock,
@@ -66,7 +64,7 @@ export default function AdminDashboardPage() {
     inProgressSlumSurveys: 0,
     completedSlumSurveys: 0,
     totalHouseholds: 0,
-    averageHouseholdsPerSlum: 0,
+    completedHouseholds: 0,
   });
 
   useEffect(() => {
@@ -111,6 +109,7 @@ export default function AdminDashboardPage() {
       let completedAssignmentsCount = 0;
       let activeAssignmentsCount = 0;  // Active = not completed
       let totalHouseholdsCount = 0;
+      let completedHouseholdsCount = 0;
       let completedSlumSurveysCount = 0;
       let inProgressSlumSurveysCount = 0;
       let pendingAssignmentsCount = 0; // Unassigned slums
@@ -120,6 +119,13 @@ export default function AdminDashboardPage() {
         totalAssignments = assignments.length;
         completedAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'COMPLETED').length;
         activeAssignmentsCount = assignments.filter((a: Assignment) => a.status !== 'COMPLETED').length;  // Active = not completed
+        
+        // Calculate completed households from assignments
+        for (const assignment of assignments) {
+          if (assignment.householdSurveyProgress) {
+            completedHouseholdsCount += assignment.householdSurveyProgress.completed;
+          }
+        }
       }
       
       // Calculate pending assignments (unassigned slums)
@@ -152,9 +158,7 @@ export default function AdminDashboardPage() {
         inProgressSlumSurveys: inProgressSlumSurveysCount,
         completedSlumSurveys: completedSlumSurveysCount,
         totalHouseholds: totalHouseholdsCount,
-        averageHouseholdsPerSlum: slumsCount > 0 
-          ? Math.round(totalHouseholdsCount / slumsCount)
-          : 0,
+        completedHouseholds: completedHouseholdsCount,
       });
 
       // Set placeholder stats for backward compatibility
@@ -320,9 +324,9 @@ export default function AdminDashboardPage() {
               colorClass: "text-rose-500 bg-rose-500/20",
             },
             {
-              label: "Average Households per Slum",
-              value: dashboardStats.averageHouseholdsPerSlum,
-              icon: <Building2 className="w-5 h-5" />,
+              label: "Completed Households",
+              value: dashboardStats.completedHouseholds,
+              icon: <CheckCircle className="w-5 h-5" />,
               colorClass: "text-violet-500 bg-violet-500/20",
             },
           ]}

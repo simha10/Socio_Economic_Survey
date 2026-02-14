@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import SupervisorAdminLayout from "@/components/SupervisorAdminLayout";
 import DashboardStats from "@/components/DashboardStats";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { Users, CheckCircle, Clock, MapPin, FileText, BarChart3, Plus, Eye, TrendingUp, Calendar, RefreshCw } from "lucide-react";
+import { Users, CheckCircle, Clock, MapPin, TrendingUp, Calendar, RefreshCw } from "lucide-react";
 import apiService from "@/services/api";
 
 interface User {
@@ -37,8 +37,8 @@ interface DashboardStats {
   totalSurveyors: number;
   completedSlumSurveys: number;
   totalHouseholdSurveys: number;
+  totalHouseholds: number;
   inProgressSlumSurveys: number;
-  totalInProgressHouseholdSurveys: number;
 }
 
 export default function SupervisorDashboardPage() {
@@ -55,8 +55,8 @@ export default function SupervisorDashboardPage() {
     totalSurveyors: 0,
     completedSlumSurveys: 0,
     totalHouseholdSurveys: 0,
+    totalHouseholds: 0,
     inProgressSlumSurveys: 0,
-    totalInProgressHouseholdSurveys: 0,
   });
 
   useEffect(() => {
@@ -106,23 +106,15 @@ export default function SupervisorDashboardPage() {
           a.slumSurveyStatus === 'IN PROGRESS'
         ).length;
         
-        // Count completed household surveys
+        // Count completed household surveys and total households
         let totalCompletedHouseholdSurveys = 0;
+        let totalHouseholdsCount = 0;
         for (const assignment of assignments) {
           if (assignment.householdSurveyProgress) {
             totalCompletedHouseholdSurveys += assignment.householdSurveyProgress.completed;
+            totalHouseholdsCount += assignment.householdSurveyProgress.total;
           } else if (assignment.householdSurveyCount) {
             totalCompletedHouseholdSurveys += assignment.householdSurveyCount;
-          }
-        }
-        
-        // Count in-progress household surveys (total - completed)
-        let totalInProgressHouseholdSurveys = 0;
-        for (const assignment of assignments) {
-          if (assignment.householdSurveyProgress) {
-            // In progress = total - completed
-            const inProgress = assignment.householdSurveyProgress.total - assignment.householdSurveyProgress.completed;
-            totalInProgressHouseholdSurveys += Math.max(0, inProgress);
           }
         }
         
@@ -136,8 +128,8 @@ export default function SupervisorDashboardPage() {
             usersResponse.data?.filter((u: User) => u.role === 'SURVEYOR').length : 0,
           completedSlumSurveys,
           totalHouseholdSurveys: totalCompletedHouseholdSurveys,
-          inProgressSlumSurveys, // Add new property
-          totalInProgressHouseholdSurveys, // Add new property
+          totalHouseholds: totalHouseholdsCount,
+          inProgressSlumSurveys,
         });
       }
       
@@ -252,16 +244,16 @@ export default function SupervisorDashboardPage() {
               colorClass: "text-amber-500 bg-amber-500/20",
             },
             {
+              label: "Total Households",
+              value: dashboardStats.totalHouseholds,
+              icon: <Users className="w-5 h-5" />,
+              colorClass: "text-slate-500 bg-slate-500/20",
+            },
+            {
               label: "Completed Household Surveys",
               value: dashboardStats.totalHouseholdSurveys,
               icon: <CheckCircle className="w-5 h-5" />,
               colorClass: "text-emerald-500 bg-emerald-500/20",
-            },
-            {
-              label: "In Progress Household Surveys",
-              value: dashboardStats.totalInProgressHouseholdSurveys,
-              icon: <Clock className="w-5 h-5" />,
-              colorClass: "text-slate-500 bg-slate-500/20",
             },
           ]}
         />
@@ -270,4 +262,3 @@ export default function SupervisorDashboardPage() {
     </SupervisorAdminLayout>
   );
 }
-
