@@ -30,11 +30,19 @@ interface Slum {
   updatedAt: string;
 }
 
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  role: string;
+}
+
 export default function AdminSlumDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [slum, setSlum] = useState<Slum | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     // Minimal user verification
@@ -55,6 +63,7 @@ export default function AdminSlumDetailPage() {
       router.push("/login");
       return;
     }
+    setUser(JSON.parse(userStr));
   }, [router]);
 
   useEffect(() => {
@@ -87,7 +96,7 @@ export default function AdminSlumDetailPage() {
 
   if (loading) {
     return (
-      <SupervisorAdminLayout role="ADMIN">
+      <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
         <div className="flex items-center justify-center min-h-96">
           <div className="text-2xl font-semibold text-slate-400">
             Loading slum details...
@@ -99,7 +108,7 @@ export default function AdminSlumDetailPage() {
 
   if (!slum) {
     return (
-      <SupervisorAdminLayout role="ADMIN">
+      <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
         <div className="flex items-center justify-center min-h-96">
           <div className="text-2xl font-semibold text-slate-400">
             Slum not found
@@ -110,7 +119,7 @@ export default function AdminSlumDetailPage() {
   }
 
   return (
-    <SupervisorAdminLayout role="ADMIN">
+    <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white">{slum.slumName}</h1>

@@ -30,13 +30,36 @@ interface Slum {
   updatedAt: string;
 }
 
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  role: string;
+}
+
 export default function SupervisorSlumDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [slum, setSlum] = useState<Slum | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+
+      const userStr = localStorage.getItem("user");
+    if (!userStr) {
+      router.push("/login");
+      return;
+    }
+
+    const userData = JSON.parse(userStr);
+    if (userData?.role !== "SUPERVISOR") {
+      router.push(`/${userData?.role?.toLowerCase()}/dashboard`);
+      return;
+    }
+
+    setUser(userData);
+
     const fetchSlum = async () => {
       try {
         let slumId: string | undefined;
@@ -64,11 +87,11 @@ export default function SupervisorSlumDetailPage() {
     if (id) {
       fetchSlum();
     }
-  }, [id]);
+  }, [id, router]);
 
   if (loading) {
     return (
-      <SupervisorAdminLayout role="SUPERVISOR">
+      <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
         <div className="flex items-center justify-center min-h-96">
           <div className="text-2xl font-semibold text-slate-400">
             Loading slum details...
@@ -80,7 +103,7 @@ export default function SupervisorSlumDetailPage() {
 
   if (!slum) {
     return (
-      <SupervisorAdminLayout role="SUPERVISOR">
+      <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
         <div className="flex items-center justify-center min-h-96">
           <div className="text-2xl font-semibold text-slate-400">
             Slum not found
@@ -91,7 +114,7 @@ export default function SupervisorSlumDetailPage() {
   }
 
   return (
-    <SupervisorAdminLayout role="SUPERVISOR">
+    <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white">{slum.slumName}</h1>
