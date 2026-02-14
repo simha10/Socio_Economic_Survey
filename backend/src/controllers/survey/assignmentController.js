@@ -264,6 +264,11 @@ const getMyAssignments = async (req, res) => {
         total: totalHouseholds
       };
 
+      // Persist the householdSurveyProgress to the Assignment model
+      // This ensures the progress is saved and available for future fetches
+      assignment.householdSurveyProgress = householdSurveyProgress;
+      await assignment.save();
+
       return {
         ...assignment.toObject(),
         slumSurveyStatus,

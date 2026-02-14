@@ -168,6 +168,63 @@ async function updateAssignmentStatusFromSlumSurvey(slumSurveyId) {
 }
 
 /**
+ * Update householdSurveyProgress in Assignment model
+ * @param {string} slumId - The ID of the slum
+ * @param {string} surveyorId - The ID of the surveyor
+ * @returns {Promise<boolean>} - Whether the update was successful
+ */
+async function updateHouseholdSurveyProgress(slumId, surveyorId) {
+  try {
+    console.log(`[STATUS_SYNC] Updating household survey progress for slum: ${slumId}, surveyor: ${surveyorId}`);
+
+    // Find the assignment
+    const assignment = await Assignment.findOne({
+      slum: slumId,
+      surveyor: surveyorId
+    });
+
+    if (!assignment) {
+      console.error(`[STATUS_SYNC] Assignment not found for slum: ${slumId} and surveyor: ${surveyorId}`);
+      return false;
+    }
+
+    // Get the slum to get totalHouseholds
+    const slum = await Slum.findById(slumId);
+    if (!slum) {
+      console.error(`[STATUS_SYNC] Slum not found: ${slumId}`);
+      return false;
+    }
+
+    // Count submitted/completed household surveys for this slum and surveyor
+    const householdSurveys = await HouseholdSurvey.find({
+      slum: slumId,
+      surveyor: surveyorId
+    });
+
+    const completedCount = householdSurveys.filter(hs =>
+      hs.surveyStatus === 'SUBMITTED' || hs.surveyStatus === 'COMPLETED'
+    ).length;
+
+    const totalCount = slum.totalHouseholds || 0;
+
+    // Update the householdSurveyProgress in Assignment
+    assignment.householdSurveyProgress = {
+      completed: completedCount,
+      total: totalCount
+    };
+
+    await assignment.save();
+
+    console.log(`[STATUS_SYNC] Updated householdSurveyProgress: ${completedCount}/${totalCount} for assignment: ${assignment._id}`);
+
+    return true;
+  } catch (error) {
+    console.error(`[STATUS_SYNC] Error updating household survey progress:`, error);
+    return false;
+  }
+}
+
+/**
  * Update statuses when household survey is submitted
  * @param {string} householdSurveyId - The ID of the household survey
  * @returns {Promise<boolean>} - Whether the update was successful
@@ -184,6 +241,10 @@ async function updateStatusesFromHouseholdSurvey(householdSurveyId) {
     }
 
     const slumId = householdSurvey.slum._id;
+    const surveyorId = householdSurvey.surveyor;
+
+    // Update the householdSurveyProgress in Assignment
+    await updateHouseholdSurveyProgress(slumId, surveyorId);
 
     // Update the slum status based on household survey progress
     const result = await updateSlumStatus(slumId);
@@ -350,9 +411,14 @@ async function initializeAssignmentStatus(assignmentId) {
     assignment.slumSurveyStatus = 'NOT STARTED';
     // Set initial main status to PENDING
     assignment.status = 'PENDING';
+    // Initialize household survey progress with total households from slum
+    assignment.householdSurveyProgress = {
+      completed: 0,
+      total: assignment.slum?.totalHouseholds || 0
+    };
     await assignment.save();
     
-    console.log(`[STATUS_SYNC] Assignment initialized with slumSurveyStatus: NOT STARTED and status: PENDING`);
+    console.log(`[STATUS_SYNC] Assignment initialized with slumSurveyStatus: NOT STARTED, status: PENDING, householdSurveyProgress: 0/${assignment.slum?.totalHouseholds || 0}`);
     return true;
   } catch (error) {
     console.error(`[STATUS_SYNC] Error initializing assignment status ${assignmentId}:`, error);
@@ -365,5 +431,6 @@ module.exports = {
   updateAssignmentStatusFromSlumSurvey,
   updateStatusesFromHouseholdSurvey,
   updateAssignmentMainStatus,
-  initializeAssignmentStatus
+  initializeAssignmentStatus,
+  updateHouseholdSurveyProgress
 };

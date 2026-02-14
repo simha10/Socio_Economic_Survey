@@ -57,6 +57,8 @@ export default function SurveyorDashboard() {
     assignmentId: string;
     slumName: string;
     surveyStatus?: "DRAFT" | "IN PROGRESS" | "SUBMITTED" | "COMPLETED";
+    progressCompleted?: number;
+    progressTotal?: number;
   } | null>(null);
   const [surveyData, setSurveyData] = useState<Record<string, any>>({});
   const [showEditConfirm, setShowEditConfirm] = useState(false);
@@ -133,8 +135,10 @@ export default function SurveyorDashboard() {
   const handleHouseholdSurveyClick = (assignmentId: string, slumName: string) => {
     // Check if all households are completed
     const assignment = assignments.find(a => a._id === assignmentId);
-    if (assignment?.householdSurveyProgress) {
-      const { completed, total } = assignment.householdSurveyProgress;
+    const progress = assignment?.householdSurveyProgress;
+
+    if (progress) {
+      const { completed, total } = progress;
       if (total > 0 && completed >= total) {
         setShowCompletionWarning(true);
         return;
@@ -144,7 +148,9 @@ export default function SurveyorDashboard() {
     setPendingSurvey({
       type: 'household',
       assignmentId,
-      slumName
+      slumName,
+      progressCompleted: progress?.completed,
+      progressTotal: progress?.total
     });
     setShowConfirmation(true);
   };
@@ -462,6 +468,8 @@ export default function SurveyorDashboard() {
         surveyType={pendingSurvey?.type || 'slum'}
         slumName={pendingSurvey?.slumName || ''}
         surveyStatus={pendingSurvey?.surveyStatus}
+        progressCompleted={pendingSurvey?.progressCompleted}
+        progressTotal={pendingSurvey?.progressTotal}
         onConfirm={confirmSurvey}
         onCancel={cancelSurvey}
         onPreview={previewSurvey}
