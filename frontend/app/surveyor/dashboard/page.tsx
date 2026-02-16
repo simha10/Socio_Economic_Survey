@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import SurveyorLayout from "@/components/SurveyorLayout";
 import DashboardStats from "@/components/DashboardStats";
 import apiService from "@/services/api";
-import { MapPin, Users, CheckCircle, Clock, ArrowRight, CircleEllipsis, ListTodo } from "lucide-react";
+import { MapPin, Users, CheckCircle, CircleEllipsis, ListTodo } from "lucide-react";
 import SurveyConfirmationDialog from "@/components/SurveyConfirmationDialog";
 import EditConfirmationDialog from "@/components/EditConfirmationDialog";
 import HHSCompletionWarningModal from "@/components/HHSCompletionWarningModal";
@@ -297,7 +297,7 @@ export default function SurveyorDashboard() {
             <h3 className="text-lg font-bold text-white">Active Assignments</h3>
             <button
               onClick={() => router.push("/surveyor/slums")}
-              className="text-xs sm:text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium self-start sm:self-auto"
+              className="text-xs sm:text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium self-start sm:self-auto cursor-pointer"
             >
               View all slums →
             </button>
@@ -434,7 +434,7 @@ export default function SurveyorDashboard() {
                     onClick={() =>
                       handleSlumSurveyClick(assignment._id, assignment.slum?.slumName || "Unknown Slum")
                     }
-                    className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-all"
+                    className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
                   >
                     Slum Survey
                   </button>
@@ -442,7 +442,7 @@ export default function SurveyorDashboard() {
                     onClick={() =>
                       handleHouseholdSurveyClick(assignment._id, assignment.slum?.slumName || "Unknown Slum")
                     }
-                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-900/20"
+                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-900/20 cursor-pointer"
                   >
                     Household Survey
                   </button>
@@ -453,7 +453,7 @@ export default function SurveyorDashboard() {
                  assignment.householdSurveyProgress.total > 0 && 
                  assignment.householdSurveyProgress.completed >= assignment.householdSurveyProgress.total && (
                   <div className="mt-4 col-span-1 md:col-span-2 text-xs text-center text-amber-300 font-medium p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
-                    {assignment.householdSurveyProgress.completed} of {assignment.householdSurveyProgress.total} HHS are done please update the status
+                    {assignment.householdSurveyProgress.completed} of {assignment.householdSurveyProgress.total} Household Surveys are done.
                   </div>
                 )}
               </div>

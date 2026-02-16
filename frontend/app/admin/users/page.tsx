@@ -216,7 +216,7 @@ export default function AdminUsersPage() {
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white py-2 px-4 rounded-lg font-medium flex items-center gap-2 transition-all"
+            className="bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white py-2 px-4 rounded-lg font-medium flex items-center gap-2 transition-all cursor-pointer"
           >
             <Plus className="w-5 h-5" /> Create User
           </button>
@@ -313,14 +313,14 @@ export default function AdminUsersPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all"
+                  className="bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
                 >
                   {submitting ? "Creating..." : "Create User"}
                 </button>
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg font-medium transition-all"
+                  className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -432,14 +432,14 @@ export default function AdminUsersPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all"
+                  className="bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
                 >
                   {submitting ? "Updating..." : "Update User"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
-                  className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg font-medium transition-all"
+                  className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -513,7 +513,7 @@ export default function AdminUsersPage() {
                             e.stopPropagation();
                             handleEditUser(user);
                           }}
-                          className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                          className="text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
                           title="Edit"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -523,7 +523,7 @@ export default function AdminUsersPage() {
                             e.stopPropagation();
                             handleDeleteUser(user);
                           }}
-                          className="text-red-400 hover:text-red-300 transition-colors"
+                          className="text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />

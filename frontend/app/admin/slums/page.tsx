@@ -206,7 +206,7 @@ export default function AdminSlumsPage() {
           </div>
           <Button
             onClick={handleCreateSlum}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Create New Slum
@@ -298,7 +298,7 @@ export default function AdminSlumsPage() {
                 <div className="flex gap-2 justify-left" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleViewSlum(row)}
-                    className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded-md transition-colors"
+                    className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded-md transition-colors cursor-pointer"
                     title="View"
                   >
                     <Eye className="w-4 h-4" />
@@ -308,7 +308,7 @@ export default function AdminSlumsPage() {
                       e.stopPropagation();
                       handleEditSlum(row);
                     }}
-                    className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded-md transition-colors"
+                    className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded-md transition-colors cursor-pointer"
                     title="Edit"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -318,7 +318,7 @@ export default function AdminSlumsPage() {
                       e.stopPropagation();
                       handleDeleteClick(row);
                     }}
-                    className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-colors"
+                    className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-colors cursor-pointer"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />

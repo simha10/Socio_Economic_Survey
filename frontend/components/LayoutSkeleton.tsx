@@ -44,7 +44,7 @@ export default function LayoutSkeleton({ children }: LayoutSkeletonProps) {
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-200 font-sans overflow-hidden">
       {/* Sidebar: Fixed width, sticky on desktop */}
-      <aside className="w-64 flex-shrink-0 border-r border-slate-800 bg-slate-900 hidden md:flex flex-col">
+      <aside className="w-64 shrink-0 border-r border-slate-800 bg-slate-900 hidden md:flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-slate-800">
           <span className="text-xl font-bold tracking-tight text-blue-500">SES System</span>
         </div>
@@ -104,7 +104,7 @@ export default function LayoutSkeleton({ children }: LayoutSkeletonProps) {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Mobile Header (Visible only on small screens) */}
-        <header className="md:hidden h-16 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900 flex-shrink-0">
+        <header className="md:hidden h-16 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900 shrink-0">
           <span className="text-lg font-bold tracking-tight text-blue-500">SES System</span>
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

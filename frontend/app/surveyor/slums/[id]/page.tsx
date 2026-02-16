@@ -53,7 +53,7 @@ export default function SlumDetailsPage() {
             setSlumSurvey(surveyResponse.data);
           }
         } catch (error) {
-          console.warn("Could not load slum survey");
+          console.warn("Could not load slum survey", error);
         }
       } catch (error) {
         console.error("Error loading slum:", error);
@@ -64,7 +64,7 @@ export default function SlumDetailsPage() {
     };
 
     if (slumId) loadData();
-  }, [slumId]);
+  }, [slumId, showToast]);
 
   const handleSlumSurveyClick = () => {
     // Check the survey status to determine the message
@@ -118,7 +118,7 @@ export default function SlumDetailsPage() {
       <SurveyorLayout>
         <Card className="text-center py-8">
           <p className="text-error mb-4">Slum not found</p>
-          <Button size="md" onClick={() => router.back()} className="w-full sm:w-auto">Go Back</Button>
+          <Button size="md" onClick={() => router.back()} className="w-full sm:w-auto cursor-pointer">Go Back</Button>
         </Card>
       </SurveyorLayout>
     );
@@ -130,7 +130,7 @@ export default function SlumDetailsPage() {
       <Card className="mb-6 border-0 bg-gradient-primary text-white">
         <button
           onClick={() => router.back()}
-          className="mb-3 text-sm hover:opacity-80"
+          className="mb-3 text-sm hover:opacity-80 cursor-pointer"
         >
           ← Back
         </button>
@@ -190,7 +190,7 @@ export default function SlumDetailsPage() {
           <Button 
             size="md"
             onClick={handleSlumSurveyClick}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto cursor-pointer"
           >
             {slumSurvey ? "Continue Survey" : "Start Survey"}
           </Button>
@@ -244,7 +244,7 @@ export default function SlumDetailsPage() {
             <Button 
               variant="secondary" 
               size="md"
-              className="w-full sm:w-auto" 
+              className="w-full sm:w-auto cursor-pointer" 
               disabled
             >
               No Households Available

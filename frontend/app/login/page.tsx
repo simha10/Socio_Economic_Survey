@@ -168,7 +168,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="!mt-2 !w-full !bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 !text-white !font-bold !py-3.5 !rounded-xl !shadow-lg !shadow-blue-500/25 hover:!shadow-blue-500/40 !transition-all !duration-300 !transform active:!scale-[0.98] !disabled:opacity-70 !disabled:cursor-not-allowed"
+                className="mt-2! w-full! bg-linear-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 !text-white !font-bold !py-3.5 !rounded-xl !shadow-lg !shadow-blue-500/25 hover:!shadow-blue-500/40 !transition-all !duration-300 !transform active:!scale-[0.98] !disabled:opacity-70 !disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">

@@ -310,7 +310,7 @@ export default function AssignmentsPage() {
           <p className="text-red-400">{error}</p>
           <Button
             onClick={() => window.location.reload()}
-            className="mt-4"
+            className="mt-4 cursor-pointer"
             variant="secondary"
           >
             Retry
@@ -332,13 +332,13 @@ export default function AssignmentsPage() {
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={cancelDeleteAssignment}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDeleteAssignment}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors cursor-pointer"
                 >
                   Delete
                 </button>
@@ -356,13 +356,13 @@ export default function AssignmentsPage() {
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={cancelUpdateAssignment}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmUpdateAssignment}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors cursor-pointer"
                 >
                   Update
                 </button>
@@ -380,13 +380,13 @@ export default function AssignmentsPage() {
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={cancelEditAssignment}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmEditAssignment}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors cursor-pointer"
                 >
                   Edit
                 </button>
@@ -408,7 +408,7 @@ export default function AssignmentsPage() {
             <span className="block sm:inline">{error}</span>
             <button
               onClick={() => setError(null)}
-              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+              className="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer"
             >
               <span className="text-2xl leading-none">&times;</span>
             </button>
@@ -458,6 +458,7 @@ export default function AssignmentsPage() {
               <div className="flex items-end">
                 <Button
                   variant="primary"
+                  className="cursor-pointer"
                   fullWidth
                   onClick={handleCreateAssignment}
                   disabled={!newAssignment.surveyorId || !newAssignment.slumId}
@@ -545,13 +546,14 @@ export default function AssignmentsPage() {
               )}
 
               <div className="flex gap-4">
-                <Button type="button" onClick={() => setShowUpdateConfirm(true)} disabled={submitting}>
+                <Button type="button" onClick={() => setShowUpdateConfirm(true)} disabled={submitting} className="cursor-pointer">
                   {submitting ? "Updating..." : "Update Assignment"}
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
                   onClick={handleCancelEdit}
+                  className="cursor-pointer"
                 >
                   Cancel
                 </Button>
@@ -636,7 +638,7 @@ export default function AssignmentsPage() {
                   <div className="flex gap-2">
                     <button 
                       onClick={() => handleEditAssignment(row)}
-                      className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                      className="text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
                       title="Edit"
                     >
                       <svg
@@ -655,7 +657,7 @@ export default function AssignmentsPage() {
                     </button>
                     <button 
                       onClick={() => handleDeleteAssignment(row._id)}
-                      className="text-red-400 hover:text-red-300 transition-colors"
+                      className="text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                       title="Delete"
                     >
                       <svg

@@ -123,7 +123,7 @@ export default function AdminSlumDetailPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white">{slum.slumName}</h1>
-          <Button variant="secondary" onClick={() => router.back()}>
+          <Button variant="secondary" className="cursor-pointer" onClick={() => router.back()}>
             Back
           </Button>
         </div>

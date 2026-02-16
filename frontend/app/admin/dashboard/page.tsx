@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
           <button
             onClick={loadDashboardStats}
             disabled={statsLoading}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 border border-slate-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 border border-slate-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer"
           >
             {statsLoading ? (
               <>

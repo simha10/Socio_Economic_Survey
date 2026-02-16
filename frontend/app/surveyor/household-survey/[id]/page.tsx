@@ -2137,7 +2137,7 @@ export default function HouseholdSurveyPage() {
           fullWidth
           loading={submitting}
           onClick={handleSubmit}
-          className="w-full"
+          className="w-full cursor-pointer"
         >
           Submit Household Survey
         </Button>
@@ -2170,13 +2170,15 @@ export default function HouseholdSurveyPage() {
                 </p>
                 <div className="flex gap-3 justify-center">
                   <Button
-                    variant="secondary"
+                    variant="secondary" 
+                    className="cursor-pointer"
                     onClick={() => setShowSubmitConfirm(false)}
                     disabled={submitting}
                   >
                     Cancel
                   </Button>
                   <Button
+                    className="cursor-pointer"
                     onClick={handleConfirmSubmit}
                     loading={submitting}
                   >

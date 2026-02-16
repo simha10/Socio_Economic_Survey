@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 interface LogoutConfirmationDialogProps {
   isOpen: boolean;
@@ -40,14 +40,14 @@ export default function LogoutConfirmationDialog({
         <div className="flex items-center justify-end space-x-3 p-6 bg-gray-50 dark:bg-gray-700/50 rounded-b-xl">
           <button
             onClick={onConfirm}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 flex items-center space-x-2"
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 flex items-center space-x-2 cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             <span>Logout</span>
           </button>
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 hover:bg-gray-50 dark:hover:bg-gray-500 border border-gray-300 dark:border-gray-600 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 hover:bg-gray-50 dark:hover:bg-gray-500 border border-gray-300 dark:border-gray-600 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 cursor-pointer"
           >
             Cancel
           </button>

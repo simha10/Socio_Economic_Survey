@@ -7,10 +7,8 @@ import Card from "@/components/Card";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import Select from "@/components/Select";
-import Checkbox from '@/components/Checkbox';
 import Stepper from '@/components/Stepper';
 import BackNavigationDialog from '@/components/BackNavigationDialog';
-import EditConfirmationDialog from '@/components/EditConfirmationDialog';
 import apiService from '@/services/api';
 import { useToast } from '@/components/Toast';
 
@@ -3299,7 +3297,7 @@ export default function SlumSurveyPage() {
            <div>
               <button
                 onClick={handleBackToDashboard}
-                className="mb-2 text-sm text-slate-400 hover:text-white flex items-center transition-colors"
+                className="mb-2 text-sm text-slate-400 hover:text-white flex items-center transition-colors cursor-pointer"
                >
                 <span className="mr-1">←</span> Back to Dashboard
               </button>
@@ -7247,7 +7245,7 @@ export default function SlumSurveyPage() {
                     size="md"
                     onClick={handlePrevious}
                     disabled={currentStep === 0 || submitting || saving || (isPreviewMode && !isEditMode)}
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto cursor-pointer"
                 >
                     Previous
                 </Button>
@@ -7259,7 +7257,7 @@ export default function SlumSurveyPage() {
                             size="md"
                             onClick={saveSection}
                             disabled={saving || submitting || (isPreviewMode && !isEditMode)}
-                            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 w-full sm:w-auto"
+                            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 w-full sm:w-auto cursor-pointer"
                         >
                             {saving ? "Saving..." : (isEditMode ? "Update & Next" : "Save & Next")}
                         </Button>
@@ -7272,7 +7270,7 @@ export default function SlumSurveyPage() {
                               handleSubmit();
                             }}
                             disabled={submitting || saving || (isPreviewMode && !isEditMode)}
-                            className="bg-green-600 hover:bg-green-500 w-full sm:w-auto"
+                            className="bg-green-600 hover:bg-green-500 w-full sm:w-auto cursor-pointer"
                         >
                             {submitting ? "Submitting..." : (isEditMode ? "Update Survey" : "Submit Survey")}
                         </Button>

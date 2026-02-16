@@ -69,7 +69,7 @@ export default function SlumsPage() {
     };
 
     loadSlums();
-  }, []);
+  }, [showToast]);
 
   const columns = [
     {
@@ -111,7 +111,7 @@ export default function SlumsPage() {
         <div className="mb-6 flex items-center justify-between">
             <button 
               onClick={() => router.back()} 
-              className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors cursor-pointer"
               aria-label="Go back"
             >
               <ArrowLeft className="w-5 h-5" />

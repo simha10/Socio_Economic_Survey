@@ -53,7 +53,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
     isSidebarOpen = sidebarContext.isSidebarOpen;
     toggleSidebar = sidebarContext.toggleSidebar;
   } catch (error) {
-    console.warn('Sidebar context not available, using fallback state');
+    console.warn('Sidebar context not available, using fallback state', error);
     isSidebarOpen = isSidebarOpenState;
     toggleSidebar = () => setIsSidebarOpenState(prev => !prev);
   }
@@ -115,7 +115,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
           )}
           <button
             onClick={toggleSidebar}
-            className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors"
+            className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors cursor-pointer"
           >
             {isSidebarOpen ? <Menu size={20} /> : <Menu size={20} className="mx-auto" />}
           </button>
@@ -169,7 +169,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
             <button
               onClick={handleLogoutClick}
               className={cn(
-                "text-slate-500 hover:text-red-400 transition-colors",
+                "text-slate-500 hover:text-red-400 transition-colors cursor-pointer",
                 isSidebarOpen ? "" : "mx-auto"  // Center the button when sidebar is collapsed
               )}
               title="Logout"
@@ -188,7 +188,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
       {/* Mobile Toggle Button (Fixed Position) */}
        <button
         onClick={() => setMobileIsOpen(!mobileIsOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-slate-900 border border-slate-800 rounded-lg text-blue-500"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-slate-900 border border-slate-800 rounded-lg text-blue-500 cursor-pointer"
       >
         <Menu size={20} />
       </button>
@@ -202,7 +202,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
                <span className="text-xl font-bold tracking-tight text-blue-500">
                 SES System
               </span>
-              <button onClick={() => setMobileIsOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setMobileIsOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
                 <X size={20} />
               </button>
             </div>
@@ -242,7 +242,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
                </div>
                <button
                   onClick={handleLogoutClick}
-                  className="w-full flex items-center justify-center gap-2 p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-900/50 hover:bg-red-900/10 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-900/50 hover:bg-red-900/10 transition-colors cursor-pointer"
                 >
                   <LogOut size={16} />
                   <span className="text-sm">Logout</span>
