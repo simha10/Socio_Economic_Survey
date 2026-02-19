@@ -10,6 +10,8 @@ import {
   AlertCircle,
   Loader2,
   LayoutDashboard,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -20,6 +22,7 @@ export default function LoginPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,29 +71,29 @@ export default function LoginPage() {
           response.error || "Login failed. Please check your credentials.",
         );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Login exception caught:", err);
-      setError("An unexpected error occurred. " + (err.message || ""));
+      setError("An unexpected error occurred. " + ((err as Error).message || ""));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="!min-h-screen !w-full flex items-center justify-center !p-4 relative !bg-slate-950 overflow-hidden isolate">
+    <div className="min-h-screen! w-full! flex items-center justify-center p-4! relative bg-slate-950! overflow-hidden isolate">
       {/* --- Background Effects --- */}
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-soft-light"></div>
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size[24px_24px] pointer-events-none"></div>
 
       {/* Glow Blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-125 h--125 bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-125 h-125 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
 
       {/* --- Main Card --- */}
-      <div className="w-full max-w-[420px] relative z-10">
+      <div className="w-full max-w-105 relative z-10">
         {/* Header Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 mb-6 shadow-lg shadow-blue-500/20">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-tr from-blue-600 to-cyan-500 mb-6 shadow-lg shadow-blue-500/20">
             <LayoutDashboard className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
@@ -105,19 +108,19 @@ export default function LoginPage() {
         <div className="backdrop-blur-xl bg-slate-900/70 border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
           {/* Progress Bar Loader */}
           {loading && (
-            <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500 animate-gradient-x" />
+            <div className="h-1 w-full bg-linear-to-r from-blue-500 via-cyan-400 to-blue-500 animate-gradient-x" />
           )}
 
-          <form onSubmit={handleSubmit} className="!p-8 !flex !flex-col !gap-6">
+          <form onSubmit={handleSubmit} className="p-8! flex! flex-col! gap-6!">
             {/* Error Message */}
             {error && (
               <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-3 text-red-400 text-sm">
-                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
             )}
 
-            <div className="!flex !flex-col !gap-5">
+            <div className="flex! flex-col! gap-5!">
               {/* Username Input */}
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">
@@ -136,7 +139,7 @@ export default function LoginPage() {
                     }
                     placeholder="Enter your username"
                     required
-                    className="!box-border !w-full !bg-slate-950/50 !border !border-slate-700 !rounded-xl !py-3.5 !pl-12 !pr-4 !text-slate-100 !placeholder-slate-600 focus:!outline-none focus:!ring-2 focus:!ring-cyan-500/50 focus:!border-cyan-500 !transition-all !duration-200"
+                    className="box-border! w-full! bg-slate-950/50! border! border-slate-700! rounded-xl! py-3.5! pl-12! pr-4! text-slate-100! placeholder-slate-600! focus:outline-none! focus:ring-2! focus:ring-cyan-500/50! focus:border-cyan-500! transition-all! duration-200!"
                   />
                 </div>
               </div>
@@ -152,15 +155,28 @@ export default function LoginPage() {
                     <Lock className="w-5 h-5" />
                   </div>
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
                     placeholder="Enter your password"
                     required
-                    className="!box-border !w-full !bg-slate-950/50 !border !border-slate-700 !rounded-xl !py-3.5 !pl-12 !pr-4 !text-slate-100 !placeholder-slate-600 focus:!outline-none focus:!ring-2 focus:!ring-cyan-500/50 focus:!border-cyan-500 !transition-all !duration-200"
+                    className="box-border! w-full! bg-slate-950/50! border! border-slate-700! rounded-xl! py-3.5! pl-12! pr-4! text-slate-100! placeholder-slate-600! focus:outline-none! focus:ring-2! focus:ring-cyan-500/50! focus:border-cyan-500! transition-all! duration-200!"
                   />
+                  {/* Eye Icon Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors focus:outline-none focus:text-cyan-400"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <Eye className="w-5 h-5" />
+                    ) : (
+                      <EyeOff className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -168,7 +184,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2! w-full! bg-linear-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 !text-white !font-bold !py-3.5 !rounded-xl !shadow-lg !shadow-blue-500/25 hover:!shadow-blue-500/40 !transition-all !duration-300 !transform active:!scale-[0.98] !disabled:opacity-70 !disabled:cursor-not-allowed cursor-pointer"
+                className="mt-2! w-full! bg-linear-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white! font-bold! py-3.5! rounded-xl! shadow-lg! shadow-blue-500/25! hover:shadow-blue-500/40! transition-all! duration-300! transform! active:scale-[0.98]! !disabled:opacity-70 !disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">

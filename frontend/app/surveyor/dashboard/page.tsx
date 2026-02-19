@@ -299,7 +299,7 @@ export default function SurveyorDashboard() {
               onClick={() => router.push("/surveyor/slums")}
               className="text-xs sm:text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium self-start sm:self-auto cursor-pointer"
             >
-              View all slums →
+              View all Assignments →
             </button>
           </div>
 
