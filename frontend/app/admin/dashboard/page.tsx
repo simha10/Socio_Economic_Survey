@@ -141,11 +141,6 @@ export default function AdminDashboardPage() {
           } else if (assignment.slumSurveyStatus === 'SUBMITTED' || assignment.slumSurveyStatus === 'COMPLETED') {
             completedSlumSurveysCount++;
           }
-          
-          // Calculate completed households from assignments
-          if (assignment.householdSurveyProgress) {
-            completedHouseholdsCount += assignment.householdSurveyProgress.completed;
-          }
         }
       }
       

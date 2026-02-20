@@ -1,6 +1,6 @@
 const HouseholdSurvey = require('../../models/HouseholdSurvey');
 const Slum = require('../../models/Slum');
-const { updateStatusesFromHouseholdSurvey, updateSlumPopulationFromHouseholdSurveys, updateSlumBplPopulationFromHouseholdSurveys } = require('../../utils/statusSyncHelper');
+const { updateStatusesFromHouseholdSurvey, updateSlumPopulationFromHouseholdSurveys, updateSlumBplPopulationFromHouseholdSurveys, updateSlumDemographicPopulationFromHouseholdSurveys } = require('../../utils/statusSyncHelper');
 const { sendSuccess, sendError } = require('../../utils/helpers/responseHelper');
 const { v4: uuidv4 } = require('uuid');
 
@@ -56,6 +56,7 @@ exports.createOrGetHouseholdSurvey = async (req, res) => {
     
     // Update BPL population calculation after creating/retrieving survey
     await updateSlumBplPopulationFromHouseholdSurveys(survey.slum._id);
+    await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
 
     sendSuccess(res, survey, 'Household survey retrieved/created successfully');
   } catch (error) {
@@ -156,6 +157,15 @@ exports.updateHouseholdSurvey = async (req, res) => {
         updateData.familyMembersMale !== undefined || 
         updateData.familyMembersFemale !== undefined) {
       await updateSlumBplPopulationFromHouseholdSurveys(survey.slum._id);
+      await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
+    }
+    
+    // Update demographic population if caste or minority status changed
+    if (updateData.caste !== undefined || updateData.minorityStatus !== undefined || 
+        updateData.familyMembersTotal !== undefined || 
+        updateData.familyMembersMale !== undefined || 
+        updateData.familyMembersFemale !== undefined) {
+      await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
     }
 
     console.log(`Updated household survey ${surveyId}`);
@@ -279,6 +289,9 @@ exports.submitHouseholdSurvey = async (req, res) => {
     
     // Update BPL population based on BPL status and family members count
     await updateSlumBplPopulationFromHouseholdSurveys(survey.slum._id);
+    
+    // Update demographic population based on caste and minority status
+    await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
 
     console.log(`Submitted household survey ${surveyId}`);
     sendSuccess(res, survey, 'Survey submitted successfully', 200);
@@ -365,6 +378,7 @@ exports.deleteHouseholdSurvey = async (req, res) => {
     if (slumId) {
       await updateSlumPopulationFromHouseholdSurveys(slumId);
       await updateSlumBplPopulationFromHouseholdSurveys(slumId);
+      await updateSlumDemographicPopulationFromHouseholdSurveys(slumId);
     }
     
     sendSuccess(res, null, 'Survey deleted successfully');
@@ -436,6 +450,13 @@ exports.updateSurveySection = async (req, res) => {
         section === 'familyMembersTotal' || section === 'familyMembersMale' || 
         section === 'familyMembersFemale') {
       await updateSlumBplPopulationFromHouseholdSurveys(survey.slum._id);
+    }
+    
+    // Update demographic population if caste, minority status, or family members section was updated
+    if (section === 'demographics' || section === 'caste' || section === 'minorityStatus' || 
+        section === 'familyMembersTotal' || section === 'familyMembersMale' || 
+        section === 'familyMembersFemale') {
+      await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
     }
 
     console.log(`Updated survey section: ${section} for survey ${surveyId}`);

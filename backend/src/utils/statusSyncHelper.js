@@ -555,6 +555,164 @@ async function updateSlumBplPopulationFromHouseholdSurveys(slumId) {
   }
 }
 
+/**
+ * Calculate and update demographic population based on household survey caste and minority status
+ * @param {string} slumId - The ID of the slum
+ * @returns {Promise<boolean>} - Whether the update was successful
+ */
+async function updateSlumDemographicPopulationFromHouseholdSurveys(slumId) {
+  try {
+    console.log(`[STATUS_SYNC] Updating slum demographic population from household surveys for slum ID: ${slumId}`);
+    
+    // Get all household surveys for this slum
+    const householdSurveys = await HouseholdSurvey.find({ slum: slumId });
+    
+    // Initialize demographic counters
+    let demographicCounts = {
+      SC: { population: 0, households: 0 },
+      ST: { population: 0, households: 0 },
+      OBC: { population: 0, households: 0 },
+      Others: { population: 0, households: 0 },
+      Minorities: { population: 0, households: 0 },
+      Total: { population: 0, households: 0 }
+    };
+    
+    // Initialize BPL demographic counters
+    let bplDemographicCounts = {
+      SC: { population: 0, households: 0 },
+      ST: { population: 0, households: 0 },
+      OBC: { population: 0, households: 0 },
+      Others: { population: 0, households: 0 },
+      Minorities: { population: 0, households: 0 },
+      Total: { population: 0, households: 0 }
+    };
+    
+    // Calculate demographic distribution from all household surveys
+    householdSurveys.forEach(hs => {
+      const familyMembers = hs.familyMembersTotal || 0;
+      
+      // Count total population and households
+      demographicCounts.Total.population += familyMembers;
+      demographicCounts.Total.households += 1;
+      
+      // Map caste to demographic groups
+      if (hs.caste === 'SC') {
+        demographicCounts.SC.population += familyMembers;
+        demographicCounts.SC.households += 1;
+      } else if (hs.caste === 'ST') {
+        demographicCounts.ST.population += familyMembers;
+        demographicCounts.ST.households += 1;
+      } else if (hs.caste === 'OBC') {
+        demographicCounts.OBC.population += familyMembers;
+        demographicCounts.OBC.households += 1;
+      } else {
+        // General caste maps to Others
+        demographicCounts.Others.population += familyMembers;
+        demographicCounts.Others.households += 1;
+      }
+      
+      // Count minorities separately (regardless of caste)
+      if (hs.minorityStatus === 'MINORITY') {
+        demographicCounts.Minorities.population += familyMembers;
+        demographicCounts.Minorities.households += 1;
+      }
+      
+      // Calculate BPL demographic distribution (only for households below poverty line)
+      if (hs.belowPovertyLine === 'YES') {
+        bplDemographicCounts.Total.population += familyMembers;
+        bplDemographicCounts.Total.households += 1;
+        
+        if (hs.caste === 'SC') {
+          bplDemographicCounts.SC.population += familyMembers;
+          bplDemographicCounts.SC.households += 1;
+        } else if (hs.caste === 'ST') {
+          bplDemographicCounts.ST.population += familyMembers;
+          bplDemographicCounts.ST.households += 1;
+        } else if (hs.caste === 'OBC') {
+          bplDemographicCounts.OBC.population += familyMembers;
+          bplDemographicCounts.OBC.households += 1;
+        } else {
+          // General caste maps to Others
+          bplDemographicCounts.Others.population += familyMembers;
+          bplDemographicCounts.Others.households += 1;
+        }
+        
+        // Count minorities in BPL (regardless of caste)
+        if (hs.minorityStatus === 'MINORITY') {
+          bplDemographicCounts.Minorities.population += familyMembers;
+          bplDemographicCounts.Minorities.households += 1;
+        }
+      }
+    });
+    
+    console.log(`[STATUS_SYNC] Calculated demographic population:`, demographicCounts);
+    
+    // Find the slum survey for this slum
+    let slumSurvey = await SlumSurvey.findOne({ slum: slumId });
+    
+    if (!slumSurvey) {
+      console.log(`[STATUS_SYNC] No slum survey found for slum: ${slumId}. Creating one if needed elsewhere.`);
+      return true; // Don't fail if no slum survey exists yet
+    }
+    
+    // Initialize demographicProfile if it doesn't exist
+    if (!slumSurvey.demographicProfile) {
+      slumSurvey.demographicProfile = {};
+    }
+    
+    // Update the demographic profile with calculated values
+    slumSurvey.demographicProfile.totalPopulation = {
+      SC: demographicCounts.SC.population,
+      ST: demographicCounts.ST.population,
+      OBC: demographicCounts.OBC.population,
+      Others: demographicCounts.Others.population,
+      Total: demographicCounts.Total.population,
+      Minorities: demographicCounts.Minorities.population
+    };
+    
+    slumSurvey.demographicProfile.numberOfHouseholds = {
+      SC: demographicCounts.SC.households,
+      ST: demographicCounts.ST.households,
+      OBC: demographicCounts.OBC.households,
+      Others: demographicCounts.Others.households,
+      Total: demographicCounts.Total.households,
+      Minorities: demographicCounts.Minorities.households
+    };
+    
+    // Update the BPL demographic profile with calculated values
+    slumSurvey.demographicProfile.bplPopulation = {
+      SC: bplDemographicCounts.SC.population,
+      ST: bplDemographicCounts.ST.population,
+      OBC: bplDemographicCounts.OBC.population,
+      Others: bplDemographicCounts.Others.population,
+      Total: bplDemographicCounts.Total.population,
+      Minorities: bplDemographicCounts.Minorities.population
+    };
+    
+    slumSurvey.demographicProfile.numberOfBplHouseholds = {
+      SC: bplDemographicCounts.SC.households,
+      ST: bplDemographicCounts.ST.households,
+      OBC: bplDemographicCounts.OBC.households,
+      Others: bplDemographicCounts.Others.households,
+      Total: bplDemographicCounts.Total.households,
+      Minorities: bplDemographicCounts.Minorities.households
+    };
+    
+    // Save the updated slum survey
+    await slumSurvey.save();
+    
+    console.log(`[STATUS_SYNC] Updated demographic population for slum survey: ${slumSurvey._id}`);
+    console.log(`[STATUS_SYNC] Updated BPL demographic population:`, {
+      bplPopulation: slumSurvey.demographicProfile.bplPopulation,
+      numberOfBplHouseholds: slumSurvey.demographicProfile.numberOfBplHouseholds
+    });
+    
+    return true;
+  } catch (error) {
+    console.error(`[STATUS_SYNC] Error updating slum demographic population from household surveys for slum ${slumId}:`, error);
+    return false;
+  }
+}
 
 
 module.exports = {
@@ -565,5 +723,6 @@ module.exports = {
   initializeAssignmentStatus,
   updateHouseholdSurveyProgress,
   updateSlumPopulationFromHouseholdSurveys,
-  updateSlumBplPopulationFromHouseholdSurveys
+  updateSlumBplPopulationFromHouseholdSurveys,
+  updateSlumDemographicPopulationFromHouseholdSurveys
 };

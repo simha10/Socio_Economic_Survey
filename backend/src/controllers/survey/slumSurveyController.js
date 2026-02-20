@@ -4,7 +4,7 @@ const Ward = require('../../models/Ward');
 const District = require('../../models/District');
 const State = require('../../models/State');
 const Assignment = require('../../models/Assignment');
-const { updateSlumStatus, updateAssignmentStatusFromSlumSurvey, updateAssignmentMainStatus, updateSlumPopulationFromHouseholdSurveys, updateSlumBplPopulationFromHouseholdSurveys } = require('../../utils/statusSyncHelper');
+const { updateSlumStatus, updateAssignmentStatusFromSlumSurvey, updateAssignmentMainStatus, updateSlumPopulationFromHouseholdSurveys, updateSlumBplPopulationFromHouseholdSurveys, updateSlumDemographicPopulationFromHouseholdSurveys } = require('../../utils/statusSyncHelper');
 const { sendSuccess, sendError } = require('../../utils/helpers/responseHelper');
 
 /**
@@ -228,6 +228,9 @@ exports.createOrGetSlumSurvey = async (req, res) => {
                 
         // Calculate and update BPL population from household surveys
         await updateSlumBplPopulationFromHouseholdSurveys(slumId);
+                
+        // Calculate and update demographic population from household surveys
+        await updateSlumDemographicPopulationFromHouseholdSurveys(slumId);
                 
         // Re-fetch the survey to get updated population and BPL data
         survey = await SlumSurvey.findById(survey._id).populate([
@@ -729,6 +732,9 @@ exports.getSlumSurveyBySlumId = async (req, res) => {
         
         // Calculate and update BPL population from household surveys
         await updateSlumBplPopulationFromHouseholdSurveys(slumId);
+        
+        // Calculate and update demographic population from household surveys
+        await updateSlumDemographicPopulationFromHouseholdSurveys(slumId);
         
         // Re-fetch the survey to get updated population and BPL data
         const updatedSurvey = await SlumSurvey.findOne({

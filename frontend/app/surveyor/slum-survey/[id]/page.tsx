@@ -1002,12 +1002,12 @@ export default function SlumSurveyPage() {
                 bplPopulationSlumMinorities: surveyData.demographicProfile.bplPopulation?.Minorities || 0,
 
                 // No. of Households
-                noHouseholdsSlumSC: surveyData.demographicProfile.noHouseholds?.SC || 0,
-                noHouseholdsSlumST: surveyData.demographicProfile.noHouseholds?.ST || 0,
-                noHouseholdsSlumOBC: surveyData.demographicProfile.noHouseholds?.OBC || 0,
-                noHouseholdsSlumOthers: surveyData.demographicProfile.noHouseholds?.Others || 0,
-                noHouseholdsSlumTotal: surveyData.demographicProfile.noHouseholds?.Total || 0,
-                noHouseholdsSlumMinorities: surveyData.demographicProfile.noHouseholds?.Minorities || 0,
+                noHouseholdsSlumSC: surveyData.demographicProfile.numberOfHouseholds?.SC || 0,
+                noHouseholdsSlumST: surveyData.demographicProfile.numberOfHouseholds?.ST || 0,
+                noHouseholdsSlumOBC: surveyData.demographicProfile.numberOfHouseholds?.OBC || 0,
+                noHouseholdsSlumOthers: surveyData.demographicProfile.numberOfHouseholds?.Others || 0,
+                noHouseholdsSlumTotal: surveyData.demographicProfile.numberOfHouseholds?.Total || 0,
+                noHouseholdsSlumMinorities: surveyData.demographicProfile.numberOfHouseholds?.Minorities || 0,
 
                 // No. of BPL Households
                 noBplHouseholdsSC: surveyData.demographicProfile.noBplHouseholds?.SC || 0,
@@ -3734,6 +3734,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("totalPopulationSlumSC", parseInt(e.target.value) || 0)}
                             name="totalPopulationSlumSC"
                             error={getFieldError('totalPopulationSlumSC')}
+                            disabled
                             />
                             <Input
                             label="ST"
@@ -3742,6 +3743,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("totalPopulationSlumST", parseInt(e.target.value) || 0)}
                             name="totalPopulationSlumST"
                             error={getFieldError('totalPopulationSlumST')}
+                            disabled
                             />
                             <Input
                             label="OBC"
@@ -3750,6 +3752,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("totalPopulationSlumOBC", parseInt(e.target.value) || 0)}
                             name="totalPopulationSlumOBC"
                             error={getFieldError('totalPopulationSlumOBC')}
+                            disabled
                             />
                             <Input
                             label="Others"
@@ -3758,6 +3761,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("totalPopulationSlumOthers", parseInt(e.target.value) || 0)}
                             name="totalPopulationSlumOthers"
                             error={getFieldError('totalPopulationSlumOthers')}
+                            disabled
                             />
                             <Input
                             label="Minorities"
@@ -3766,6 +3770,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("totalPopulationSlumMinorities", parseInt(e.target.value) || 0)}
                             name="totalPopulationSlumMinorities"
                             error={getFieldError('totalPopulationSlumMinorities')}
+                            disabled
                             />
                             <Input
                             label="Total"
@@ -3774,6 +3779,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("totalPopulationSlumTotal", parseInt(e.target.value) || 0)}
                             name="totalPopulationSlumTotal"
                             error={getFieldError('totalPopulationSlumTotal')}
+                            disabled
                             />
                         </div>
                     </div>
@@ -3789,6 +3795,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("bplPopulationSlumSC", parseInt(e.target.value) || 0)}
                             name="bplPopulationSlumSC"
                             error={getFieldError('bplPopulationSlumSC')}
+                            disabled
                             />
                             <Input
                             label="ST"
@@ -3796,6 +3803,7 @@ export default function SlumSurveyPage() {
                             value={formData.bplPopulationSlumST || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumST", parseInt(e.target.value) || 0)}
                             name="bplPopulationSlumST"
+                            disabled
                             error={getFieldError('bplPopulationSlumST')}
                             />
                             <Input
@@ -3805,6 +3813,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("bplPopulationSlumOBC", parseInt(e.target.value) || 0)}
                             name="bplPopulationSlumOBC"
                             error={getFieldError('bplPopulationSlumOBC')}
+                            disabled
                             />
                             <Input
                             label="Others"
@@ -3812,6 +3821,7 @@ export default function SlumSurveyPage() {
                             value={formData.bplPopulationSlumOthers || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumOthers", parseInt(e.target.value) || 0)}
                             name="bplPopulationSlumOthers"
+                            disabled
                             error={getFieldError('bplPopulationSlumOthers')}
                             />
                             <Input
@@ -3820,6 +3830,7 @@ export default function SlumSurveyPage() {
                             value={formData.bplPopulationSlumMinorities || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumMinorities", parseInt(e.target.value) || 0)}
                             name="bplPopulationSlumMinorities"
+                            disabled
                             error={getFieldError('bplPopulationSlumMinorities')}
                             />
                             <Input
@@ -3828,6 +3839,7 @@ export default function SlumSurveyPage() {
                             value={formData.bplPopulationSlumTotal || ""}
                             onChange={(e) => handleInputChange("bplPopulationSlumTotal", parseInt(e.target.value) || 0)}
                             name="bplPopulationSlumTotal"
+                            disabled
                             error={getFieldError('bplPopulationSlumTotal')}
                             />
                         </div>
@@ -3844,6 +3856,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noHouseholdsSlumSC", parseInt(e.target.value) || 0)}
                             name="noHouseholdsSlumSC"
                             error={getFieldError('noHouseholdsSlumSC')}
+                            disabled
                             />
                             <Input
                             label="ST"
@@ -3852,6 +3865,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noHouseholdsSlumST", parseInt(e.target.value) || 0)}
                             name="noHouseholdsSlumST"
                             error={getFieldError('noHouseholdsSlumST')}
+                            disabled
                             />
                             <Input
                             label="OBC"
@@ -3860,6 +3874,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noHouseholdsSlumOBC", parseInt(e.target.value) || 0)}
                             name="noHouseholdsSlumOBC"
                             error={getFieldError('noHouseholdsSlumOBC')}
+                            disabled
                             />
                             <Input
                             label="Others"
@@ -3868,6 +3883,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noHouseholdsSlumOthers", parseInt(e.target.value) || 0)}
                             name="noHouseholdsSlumOthers"
                             error={getFieldError('noHouseholdsSlumOthers')}
+                            disabled
                             />
                             <Input
                             label="Minorities"
@@ -3876,6 +3892,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noHouseholdsSlumMinorities", parseInt(e.target.value) || 0)}
                             name="noHouseholdsSlumMinorities"
                             error={getFieldError('noHouseholdsSlumMinorities')}
+                            disabled
                             />
                             <Input
                             label="Total"
@@ -3884,6 +3901,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noHouseholdsSlumTotal", parseInt(e.target.value) || 0)}
                             name="noHouseholdsSlumTotal"
                             error={getFieldError('noHouseholdsSlumTotal')}
+                            disabled
                             />
                         </div>
                     </div>
@@ -3899,6 +3917,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noBplHouseholdsSC", parseInt(e.target.value) || 0)}
                             name="noBplHouseholdsSC"
                             error={getFieldError('noBplHouseholdsSC')}
+                            disabled
                             />
                             <Input
                             label="ST"
@@ -3907,6 +3926,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noBplHouseholdsST", parseInt(e.target.value) || 0)}
                             name="noBplHouseholdsST"
                             error={getFieldError('noBplHouseholdsST')}
+                            disabled
                             />
                             <Input
                             label="OBC"
@@ -3915,6 +3935,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noBplHouseholdsOBC", parseInt(e.target.value) || 0)}
                             name="noBplHouseholdsOBC"
                             error={getFieldError('noBplHouseholdsOBC')}
+                            disabled
                             />
                             <Input
                             label="Others"
@@ -3923,6 +3944,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noBplHouseholdsOthers", parseInt(e.target.value) || 0)}
                             name="noBplHouseholdsOthers"
                             error={getFieldError('noBplHouseholdsOthers')}
+                            disabled
                             />
                             <Input
                             label="Minorities"
@@ -3931,6 +3953,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noBplHouseholdsMinorities", parseInt(e.target.value) || 0)}
                             name="noBplHouseholdsMinorities"
                             error={getFieldError('noBplHouseholdsMinorities')}
+                            disabled
                             />
                             <Input
                             label="Total"
@@ -3939,6 +3962,7 @@ export default function SlumSurveyPage() {
                             onChange={(e) => handleInputChange("noBplHouseholdsTotal", parseInt(e.target.value) || 0)}
                             name="noBplHouseholdsTotal"
                             error={getFieldError('noBplHouseholdsTotal')}
+                            disabled
                             />
                         </div>
                     </div>
@@ -4220,7 +4244,7 @@ export default function SlumSurveyPage() {
                     
                     {/* Question 12 - No. of Persons with HIV/AIDS */}
                     <div>
-                        <h3 className="text-lg font-semibold text-white mb-4">12j. No.of Persons with HIV-AIDS</h3>
+                        <h3 className="text-lg font-semibold text-white mb-4">12j. No. of Persons with HIV-AIDS</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <Input
                             label="SC"
@@ -4444,7 +4468,7 @@ export default function SlumSurveyPage() {
 
                     {/* Question 13 - Total No of Illiterate Persons */}
                     <div>
-                        <h3 className="text-lg font-semibold text-white mb-4">13a. Total No of Illiterate Persons</h3>
+                        <h3 className="text-lg font-semibold text-white mb-4">13a. Total No. of Illiterate Persons</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <Input
                             label="SC"

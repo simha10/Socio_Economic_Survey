@@ -15,6 +15,7 @@ import { HouseholdSurveyModal } from "@/components/HouseholdSurveyModal";
 
 interface HouseholdSurveyForm {
   householdId: string;
+  surveyStatus?: string;
   // Section I - General Information
   slumName?: string;
   ward?: string;
@@ -282,39 +283,66 @@ export default function HouseholdSurveyPage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        // First, fetch the assignment to get the slum ID
-        const assignmentResponse = await apiService.getAssignment(assignmentId);
-        if (assignmentResponse.success && assignmentResponse.data) {
-          setAssignment(assignmentResponse.data);
-          const slumId = assignmentResponse.data.slum._id;
-
-          // Fetch slum details
-          const slumResponse = await apiService.getSlum(slumId);
-          if (slumResponse.success) {
-            const slumData = slumResponse.data;
-            setSlum(slumData);
-
-            // Auto-fill slum details
-            setFormData((prev) => ({
-              ...prev,
-              slumName: slumData.slumName || "",
-              ward: typeof slumData.ward === 'object' ? `${slumData.ward.number} - ${slumData.ward.name}` : slumData.ward || "",
-            }));
-
-            // Load households for this slum
-            await loadHouseholdsForSlum(slumId);
-            
-            // Fetch initial progress
-            await fetchProgress();
+        
+        // First, try to fetch as a household survey ID
+        const householdSurveyResponse = await apiService.getHouseholdSurvey(assignmentId);
+        
+        if (householdSurveyResponse.success && householdSurveyResponse.data) {
+          // This is an existing household survey, populate the form with its data
+          const surveyData = householdSurveyResponse.data;
+          setSlum(surveyData.slum);
+          
+          // Set form data with the existing survey data
+          setFormData({
+            ...surveyData,
+            slumName: surveyData.slum?.slumName || "",
+            ward: typeof surveyData.slum?.ward === 'object' 
+              ? `${surveyData.slum.ward.number} - ${surveyData.slum.ward.name}` 
+              : surveyData.slum?.ward || "",
+          });
+          
+          // Set assignment info if available
+          if (surveyData.surveyor) {
+            setAssignment({
+              _id: surveyData._id,
+              slum: surveyData.slum,
+            });
           }
         } else {
-          showToast("Failed to load assignment details", "error");
-          router.push("/surveyor/dashboard");
-          return;
+          // If it's not a household survey ID, treat it as an assignment ID
+          const assignmentResponse = await apiService.getAssignment(assignmentId);
+          if (assignmentResponse.success && assignmentResponse.data) {
+            setAssignment(assignmentResponse.data);
+            const slumId = assignmentResponse.data.slum._id;
+
+            // Fetch slum details
+            const slumResponse = await apiService.getSlum(slumId);
+            if (slumResponse.success) {
+              const slumData = slumResponse.data;
+              setSlum(slumData);
+
+              // Auto-fill slum details
+              setFormData((prev) => ({
+                ...prev,
+                slumName: slumData.slumName || "",
+                ward: typeof slumData.ward === 'object' ? `${slumData.ward.number} - ${slumData.ward.name}` : slumData.ward || "",
+              }));
+
+              // Load households for this slum
+              await loadHouseholdsForSlum(slumId);
+              
+              // Fetch initial progress
+              await fetchProgress();
+            }
+          } else {
+            showToast("Failed to load assignment details", "error");
+            router.push("/surveyor/dashboard");
+            return;
+          }
         }
       } catch (error) {
-        console.error(`Error loading assignment with ID ${assignmentId}:`, error);
-        showToast("Failed to load assignment data", "error");
+        console.error(`Error loading data with ID ${assignmentId}:`, error);
+        showToast("Failed to load data", "error");
         router.push("/surveyor/dashboard");
       } finally {
         setLoading(false);
@@ -837,111 +865,149 @@ export default function HouseholdSurveyPage() {
     try {
       setSubmitting(true);
       setShowSubmitConfirm(false);
-
+  
       // Clear previous errors
       setErrors([]);
-
-      // Create or get household survey
-      const surveyResponse = await apiService.createOrGetHouseholdSurvey(
-        assignment?.slum?._id || "",
-        formData.houseDoorNo || "",
-      );
-
-      if (!surveyResponse.success) {
-        showToast(
-          surveyResponse.message || "Failed to initialize survey",
-          "error",
+  
+      // Check if we're working with an existing survey (editing mode)
+      const existingSurveyId = assignmentId; // This could be either assignment ID or household survey ID
+        
+      // Try to get the household survey by the ID we were given
+      const existingSurveyResponse = await apiService.getHouseholdSurvey(existingSurveyId);
+      let surveyId;
+        
+      if (existingSurveyResponse.success && existingSurveyResponse.data) {
+        // We're editing an existing survey, use its ID
+        surveyId = existingSurveyId;
+          
+        // Extract surveyStatus to handle separately
+        const { surveyStatus, ...otherFormData } = formData;
+                
+        // Update the existing survey
+        const response = await apiService.updateHouseholdSurvey(
+          surveyId,
+          {
+            ...otherFormData,
+            surveyStatus: surveyStatus || 'IN PROGRESS', // Use existing status or set to IN PROGRESS
+          }
         );
-        return;
-      }
-
-      const surveyId = surveyResponse.data._id;
-
-      // Submit the survey
-      const response = await apiService.submitHouseholdSurvey(
-        surveyId,
-        formData,
-      );
-
-      if (response.success) {
-        showToast("Household survey submitted successfully", "success");
-        
-        // Save house number for modal
-        setLastSubmittedHouseNo(formData.houseDoorNo || "");
-
-        // Reset form for next household
-        setFormData({
-          householdId: "",
-          houseDoorNo: "",
-          slumName: slum?.slumName || "",
-          ward: typeof slum?.ward === 'object' ? `${slum?.ward.number} - ${slum?.ward.name}` : slum?.ward || "",
-          // Reset all other fields to empty/default values
-          headName: "",
-          fatherName: "",
-          sex: "",
-          caste: "",
-          religion: "",
-          minorityStatus: "",
-          femaleHeadStatus: "",
-          familyMembersMale: undefined,
-          familyMembersFemale: undefined,
-          familyMembersTotal: undefined,
-          illiterateAdultMale: undefined,
-          illiterateAdultFemale: undefined,
-          illiterateAdultTotal: undefined,
-          childrenNotAttendingMale: undefined,
-          childrenNotAttendingFemale: undefined,
-          childrenNotAttendingTotal: undefined,
-          handicappedPhysically: undefined,
-          handicappedMentally: undefined,
-          handicappedTotal: undefined,
-          femaleEarningStatus: "",
-          belowPovertyLine: "",
-          bplCard: "",
-          landTenureStatus: "",
-          houseStructure: "",
-          roofType: "",
-          flooringType: "",
-          houseLighting: "",
-          cookingFuel: "",
-          waterSource: "",
-          waterSupplyDuration: "",
-          waterSourceDistance: "",
-          toiletFacility: "",
-          bathroomFacility: "",
-          roadFrontType: "",
-          preschoolType: "",
-          primarySchoolType: "",
-          highSchoolType: "",
-          healthFacilityType: "",
-          welfareBenefits: [],
-          consumerDurables: [],
-          livestock: [],
-          yearsInTown: "",
-          migrated: "",
-          migratedFrom: "",
-          migrationType: "",
-          migrationReasons: [],
-          earningAdultMale: undefined,
-          earningAdultFemale: undefined,
-          earningAdultTotal: undefined,
-          earningNonAdultMale: undefined,
-          earningNonAdultFemale: undefined,
-          earningNonAdultTotal: undefined,
-          monthlyIncome: undefined,
-          monthlyExpenditure: undefined,
-          debtOutstanding: undefined,
-          notes: ""
-        });
-        
-        // Reset expanded sections
-        setExpandedSections(new Set(["general", "household"]));
-        
-        // Show completion modal instead of browser alert
-        await fetchProgress(); // Fetch updated progress
-        setShowCompletionModal(true);
+                
+        if (response.success) {
+          showToast("Household survey updated successfully", "success");
+                  
+          // Save house number for modal
+          setLastSubmittedHouseNo(formData.houseDoorNo || "");
+                  
+          // Show completion modal instead of browser alert
+          await fetchProgress(); // Fetch updated progress
+          setShowCompletionModal(true);
+        } else {
+          showToast(response.message || "Failed to update survey", "error");
+          return;
+        }
       } else {
-        showToast(response.message || "Failed to submit survey", "error");
+        // This is a new survey from an assignment, create it
+        const surveyResponse = await apiService.createOrGetHouseholdSurvey(
+          assignment?.slum?._id || "",
+          formData.houseDoorNo || "",
+        );
+  
+        if (!surveyResponse.success) {
+          showToast(
+            surveyResponse.message || "Failed to initialize survey",
+            "error",
+          );
+          return;
+        }
+  
+        surveyId = surveyResponse.data._id;
+  
+        // Submit the new survey
+        const response = await apiService.submitHouseholdSurvey(
+          surveyId,
+          formData,
+        );
+          
+        if (response.success) {
+          showToast("Household survey submitted successfully", "success");
+            
+          // Save house number for modal
+          setLastSubmittedHouseNo(formData.houseDoorNo || "");
+  
+          // Reset form for next household
+          setFormData({
+            householdId: "",
+            houseDoorNo: "",
+            slumName: slum?.slumName || "",
+            ward: typeof slum?.ward === 'object' ? `${slum?.ward.number} - ${slum?.ward.name}` : slum?.ward || "",
+            // Reset all other fields to empty/default values
+            headName: "",
+            fatherName: "",
+            sex: "",
+            caste: "",
+            religion: "",
+            minorityStatus: "",
+            femaleHeadStatus: "",
+            familyMembersMale: undefined,
+            familyMembersFemale: undefined,
+            familyMembersTotal: undefined,
+            illiterateAdultMale: undefined,
+            illiterateAdultFemale: undefined,
+            illiterateAdultTotal: undefined,
+            childrenNotAttendingMale: undefined,
+            childrenNotAttendingFemale: undefined,
+            childrenNotAttendingTotal: undefined,
+            handicappedPhysically: undefined,
+            handicappedMentally: undefined,
+            handicappedTotal: undefined,
+            femaleEarningStatus: "",
+            belowPovertyLine: "",
+            bplCard: "",
+            landTenureStatus: "",
+            houseStructure: "",
+            roofType: "",
+            flooringType: "",
+            houseLighting: "",
+            cookingFuel: "",
+            waterSource: "",
+            waterSupplyDuration: "",
+            waterSourceDistance: "",
+            toiletFacility: "",
+            bathroomFacility: "",
+            roadFrontType: "",
+            preschoolType: "",
+            primarySchoolType: "",
+            highSchoolType: "",
+            healthFacilityType: "",
+            welfareBenefits: [],
+            consumerDurables: [],
+            livestock: [],
+            yearsInTown: "",
+            migrated: "",
+            migratedFrom: "",
+            migrationType: "",
+            migrationReasons: [],
+            earningAdultMale: undefined,
+            earningAdultFemale: undefined,
+            earningAdultTotal: undefined,
+            earningNonAdultMale: undefined,
+            earningNonAdultFemale: undefined,
+            earningNonAdultTotal: undefined,
+            monthlyIncome: undefined,
+            monthlyExpenditure: undefined,
+            debtOutstanding: undefined,
+            notes: ""
+          });
+            
+          // Reset expanded sections
+          setExpandedSections(new Set(["general", "household"]));
+            
+          // Show completion modal instead of browser alert
+          await fetchProgress(); // Fetch updated progress
+          setShowCompletionModal(true);
+        } else {
+          showToast(response.message || "Failed to submit survey", "error");
+        }
       }
     } catch (error) {
       console.error("Error submitting survey:", error);
@@ -1072,8 +1138,8 @@ export default function HouseholdSurveyPage() {
                         error={getFieldError("headName")}
                       />
                       <Input
-                        label="5. Father's Name"
-                        placeholder="Enter father's name"
+                        label="5. Father/ Husband/ Guardian's Name"
+                        placeholder="Enter father/husband/guardian's name"
                         value={formData.fatherName || ""}
                         onChange={(e) =>
                           handleInputChange("fatherName", e.target.value)

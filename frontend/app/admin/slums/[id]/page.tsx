@@ -14,6 +14,9 @@ interface Slum {
   stateCode: string;
   distCode: string;
   cityTownCode: string;
+  location?: string;
+  ulbCode?: string;
+  ulbName?: string;
   ward: {
     _id: string;
     number: string;
@@ -165,12 +168,24 @@ export default function AdminSlumDetailPage() {
                 </p>
               </div>
               <div>
+                <h3 className="text-sm font-medium text-slate-400">Location</h3>
+                <p className="text-white">{slum.location || 'N/A'}</p>
+              </div>
+              <div>
                 <h3 className="text-sm font-medium text-slate-400">Village</h3>
                 <p className="text-white">{slum.village || 'N/A'}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-slate-400">Land Ownership</h3>
                 <p className="text-white">{slum.landOwnership || 'N/A'}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-slate-400">ULB Code</h3>
+                <p className="text-white">{slum.ulbCode || 'N/A'}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-slate-400">ULB Name</h3>
+                <p className="text-white">{slum.ulbName || 'N/A'}</p>
               </div>
             </div>
           </Card>

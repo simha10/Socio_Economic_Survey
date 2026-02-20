@@ -23,6 +23,7 @@ interface Assignment {
     _id: string;
     slumName: string;
     village: string;
+    slumId: string;
     ward: {
       _id: string;
       number: string;
@@ -312,7 +313,7 @@ export default function SurveyorDashboard() {
               <div className="bg-slate-800/80 px-6 py-4 border-b border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">
-                    {assignment.slum?.slumName || "Unknown Slum"}
+                    {`${assignment.slum?.slumName}, (${assignment.slum?.slumId})` || "Unknown Slum"}
                   </h3>
                   <div className="flex flex-col gap-1 text-slate-400 text-sm">
                     <div className="flex items-center gap-2">

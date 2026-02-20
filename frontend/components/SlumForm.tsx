@@ -27,6 +27,7 @@ interface Slum {
   distCode?: string;
   cityTownCode?: string;
   city?: string;
+  location?: string;
   ward?: string | number | {
     _id?: string;
     number?: string;
@@ -72,6 +73,7 @@ export default function SlumForm({
     landOwnership: "",
     totalHouseholds: 0,
     area: 0,
+    location: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -100,6 +102,7 @@ export default function SlumForm({
         landOwnership: slum.landOwnership || "",
         totalHouseholds: slum.totalHouseholds || 0,
         area: slum.area || 0,
+        location: slum.location || "",
       });
     } else {
       setFormData({
@@ -108,6 +111,7 @@ export default function SlumForm({
         stateCode: "",
         distCode: "",
         cityTownCode: "",
+        location: "",
         ward: "",
         slumType: "NOTIFIED",
         village: "",
@@ -167,6 +171,7 @@ export default function SlumForm({
           stateCode: "",
           distCode: "",
           cityTownCode: "",
+          location: "",
           ward: 0,
           slumType: "NOTIFIED",
           village: "",
@@ -236,6 +241,26 @@ export default function SlumForm({
                 value={formData.slumId || ''}
                 onChange={handleChange}
                 placeholder="Enter unique slum ID"
+                required
+                disabled
+                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                label="Location"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="Enter location"
+              />
+              <Input
+                label="City/Town Code"
+                name="cityTownCode"
+                value={formData.cityTownCode}
+                onChange={handleChange}
+                placeholder="Enter City/Town Code"
                 required
                 disabled
                 className="bg-slate-800/50 cursor-not-allowed opacity-75"

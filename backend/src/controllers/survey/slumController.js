@@ -1,6 +1,8 @@
+const mongoose = require('mongoose');
 const Slum = require('../../models/Slum');
 const State = require('../../models/State');
 const District = require('../../models/District');
+const Ward = require('../../models/Ward');
 
 // Create a new slum
 const createSlum = async (req, res) => {
@@ -11,7 +13,7 @@ const createSlum = async (req, res) => {
       userRole: req.user.role
     });
     
-    const { name, slumId, location, stateCode, distCode, city, ward, slumType, landOwnership, totalHouseholds, village, area } = req.body;
+    const { name, slumId, location, stateCode, distCode, city, ward, slumType, landOwnership, totalHouseholds, village, area, ulbCode, ulbName } = req.body;
 
     // Validate required fields
     if (!stateCode) {
@@ -30,6 +32,30 @@ const createSlum = async (req, res) => {
       });
     }
 
+    // Handle ward field - if it's provided as a number/string, find the corresponding Ward document
+    let wardId = ward;
+    if (ward) {
+      let wardDoc;
+      if (mongoose.Types.ObjectId.isValid(ward)) {
+        // If ward is already an ObjectId, use it directly
+        wardDoc = await Ward.findById(ward);
+      } else {
+        // If ward is a number or string, search by the number field
+        wardDoc = await Ward.findOne({ number: ward.toString() });
+      }
+      
+      if (wardDoc) {
+        wardId = wardDoc._id;
+      } else {
+        // If no ward is found, return an error
+        console.log('[DEBUG] Ward not found for value:', ward);
+        return res.status(400).json({
+          success: false,
+          message: 'Ward not found. Please provide a valid ward number.'
+        });
+      }
+    }
+
     // Create new slum
     const slum = new Slum({
       name,
@@ -37,8 +63,10 @@ const createSlum = async (req, res) => {
       location,
       stateCode,
       distCode,
+      ulbCode: ulbCode || '',
+      ulbName: ulbName || '',
       city,
-      ward,
+      ward: wardId,
       slumType,
       landOwnership,
       village: village || '',
@@ -213,7 +241,7 @@ const updateSlum = async (req, res) => {
       userRole: req.user.role
     });
     
-    const { name, stateCode, distCode, city, ward, slumType, landOwnership, totalHouseholds, village, area } = req.body;
+    const { name, location, stateCode, distCode, city, ward, slumType, landOwnership, totalHouseholds, village, area, ulbCode, ulbName } = req.body;
 
     const slum = await Slum.findById(req.params.id);
     if (!slum) {
@@ -240,13 +268,40 @@ const updateSlum = async (req, res) => {
       name,
       location,
       city,
-      ward,
       slumType,
       landOwnership,
       totalHouseholds,
       village: village || slum.village,
       area: area !== undefined ? area : slum.area
     };
+
+    // Handle ward field - if it's provided as a number/string, find the corresponding Ward document
+    if (ward) {
+      // Try to find the Ward by number or ObjectId
+      let wardDoc;
+      if (mongoose.Types.ObjectId.isValid(ward)) {
+        // If ward is already an ObjectId, use it directly
+        wardDoc = await Ward.findById(ward);
+      } else {
+        // If ward is a number or string, search by the number field
+        wardDoc = await Ward.findOne({ number: ward.toString() });
+      }
+      
+      if (wardDoc) {
+        updatedFields.ward = wardDoc._id;
+      } else {
+        // If no ward is found, return an error
+        console.log('[DEBUG] Ward not found for value:', ward);
+        return res.status(400).json({
+          success: false,
+          message: 'Ward not found. Please provide a valid ward number.'
+        });
+      }
+    }
+
+    // Add optional fields if they exist
+    if (ulbCode) updatedFields.ulbCode = ulbCode;
+    if (ulbName) updatedFields.ulbName = ulbName;
 
     if (stateCode) updatedFields.stateCode = stateCode;
     if (distCode) updatedFields.distCode = distCode;

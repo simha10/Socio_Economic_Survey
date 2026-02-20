@@ -59,7 +59,7 @@ export default function HHQCPage() {
 
       try {
         setLoading(true);
-        const response = await apiService.getHouseholdSurveysBySlum(selectedSlum, 'SUBMITTED');
+        const response = await apiService.getHouseholdSurveysBySlum(selectedSlum);
         setHouseholdSurveys(Array.isArray(response.data) ? response.data : response.data.surveys || []);
         setLoading(false);
       } catch (err) {
@@ -73,18 +73,8 @@ export default function HHQCPage() {
   }, [selectedSlum]);
 
   const handleEditRecord = (survey: HouseholdSurvey) => {
-    // Find the assignment that corresponds to this household survey
-    // Match by slum ID and surveyor ID (from the household survey)
-    const matchingAssignment = assignments.find(assignment => 
-      assignment.slum?._id === survey.slum?._id && 
-      assignment.surveyor?._id === survey.surveyor?._id
-    );
-    
-    if (matchingAssignment) {
-      router.push(`/surveyor/household-survey/${matchingAssignment._id}`);
-    } else {
-      setError("Could not find the corresponding assignment for this household survey");
-    }
+    // Navigate directly to the household survey ID to edit existing data
+    router.push(`/surveyor/household-survey/${survey._id}`);
   };
 
   return (
