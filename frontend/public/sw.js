@@ -1,82 +1,94 @@
 // sw.js - Service Worker for PWA functionality
-
-const CACHE_NAME = 'ses-v1';
-const urlsToCache = [
+const CACHE_NAME = 'ses-v3';
+const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/SES_logo.png',
   '/favicon.ico',
-  '/globals.css',
-  '/offline.html'
+  '/offline.html',
 ];
 
-// Install event - cache static assets
+// Install: cache static assets and skip waiting to activate immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS);
+    }).then(() => {
+      // Activate immediately without waiting for old tabs to close
+      return self.skipWaiting();
+    })
   );
 });
 
-// Fetch event - serve cached content when offline
+// Activate: claim all clients immediately and clean up old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    Promise.all([
+      // Take control of all open pages right away
+      self.clients.claim(),
+      // Delete old caches
+      caches.keys().then((cacheNames) =>
+        Promise.all(
+          cacheNames
+            .filter((name) => name !== CACHE_NAME)
+            .map((name) => caches.delete(name))
+        )
+      ),
+    ])
+  );
+});
+
+// Fetch: network-first for API, cache-first for static assets
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
+  // Only handle GET requests
   if (event.request.method !== 'GET') {
     return;
   }
-  
-  // Don't cache certain types of requests
+
   const url = new URL(event.request.url);
-  if (url.pathname.startsWith('/api/')) {
-    // For API requests, don't use cache
+
+  // API requests: network only, return JSON error when offline
+  if (url.pathname.startsWith('/api/') || url.href.includes('/api/')) {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Network error - please check your connection',
-            offline: true 
+      fetch(event.request).catch(() =>
+        new Response(
+          JSON.stringify({
+            success: false,
+            error: 'You are offline. Please check your network connection.',
+            offline: true,
           }),
           {
             status: 503,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
           }
-        );
-      })
+        )
+      )
     );
-  } else {
-    // For static assets, try cache first
-    event.respondWith(
-      caches.match(event.request)
-        .then((response) => {
-          return response || fetch(event.request).catch(() => {
-            // For HTML requests, return offline page
-            if (event.request.destination === 'document') {
-              return caches.match('/offline.html');
-            }
-            
-            // For other requests, return a basic response
-            return new Response('Offline', { status: 503 });
-          });
-        })
-    );
+    return;
   }
-});
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
+  // Static assets: cache-first strategy
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(event.request)
+        .then((response) => {
+          // Cache successful responses for static assets
+          if (response.ok) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
           }
+          return response;
         })
-      );
+        .catch(() => {
+          // For HTML navigation requests, serve offline page
+          if (event.request.destination === 'document') {
+            return caches.match('/offline.html');
+          }
+          return new Response('Offline', { status: 503 });
+        });
     })
   );
 });

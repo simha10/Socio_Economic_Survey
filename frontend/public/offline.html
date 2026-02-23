@@ -1,56 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Socio-Economic Survey - Offline</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background-color: #0B1F33;
-      color: #E5E7EB;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      text-align: center;
-    }
-    .container {
-      max-width: 500px;
-      padding: 2rem;
-    }
-    .icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-      color: #0ea5e9;
-    }
-    h1 {
-      margin-top: 0;
-      margin-bottom: 1rem;
-      font-size: 1.5rem;
-    }
-    p {
-      margin-bottom: 2rem;
-      line-height: 1.6;
-    }
-    .status {
-      display: inline-block;
-      padding: 0.5rem 1rem;
-      background-color: #374151;
-      border-radius: 9999px;
-      margin-bottom: 1rem;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Socio-Economic Survey</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0B1F33 0%, #1e3a5f 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .background-effects {
+            position: absolute;
+            inset: 0;
+            background: 
+                url('https://grainy-gradients.vercel.app/noise.svg'),
+                linear-gradient(to right, #80808012 1px, transparent 1px),
+                linear-gradient(to bottom, #80808012 1px, transparent 1px);
+            background-size: auto, 24px 24px, 24px 24px;
+            opacity: 0.2;
+            pointer-events: none;
+            mix-blend-mode: soft-light;
+        }
+        
+        .glow-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+        }
+        
+        .glow-blob-1 {
+            top: -10%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(59, 130, 246, 0.2);
+        }
+        
+        .glow-blob-2 {
+            bottom: -10%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(139, 92, 246, 0.2);
+        }
+        
+        .logo-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        
+        .logo-glow {
+            position: absolute;
+            inset: -20px;
+            background: linear-gradient(45deg, #3b82f6, #06b6d4);
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.3;
+            animation: pulse 2s infinite;
+        }
+        
+        .logo {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            z-index: 2;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 1rem 0;
+            background: linear-gradient(to right, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+        
+        .status-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            max-width: 500px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        
+        .status-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 1rem;
+            background: rgba(239, 68, 68, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status-icon svg {
+            width: 30px;
+            height: 30px;
+            color: #ef4444;
+        }
+        
+        .retry-button {
+            background: linear-gradient(to right, #3b82f6, #06b6d4);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4);
+        }
+        
+        .retry-button:active {
+            transform: translateY(0);
+        }
+        
+        .footer {
+            position: absolute;
+            bottom: 2rem;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.5; }
+        }
+        
+        @media (max-width: 768px) {
+            .title { font-size: 2rem; }
+            .subtitle { font-size: 1rem; }
+            .logo { width: 100px; height: 100px; }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="icon">📶</div>
-    <h1>You are offline</h1>
-    <div class="status">No Internet Connection</div>
-    <p>Please check your network connection and try again. Some features may be unavailable while offline.</p>
-    <p>Once you're back online, the application will reconnect automatically.</p>
-  </div>
+    <div class="background-effects"></div>
+    <div class="glow-blob glow-blob-1"></div>
+    <div class="glow-blob glow-blob-2"></div>
+    
+    <div class="logo-container">
+        <div class="logo-glow"></div>
+        <img src="/SES_logo.png" alt="Socio-Economic Survey Logo" class="logo">
+    </div>
+    
+    <h1 class="title">You're Offline</h1>
+    <p class="subtitle">
+        It seems you've lost your internet connection. Don't worry - you can still access 
+        previously loaded content and your data will sync automatically when you're back online.
+    </p>
+    
+    <div class="status-card">
+        <div class="status-icon">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+        </div>
+        <h2 style="margin: 0 0 1rem; color: #f1f5f9;">Connection Status</h2>
+        <p style="margin: 0; color: #94a3b8;">Offline Mode Active</p>
+    </div>
+    
+    <button class="retry-button" onclick="retryConnection()">
+        Retry Connection
+    </button>
+    
+    <div class="footer">
+        Socio-Economic Survey System • Secure Offline Access
+    </div>
+    
+    <script>
+        function retryConnection() {
+            // Try to reload the page
+            window.location.reload();
+        }
+        
+        // Check connection status periodically
+        setInterval(() => {
+            if (navigator.onLine) {
+                window.location.reload();
+            }
+        }, 5000);
+        
+        // Listen for online events
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+    </script>
 </body>
 </html>
