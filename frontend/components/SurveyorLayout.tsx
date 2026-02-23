@@ -22,6 +22,9 @@ export default function SurveyorLayout({
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    // Don't remove remembered credentials - they should persist across sessions
+    // localStorage.removeItem("rememberedCredentials");
+    // localStorage.removeItem("rememberMeState");
     router.push("/login");
   };
 

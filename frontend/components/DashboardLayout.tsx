@@ -32,17 +32,26 @@ export default function DashboardLayout({
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
+    const initializeAuth = () => {
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
 
-    if (!token || !userStr) {
-      router.push("/login");
-      return;
-    }
+      if (!token || !userStr) {
+        router.push("/login");
+        return;
+      }
 
-    const userData = JSON.parse(userStr);
-    setUser(userData);
-    setLoading(false);
+      try {
+        const userData = JSON.parse(userStr);
+        setUser(userData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to parse user data:", error);
+        router.push("/login");
+      }
+    };
+
+    initializeAuth();
   }, [router]);
 
   if (loading) {
@@ -119,6 +128,9 @@ export default function DashboardLayout({
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    // Don't remove remembered credentials - they should persist across sessions
+    // localStorage.removeItem("rememberedCredentials");
+    // localStorage.removeItem("rememberMeState");
     router.push("/login");
   };
 
@@ -219,7 +231,7 @@ export default function DashboardLayout({
           {/* User Profile Footer */}
           <div className="p-4 border-t border-slate-800 space-y-3">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950/50 border border-slate-800">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-10 h-10 rounded-full bg-linear-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-sm">
                 {role.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">

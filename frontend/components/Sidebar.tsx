@@ -69,12 +69,18 @@ export default function Sidebar({ role, username }: SidebarProps) {
       // await new Promise(resolve => setTimeout(resolve, 500)); 
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      // Don't remove remembered credentials - they should persist across sessions
+      // localStorage.removeItem("rememberedCredentials");
+      // localStorage.removeItem("rememberMeState");
       router.push("/login");
     } catch (error) {
       console.error("Logout error:", error);
       // Fallback to traditional redirect if router fails
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      // Don't remove remembered credentials - they should persist across sessions
+      // localStorage.removeItem("rememberedCredentials");
+      // localStorage.removeItem("rememberMeState");
       window.location.href = "/login";
     }
   };

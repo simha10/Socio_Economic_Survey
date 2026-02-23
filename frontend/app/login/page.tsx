@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import apiService from "@/services/api";
 // Ensure you have lucide-react installed: npm install lucide-react
 import {
@@ -9,9 +10,8 @@ import {
   Lock,
   AlertCircle,
   Loader2,
-  LayoutDashboard,
   Eye,
-  EyeOff,
+  EyeOff
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -23,6 +23,35 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Load remembered credentials and toggle state on page load
+  useEffect(() => {
+    const loadCredentialsAndState = () => {
+      
+      // Load remembered credentials
+      const rememberedCredentials = localStorage.getItem("rememberedCredentials");
+      
+      // Load remembered toggle state
+      const rememberedToggleState = localStorage.getItem("rememberMeState") === 'true';
+      
+      if (rememberedCredentials && rememberedToggleState) {
+        try {
+          const { username, password } = JSON.parse(rememberedCredentials);
+          if (username && password) {
+            setFormData({ username, password });
+            setRememberMe(true);
+          }
+        } catch (error) {
+          localStorage.removeItem("rememberedCredentials");
+          localStorage.removeItem("rememberMeState");
+          console.error("Error parsing remembered credentials:", error);
+        }
+      }
+    };
+    
+    loadCredentialsAndState();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +82,21 @@ export default function LoginPage() {
           localStorage.setItem("user", JSON.stringify(userData));
         }
 
+        // Handle Remember Me functionality
+        if (rememberMe) {
+          // Store credentials in localStorage
+          const credentialsToSave = {
+            username: formData.username,
+            password: formData.password
+          };
+          localStorage.setItem("rememberedCredentials", JSON.stringify(credentialsToSave));
+          localStorage.setItem("rememberMeState", "true");
+        } else {
+          // Clear any previously saved credentials and toggle state
+          localStorage.removeItem("rememberedCredentials");
+          localStorage.removeItem("rememberMeState");
+        }
+
         const role = userData?.role?.toUpperCase(); // Convert to uppercase to match the enum values
         console.log("User role determined:", role);
         if (role === "ADMIN") {
@@ -72,7 +116,6 @@ export default function LoginPage() {
         );
       }
     } catch (err: unknown) {
-      console.error("Login exception caught:", err);
       setError("An unexpected error occurred. " + ((err as Error).message || ""));
     } finally {
       setLoading(false);
@@ -178,12 +221,30 @@ export default function LoginPage() {
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
-                      <Eye className="w-5 h-5" />
+                      <Eye className="w-5 h-5 cursor-pointer" />
                     ) : (
-                      <EyeOff className="w-5 h-5" />
+                      <EyeOff className="w-5 h-5 cursor-pointer" />
                     )}
                   </button>
                 </div>
+              </div>
+
+              {/* Remember Me Toggle */}
+              <div className="flex items-center justify-between py-2">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">
+                  Remember Me
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setRememberMe(!rememberMe)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 cursor-pointer ${rememberMe ? 'bg-green-500' : 'bg-red-500'}`}
+                  aria-label={rememberMe ? "Remember me enabled" : "Remember me disabled"}
+                >
+                  <span className="sr-only">{rememberMe ? "Remember me enabled" : "Remember me disabled"}</span>
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${rememberMe ? 'translate-x-6' : 'translate-x-1'}`}
+                  />
+                </button>
               </div>
 
               {/* Submit Button */}

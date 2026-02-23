@@ -18,6 +18,14 @@ require('./models/HouseholdSurvey');
 
 const app = express();
 
+// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
 // Logging middleware
 app.use((req, res, next) => {
   const startTime = Date.now();
@@ -38,14 +46,6 @@ app.use((req, res, next) => {
   
   next();
 });
-
-// Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
