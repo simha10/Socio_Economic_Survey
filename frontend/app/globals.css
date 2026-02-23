@@ -83,8 +83,8 @@
 /* Custom Base Styles for SaaS Appeal */
 body {
   @apply bg-slate-950 text-slate-200 antialiased font-sans;
-  background-color: #0B1F33 !important;
-  color: #E5E7EB !important;
+  background-color: #0b1f33 !important;
+  color: #e5e7eb !important;
 }
 
 h1,
@@ -110,6 +110,17 @@ h6 {
 
 .animate-fade-in-up {
   animation: fade-in-up 0.3s ease-out forwards;
+}
+
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Table Alignment Fixes */

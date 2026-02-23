@@ -90,16 +90,24 @@ export default function LoginPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-125 h-125 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
 
       {/* --- Main Card --- */}
-      <div className="w-full max-w-105 relative z-10">
+      <div className="w-full max-w-100 relative z-10">
         {/* Header Section */}
-        <div className="text-center mb-8">
-          <img src="/SES_logo.png" alt="Socio-Economic Survey Logo" className="w-16 h-16 mx-auto mb-6" />
+        <div className="text-center">
+          <div className="relative inline-block">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur-lg opacity-30 animate-pulse"></div>
+            <img 
+              src="/SES_logo.png" 
+              alt="Socio-Economic Survey Logo" 
+              className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-6 relative z-10 drop-shadow-xl hover:scale-110 transition-transform duration-300"
+            />
+          </div>
           <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
             Welcome Back
           </h1>
           <p className="text-slate-400 text-sm">
             Sign in to access the Socio-Economic Survey
           </p>
+          <div className="w-16 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mx-auto mt-4"></div>
         </div>
 
         {/* Glass Container */}
@@ -109,7 +117,7 @@ export default function LoginPage() {
             <div className="h-1 w-full bg-linear-to-r from-blue-500 via-cyan-400 to-blue-500 animate-gradient-x" />
           )}
 
-          <form onSubmit={handleSubmit} className="p-8! flex! flex-col! gap-6!">
+          <form onSubmit={handleSubmit} className="p-6 flex! flex-col gap-6">
             {/* Error Message */}
             {error && (
               <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-3 text-red-400 text-sm">
@@ -118,7 +126,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="flex! flex-col! gap-5!">
+            <div className="flex flex-col gap-5">
               {/* Username Input */}
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">
