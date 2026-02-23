@@ -253,14 +253,16 @@ const getMyAssignments = async (req, res) => {
         slum: assignment.slum._id
       }).populate('slum', 'slumName totalHouseholds');
 
-      // All surveys are already filtered by slum, so count them directly
-      const slumHouseholdSurveys = householdSurveys;
-
       // Get total households in the slum
       const totalHouseholds = assignment.slum?.totalHouseholds || 0;
 
+      // Count only household surveys with SUBMITTED or COMPLETED status
+      const submittedHouseholdSurveys = householdSurveys.filter(hs => 
+        hs.surveyStatus === 'SUBMITTED' || hs.surveyStatus === 'COMPLETED'
+      );
+
       householdSurveyProgress = {
-        completed: slumHouseholdSurveys.length,
+        completed: submittedHouseholdSurveys.length,
         total: totalHouseholds
       };
 

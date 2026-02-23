@@ -7,17 +7,13 @@ const Ward = require('../../models/Ward');
 // Create a new slum
 const createSlum = async (req, res) => {
   try {
-    console.log('[DEBUG] Create slum request received:', {
-      body: req.body,
-      userId: req.user._id,
-      userRole: req.user.role
-    });
+
     
     const { name, slumId, location, stateCode, distCode, city, ward, slumType, landOwnership, totalHouseholds, village, area, ulbCode, ulbName } = req.body;
 
     // Validate required fields
     if (!stateCode) {
-      console.log('[DEBUG] State code is required for creation');
+      
       return res.status(400).json({
         success: false,
         message: 'State code is required.'
@@ -25,7 +21,7 @@ const createSlum = async (req, res) => {
     }
 
     if (!distCode) {
-      console.log('[DEBUG] District code is required for creation');
+      
       return res.status(400).json({
         success: false,
         message: 'District code is required.'
@@ -48,7 +44,6 @@ const createSlum = async (req, res) => {
         wardId = wardDoc._id;
       } else {
         // If no ward is found, return an error
-        console.log('[DEBUG] Ward not found for value:', ward);
         return res.status(400).json({
           success: false,
           message: 'Ward not found. Please provide a valid ward number.'
@@ -291,7 +286,6 @@ const updateSlum = async (req, res) => {
         updatedFields.ward = wardDoc._id;
       } else {
         // If no ward is found, return an error
-        console.log('[DEBUG] Ward not found for value:', ward);
         return res.status(400).json({
           success: false,
           message: 'Ward not found. Please provide a valid ward number.'
@@ -306,7 +300,7 @@ const updateSlum = async (req, res) => {
     if (stateCode) updatedFields.stateCode = stateCode;
     if (distCode) updatedFields.distCode = distCode;
     
-    console.log('[DEBUG] Updating slum with fields:', updatedFields);
+
 
     const updatedSlum = await Slum.findByIdAndUpdate(
       req.params.id,

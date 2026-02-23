@@ -78,12 +78,12 @@ exports.createOrGetSlumSurvey = async (req, res) => {
 
             if (!districtData.state) {
                 // Try to find the state using the slum's stateCode as a fallback
-                console.log(`[DEBUG] District ${districtData._id} is missing state information. Attempting to find state using slum's stateCode: ${slum.stateCode}`);
+                
                 
                 // First, try to find state by code
                 const stateByCode = await State.findOne({ code: slum.stateCode });
                 if (stateByCode) {
-                    console.log(`[DEBUG] Found state by code: ${stateByCode._id}`);
+                    
                     
                     // Update the district with the state reference
                     districtData.state = stateByCode._id;
@@ -92,7 +92,7 @@ exports.createOrGetSlumSurvey = async (req, res) => {
                     // If we still can't find the state, try to find it by matching the district
                     const stateForDistrict = await State.findOne({ districts: districtData._id });
                     if (stateForDistrict) {
-                        console.log(`[DEBUG] Found state by district reference: ${stateForDistrict._id}`);
+                        
                         
                         // Update the district with the state reference
                         districtData.state = stateForDistrict._id;
@@ -133,7 +133,7 @@ exports.createOrGetSlumSurvey = async (req, res) => {
                 }
             });
             await survey.save();
-            console.log(`Created new slum survey for slum ${slumId}`);
+            
         }
          
         // Ensure nested objects are properly initialized to prevent validation errors
@@ -414,7 +414,7 @@ exports.updateSlumSurvey = async (req, res) => {
         // Handle nested objects to prevent validation errors
         // Prevent manual updates to slumPopulation as it's auto-calculated
         if (updateData.cityTownSlumProfile && updateData.cityTownSlumProfile.slumPopulation !== undefined) {
-            console.log('Ignoring manual update to slumPopulation as it is auto-calculated');
+            
             delete updateData.cityTownSlumProfile.slumPopulation;
             
             // If cityTownSlumProfile becomes empty after deletion, remove it
@@ -427,7 +427,7 @@ exports.updateSlumSurvey = async (req, res) => {
         if (updateData.cityTownSlumProfile && 
             (updateData.cityTownSlumProfile.bplPopulation !== undefined || 
              updateData.cityTownSlumProfile.bplHouseholds !== undefined)) {
-            console.log('Ignoring manual update to BPL population/households as they are auto-calculated');
+            
             delete updateData.cityTownSlumProfile.bplPopulation;
             delete updateData.cityTownSlumProfile.bplHouseholds;
             
@@ -531,7 +531,7 @@ exports.updateSlumSurvey = async (req, res) => {
             { path: 'surveyor', select: 'name ' },
         ]);
 
-        console.log(`Updated slum survey ${surveyId}`);
+        
         sendSuccess(res, survey, 'Survey updated successfully');
     } catch (error) {
         console.error('Error in updateSlumSurvey:', error.message);
@@ -579,7 +579,7 @@ exports.submitSlumSurvey = async (req, res) => {
         allSections.forEach(section => {
             if (!survey.completedSections.includes(section)) {
                 survey.completedSections.push(section);
-                console.log(`Section ${section} marked as completed during submission`);
+                
             }
         });
         
@@ -674,12 +674,7 @@ exports.submitSlumSurvey = async (req, res) => {
         survey.lastModifiedBy = userId;
         survey.lastModifiedAt = new Date();
                 
-        // Final validation check before saving
-        console.log('[DEBUG] Final validation before save - survey data:', {
-            physicalInfrastructure: survey.physicalInfrastructure,
-            hasSourceDrinkingWater: !!survey.physicalInfrastructure?.sourceDrinkingWater,
-            hasSolidWasteManagement: !!survey.physicalInfrastructure?.solidWasteManagement
-        });
+
                 
         // Add validation error handling
         try {
@@ -693,13 +688,13 @@ exports.submitSlumSurvey = async (req, res) => {
         // Update all statuses based on slum survey status after submission
         await updateAssignmentStatusFromSlumSurvey(surveyId);
                 
-        console.log(`Final completion after submission: ${survey.completedSections.length}/16 = ${survey.completionPercentage}%`);
+        
         await survey.populate([
             { path: 'slum', select: 'slumName population' },
             { path: 'surveyor', select: 'name ' },
         ]);
                 
-        console.log(`Submitted slum survey ${surveyId}`);
+        
         sendSuccess(res, survey, 'Survey submitted successfully', 200);
     } catch (error) {
         console.error('Error in submitSlumSurvey:', error.message);
@@ -878,7 +873,7 @@ exports.deleteSlumSurvey = async (req, res) => {
         }
 
         await SlumSurvey.findByIdAndDelete(surveyId);
-        console.log(`Deleted slum survey ${surveyId}`);
+        
         sendSuccess(res, null, 'Survey deleted successfully');
     } catch (error) {
         console.error('Error in deleteSlumSurvey:', error.message);
@@ -945,13 +940,10 @@ exports.updateSurveySection = async (req, res) => {
         // If data has a nested structure (like data.physicalInfrastructure), extract it
         if (data && typeof data === 'object' && data[section] && typeof data[section] === 'object') {
             processedData = data[section];
-            console.log(`[DEBUG] Extracted nested data for section ${section}:`, processedData);
+            
         }
         
-        // Add debug logging
-        console.log('[DEBUG] Processing section:', section);
-        console.log('[DEBUG] Raw data received:', data);
-        console.log('[DEBUG] Processed data:', processedData);
+
 
         // Define all survey sections
         const surveySections = [
@@ -1566,9 +1558,7 @@ exports.updateSurveySection = async (req, res) => {
         // Update all statuses based on slum survey status
         await updateAssignmentStatusFromSlumSurvey(surveyId);
 
-        console.log(`Updated survey section: ${section} for survey ${surveyId}. Completion: ${completionPercentage}%`);
-        console.log(`Section data saved:`, JSON.stringify(survey[section], null, 2));
-        console.log(`All sections status:`, survey.completedSections);
+
         sendSuccess(res, {...survey.toObject(), completionPercentage}, `${section} updated successfully. Overall completion: ${completionPercentage}%`);
     } catch (error) {
         console.error('Error in updateSurveySection:', error.message);

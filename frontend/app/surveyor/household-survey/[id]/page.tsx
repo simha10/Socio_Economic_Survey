@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import SurveyorLayout from "@/components/SurveyorLayout";
 import Card from "@/components/Card";
 import Button from "@/components/Button";
@@ -159,8 +159,13 @@ const WELFARE_BENEFITS = [
 export default function HouseholdSurveyPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const assignmentId = params.id as string;
   const { showToast } = useToast();
+  
+  // Get surveyId from query parameter, fallback to assignmentId
+  const surveyIdFromQuery = searchParams.get('surveyId');
+  const surveyIdToUse = surveyIdFromQuery || assignmentId;
 
   const [slum, setSlum] = useState<{ 
     _id: string;
@@ -185,6 +190,28 @@ export default function HouseholdSurveyPage() {
 
   const [formData, setFormData] = useState<HouseholdSurveyForm>({
     householdId: "",
+    // Initialize with common fields to ensure they're available
+    houseDoorNo: "",
+    headName: "",
+    fatherName: "",
+    sex: "",
+    caste: "",
+    religion: "",
+    minorityStatus: "",
+    femaleHeadStatus: "",
+    familyMembersMale: 0,
+    familyMembersFemale: 0,
+    familyMembersTotal: 0,
+    illiterateAdultMale: 0,
+    illiterateAdultFemale: 0,
+    illiterateAdultTotal: 0,
+    childrenNotAttendingMale: 0,
+    childrenNotAttendingFemale: 0,
+    childrenNotAttendingTotal: 0,
+    surveyStatus: "",
+    // Parcel-based identification
+    parcelId: undefined,
+    propertyNo: undefined,
   });
 
   // Validation state
@@ -203,56 +230,58 @@ export default function HouseholdSurveyPage() {
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [householdProgress, setHouseholdProgress] = useState({ completed: 0, total: 0 });
   
-  // Parcel-based workflow state
-  const [parcels, setParcels] = useState<number[]>([]);
-  const [properties, setProperties] = useState<number[]>([]);
-  const [selectedParcel, setSelectedParcel] = useState<number | null>(null);
-  const [selectedProperty, setSelectedProperty] = useState<number | null>(null);
-  const [loadingParcels, setLoadingParcels] = useState(false);
-  const [loadingProperties, setLoadingProperties] = useState(false);
-  const [autoSelectedProperty, setAutoSelectedProperty] = useState<number | null>(null);
-  
-  // State for manual parcel entry and confirmation
-  const [showParcelConfirmation, setShowParcelConfirmation] = useState(false);
-  const [manualParcelInput, setManualParcelInput] = useState("");
-  const [isCheckingParcel, setIsCheckingParcel] = useState(false);
+
 
   // Auto-calculate totals when male/female fields change
   useEffect(() => {
     setFormData(prev => {
       const updated = { ...prev };
+      let hasChanges = false;
       
       // Family members total
-      if (updated.familyMembersMale !== undefined && updated.familyMembersFemale !== undefined) {
-        updated.familyMembersTotal = (updated.familyMembersMale || 0) + (updated.familyMembersFemale || 0);
+      const familyTotal = (updated.familyMembersMale || 0) + (updated.familyMembersFemale || 0);
+      if (updated.familyMembersTotal !== familyTotal) {
+        updated.familyMembersTotal = familyTotal;
+        hasChanges = true;
       }
       
       // Illiterate adults total
-      if (updated.illiterateAdultMale !== undefined && updated.illiterateAdultFemale !== undefined) {
-        updated.illiterateAdultTotal = (updated.illiterateAdultMale || 0) + (updated.illiterateAdultFemale || 0);
+      const illiterateTotal = (updated.illiterateAdultMale || 0) + (updated.illiterateAdultFemale || 0);
+      if (updated.illiterateAdultTotal !== illiterateTotal) {
+        updated.illiterateAdultTotal = illiterateTotal;
+        hasChanges = true;
       }
       
       // Children not attending school total
-      if (updated.childrenNotAttendingMale !== undefined && updated.childrenNotAttendingFemale !== undefined) {
-        updated.childrenNotAttendingTotal = (updated.childrenNotAttendingMale || 0) + (updated.childrenNotAttendingFemale || 0);
+      const childrenTotal = (updated.childrenNotAttendingMale || 0) + (updated.childrenNotAttendingFemale || 0);
+      if (updated.childrenNotAttendingTotal !== childrenTotal) {
+        updated.childrenNotAttendingTotal = childrenTotal;
+        hasChanges = true;
       }
       
       // Handicapped total
-      if (updated.handicappedPhysically !== undefined && updated.handicappedMentally !== undefined) {
-        updated.handicappedTotal = (updated.handicappedPhysically || 0) + (updated.handicappedMentally || 0);
+      const handicappedTotal = (updated.handicappedPhysically || 0) + (updated.handicappedMentally || 0);
+      if (updated.handicappedTotal !== handicappedTotal) {
+        updated.handicappedTotal = handicappedTotal;
+        hasChanges = true;
       }
       
       // Earning adults total
-      if (updated.earningAdultMale !== undefined && updated.earningAdultFemale !== undefined) {
-        updated.earningAdultTotal = (updated.earningAdultMale || 0) + (updated.earningAdultFemale || 0);
+      const earningAdultTotal = (updated.earningAdultMale || 0) + (updated.earningAdultFemale || 0);
+      if (updated.earningAdultTotal !== earningAdultTotal) {
+        updated.earningAdultTotal = earningAdultTotal;
+        hasChanges = true;
       }
       
       // Earning non-adults total
-      if (updated.earningNonAdultMale !== undefined && updated.earningNonAdultFemale !== undefined) {
-        updated.earningNonAdultTotal = (updated.earningNonAdultMale || 0) + (updated.earningNonAdultFemale || 0);
+      const earningNonAdultTotal = (updated.earningNonAdultMale || 0) + (updated.earningNonAdultFemale || 0);
+      if (updated.earningNonAdultTotal !== earningNonAdultTotal) {
+        updated.earningNonAdultTotal = earningNonAdultTotal;
+        hasChanges = true;
       }
       
-      return updated;
+      // Only return updated object if there were actual changes
+      return hasChanges ? updated : prev;
     });
   }, [
     formData.familyMembersMale, formData.familyMembersFemale,
@@ -283,16 +312,10 @@ export default function HouseholdSurveyPage() {
   const loadHouseholdsForSlum = useCallback(
     async (slumId: string) => {
       try {
-        // TODO: Add API method to fetch households for a slum
-        // const response = await apiService.getHouseholdsForSlum(slumId);
-        // if (response.success) {
-        //   setHouseholds(response.data);
-        // }
+        // Currently no households need to be loaded for the editing workflow
       } catch (error) {
         console.error(`Error loading households for Slum with ID ${slumId}:`, error);
         showToast("Failed to load households", "error");
-      } finally {
-        setLoading(false);
       }
     },
     [showToast],
@@ -303,22 +326,17 @@ export default function HouseholdSurveyPage() {
       try {
         setLoading(true);
         
-        // First, try to fetch as a household survey ID
-        const householdSurveyResponse = await apiService.getHouseholdSurvey(assignmentId);
+        // Load specific household survey by ID from query params
+        const householdSurveyResponse = await apiService.getHouseholdSurvey(surveyIdToUse);
         
         if (householdSurveyResponse.success && householdSurveyResponse.data) {
           // This is an existing household survey, populate the form with its data
           const surveyData = householdSurveyResponse.data;
-          setSlum(surveyData.slum);
           
-          // Set form data with the existing survey data
-          setFormData({
-            ...surveyData,
-            slumName: surveyData.slum?.slumName || "",
-            ward: typeof surveyData.slum?.ward === 'object' 
-              ? `${surveyData.slum.ward.number} - ${surveyData.slum.ward.name}` 
-              : surveyData.slum?.ward || "",
-          });
+          // Set slum information
+          if (surveyData.slum) {
+            setSlum(surveyData.slum);
+          }
           
           // Set assignment info if available
           if (surveyData.surveyor) {
@@ -327,8 +345,34 @@ export default function HouseholdSurveyPage() {
               slum: surveyData.slum,
             });
           }
+          
+          // Set form data with the existing survey data, ensuring all fields are properly mapped
+          setFormData(prev => {
+            const updatedData = {
+              ...prev, // Start with existing form data
+              ...surveyData, // Override with survey data
+              slumName: surveyData.slum?.slumName || prev.slumName || "",
+              ward: typeof surveyData.slum?.ward === 'object' 
+                ? `${surveyData.slum.ward.number} - ${surveyData.slum.ward.name}` 
+                : surveyData.slum?.ward || prev.ward || "",
+            };
+            
+            // Ensure required fields mentioned in requirements are properly displayed
+            // Construct houseDoorNo as {Parcel Id}-{Property Number} if not already set
+            if (!updatedData.houseDoorNo && updatedData.parcelId !== undefined && updatedData.propertyNo !== undefined) {
+              updatedData.houseDoorNo = `${updatedData.parcelId}-${updatedData.propertyNo}`;
+            }
+            
+            return updatedData;
+          });
         } else {
-          // If it's not a household survey ID, treat it as an assignment ID
+          // Check if the API call failed due to authorization error
+          if (householdSurveyResponse.error && householdSurveyResponse.message?.includes('403')) {
+            showToast("Access denied. You don't have permission to view this survey.", "error");
+            router.push("/surveyor/dashboard");
+            return; // Exit early to prevent further execution
+          }
+          // No existing survey found, try to load assignment details to get slum info
           const assignmentResponse = await apiService.getAssignment(assignmentId);
           if (assignmentResponse.success && assignmentResponse.data) {
             setAssignment(assignmentResponse.data);
@@ -341,17 +385,17 @@ export default function HouseholdSurveyPage() {
               setSlum(slumData);
 
               // Auto-fill slum details
-              setFormData((prev) => ({
+              setFormData(prev => ({
                 ...prev,
-                slumName: slumData.slumName || "",
-                ward: typeof slumData.ward === 'object' ? `${slumData.ward.number} - ${slumData.ward.name}` : slumData.ward || "",
+                slumName: slumData.slumName || prev.slumName || "",
+                ward: typeof slumData.ward === 'object' ? `${slumData.ward.number} - ${slumData.ward.name}` : slumData.ward || prev.ward || "",
               }));
 
               // Load households for this slum
               await loadHouseholdsForSlum(slumId);
               
-              // Load parcels for parcel-based workflow
-              await loadParcels(slumId);
+              
+              
               
               // Fetch initial progress
               await fetchProgress();
@@ -364,8 +408,16 @@ export default function HouseholdSurveyPage() {
         }
       } catch (error) {
         console.error(`Error loading data with ID ${assignmentId}:`, error);
-        showToast("Failed to load data", "error");
-        router.push("/surveyor/dashboard");
+        
+        // Check if it's a 403 error (authorization) and handle gracefully
+        if (error instanceof Error && (error.message.includes('403') || error.message.includes('Forbidden'))) {
+          showToast("Access denied. You don't have permission to view this survey.", "error");
+          // Redirect to dashboard
+          router.push("/surveyor/dashboard");
+        } else {
+          showToast("Failed to load data", "error");
+          router.push("/surveyor/dashboard");
+        }
       } finally {
         setLoading(false);
       }
@@ -373,232 +425,6 @@ export default function HouseholdSurveyPage() {
 
     loadData();
   }, [assignmentId, router, showToast, fetchProgress, loadHouseholdsForSlum]);
-
-  // Functions for parcel-based workflow
-  const loadParcels = async (slumId: string) => {
-    try {
-      setLoadingParcels(true);
-      const response = await apiService.getParcelsBySlum(slumId);
-      
-      if (response.success) {
-        setParcels(response.data || []);
-      } else {
-        showToast(response.message || "Failed to load parcels", "error");
-      }
-    } catch (error) {
-      console.error("Error loading parcels:", error);
-      showToast("Failed to load parcels", "error");
-    } finally {
-      setLoadingParcels(false);
-    }
-  };
-
-  const loadProperties = async (slumId: string, parcelId: number) => {
-    try {
-      setLoadingProperties(true);
-      setProperties([]);
-      setAutoSelectedProperty(null);
-      
-      const response = await apiService.getPropertiesBySlumAndParcel(slumId, parcelId);
-      
-      if (response.success) {
-        const propertyList = response.data || [];
-        setProperties(propertyList);
-        
-        // Auto-select property if there's only one
-        if (propertyList.length === 1) {
-          setAutoSelectedProperty(propertyList[0]);
-          setSelectedProperty(propertyList[0]);
-          setFormData(prev => ({
-            ...prev,
-            parcelId,
-            propertyNo: propertyList[0],
-            houseDoorNo: `${parcelId}-${propertyList[0]}` // Generate houseDoorNo from parcel and property
-          }));
-        } else {
-          setSelectedProperty(null);
-          setFormData(prev => ({
-            ...prev,
-            parcelId,
-            propertyNo: undefined
-          }));
-        }
-      } else {
-        showToast(response.message || "Failed to load properties", "error");
-      }
-    } catch (error) {
-      console.error("Error loading properties:", error);
-      showToast("Failed to load properties", "error");
-    } finally {
-      setLoadingProperties(false);
-    }
-  };
-
-  // Function to check if parcel has existing data
-  const checkParcelExists = async (parcelId: number) => {
-    if (!slum) return false;
-    
-    try {
-      setIsCheckingParcel(true);
-      const response = await apiService.getPropertiesBySlumAndParcel(slum._id, parcelId);
-      
-      if (response.success) {
-        const propertyList = response.data || [];
-        return propertyList.length > 0;
-      }
-      return false;
-    } catch (error) {
-      console.error("Error checking parcel:", error);
-      return false;
-    } finally {
-      setIsCheckingParcel(false);
-    }
-  };
-
-  // Handle manual parcel input
-  const handleManualParcelInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setManualParcelInput(value);
-    
-    if (value && !isNaN(parseInt(value))) {
-      const parcelId = parseInt(value);
-      setSelectedParcel(parcelId);
-      
-      if (slum) {
-        const hasExistingData = await checkParcelExists(parcelId);
-        
-        if (!hasExistingData) {
-          setShowParcelConfirmation(true);
-        } else {
-          // Load properties for existing parcel
-          loadProperties(slum._id, parcelId);
-        }
-      }
-    } else {
-      setSelectedParcel(null);
-      setProperties([]);
-      setSelectedProperty(null);
-      setAutoSelectedProperty(null);
-      setFormData(prev => ({
-        ...prev,
-        parcelId: undefined,
-        propertyNo: undefined,
-        houseDoorNo: ""
-      }));
-    }
-  };
-
-  // Handle confirmation for new parcel
-  const handleConfirmNewParcel = () => {
-    setShowParcelConfirmation(false);
-    if (selectedParcel && slum) {
-      // Initialize with empty properties for new parcel
-      setProperties([]);
-      setSelectedProperty(null);
-      setAutoSelectedProperty(null);
-      setFormData(prev => ({
-        ...prev,
-        parcelId: selectedParcel,
-        propertyNo: undefined,
-        houseDoorNo: `${selectedParcel}-` // Partial houseDoorNo
-      }));
-    }
-  };
-
-  // Handle cancel new parcel
-  const handleCancelNewParcel = () => {
-    setShowParcelConfirmation(false);
-    setManualParcelInput("");
-    setSelectedParcel(null);
-    setProperties([]);
-    setSelectedProperty(null);
-    setAutoSelectedProperty(null);
-    setFormData(prev => ({
-      ...prev,
-      parcelId: undefined,
-      propertyNo: undefined,
-      houseDoorNo: ""
-    }));
-  };
-
-  // Handle search for existing data for the selected parcel and property
-  const handleIdentifyParcel = async () => {
-    if (!selectedParcel || !selectedProperty || !slum) {
-      showToast("Please select both Parcel ID and Property Number", "error");
-      return;
-    }
-
-    try {
-      // Call the API to get household survey by parcel and property
-      const response = await apiService.getHouseholdSurveyByParcel(slum._id, selectedParcel, selectedProperty);
-      
-      if (response.success && response.data) {
-        // Populate form with the existing data
-        const surveyData = response.data;
-        setFormData(prev => ({
-          ...prev,
-          ...surveyData,
-          parcelId: selectedParcel,
-          propertyNo: selectedProperty,
-          houseDoorNo: `${selectedParcel}-${selectedProperty}`
-        }));
-        
-        showToast(`Data loaded for Parcel ${selectedParcel}, Property ${selectedProperty}`, "success");
-      } else {
-        // If no data found, clear the form except for parcel and property
-        setFormData(prev => ({
-          ...prev,
-          parcelId: selectedParcel,
-          propertyNo: selectedProperty,
-          houseDoorNo: `${selectedParcel}-${selectedProperty}`,
-          headName: "",
-          fatherName: "",
-          sex: "",
-          caste: "",
-          religion: "",
-          minorityStatus: "",
-          // ... and other fields cleared to empty
-        }));
-        
-        showToast(`No existing data found for Parcel ${selectedParcel}, Property ${selectedProperty}. Form is ready for new entry.`, "info");
-      }
-    } catch (error) {
-      console.error("Error fetching household data:", error);
-      showToast("Failed to fetch household data", "error");
-    }
-  };
-
-  const handleParcelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedParcel = e.target.value ? parseInt(e.target.value) : undefined;
-    setSelectedParcel(selectedParcel ? selectedParcel : null);
-    
-    if (selectedParcel && slum) {
-      loadProperties(slum._id, selectedParcel);
-    } else {
-      setProperties([]);
-      setSelectedProperty(null);
-      setAutoSelectedProperty(null);
-      setFormData(prev => ({
-        ...prev,
-        parcelId: undefined,
-        propertyNo: undefined,
-        houseDoorNo: ""
-      }));
-    }
-  };
-
-  const handlePropertyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedProperty = e.target.value ? parseInt(e.target.value) : undefined;
-    setSelectedProperty(selectedProperty ? selectedProperty : null);
-    
-    if (selectedProperty !== undefined && selectedParcel) {
-      setFormData(prev => ({
-        ...prev,
-        propertyNo: selectedProperty,
-        houseDoorNo: `${selectedParcel}-${selectedProperty}` // Generate houseDoorNo from parcel and property
-      }));
-    }
-  };
 
   const toggleSection = useCallback((sectionId: string) => {
     setExpandedSections((prev) => {
@@ -1120,22 +946,28 @@ export default function HouseholdSurveyPage() {
       setErrors([]);
   
       // Check if we're working with an existing survey (editing mode)
-      const existingSurveyId = assignmentId; // This could be either assignment ID or household survey ID
-        
-      // Try to get the household survey by the ID we were given
-      const existingSurveyResponse = await apiService.getHouseholdSurvey(existingSurveyId);
-      let surveyId;
-        
-      if (existingSurveyResponse.success && existingSurveyResponse.data) {
-        // We're editing an existing survey, use its ID
-        surveyId = existingSurveyId;
+      // Get surveyId from query params
+      const surveyIdFromQuery = searchParams.get('surveyId');
+      let surveyIdToUse = surveyIdFromQuery || assignmentId;
+      let isExistingSurvey = false;
+      
+      // Check if this is an existing survey
+      try {
+        const existingSurveyResponse = await apiService.getHouseholdSurvey(surveyIdToUse);
+        isExistingSurvey = existingSurveyResponse.success && existingSurveyResponse.data;
+      } catch (error) {
+        console.error('Error checking existing survey:', error);
+        isExistingSurvey = false;
+      }
+      
+      if (isExistingSurvey && surveyIdToUse) {
           
         // Extract surveyStatus to handle separately
         const { surveyStatus, ...otherFormData } = formData;
                 
         // Update the existing survey
         const response = await apiService.updateHouseholdSurvey(
-          surveyId,
+          surveyIdToUse,
           {
             ...otherFormData,
             surveyStatus: surveyStatus || 'IN PROGRESS', // Use existing status or set to IN PROGRESS
@@ -1183,11 +1015,11 @@ export default function HouseholdSurveyPage() {
           return;
         }
       
-        surveyId = surveyResponse.data._id;
+        surveyIdToUse = surveyResponse.data._id;
       
         // Submit the new survey
         const response = await apiService.submitHouseholdSurvey(
-          surveyId,
+          surveyIdToUse,
           formData,
         );
           
@@ -1267,11 +1099,7 @@ export default function HouseholdSurveyPage() {
           // Reset expanded sections
           setExpandedSections(new Set(["general", "household"]));
                     
-          // Reset parcel-based selections
-          setSelectedParcel(null);
-          setSelectedProperty(null);
-          setProperties([]);
-          setAutoSelectedProperty(null);
+          
                     
           // Show completion modal instead of browser alert
           await fetchProgress(); // Fetch updated progress
@@ -1293,65 +1121,9 @@ export default function HouseholdSurveyPage() {
       <SurveyorLayout fullScreen>
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          {/* Parcel Confirmation Dialog */}
-          {showParcelConfirmation && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-slate-900 rounded-lg max-w-md w-full border border-slate-700">
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-2">New Parcel ID</h3>
-                  <p className="text-slate-300 mb-4">
-                    No existing data found for Parcel ID <span className="font-medium text-blue-400">{selectedParcel}</span>. 
-                    Would you like to continue creating a new household survey for this parcel?
-                  </p>
-                  <div className="flex gap-3">
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={handleCancelNewParcel}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      onClick={handleConfirmNewParcel}
-                    >
-                      Continue
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+
   
-          {/* Parcel Confirmation Dialog */}
-          {showParcelConfirmation && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-slate-900 rounded-lg max-w-md w-full border border-slate-700">
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-2">New Parcel ID</h3>
-                  <p className="text-slate-300 mb-4">
-                    No existing data found for Parcel ID <span className="font-medium text-blue-400">{selectedParcel}</span>. 
-                    Would you like to continue creating a new household survey for this parcel?
-                  </p>
-                  <div className="flex gap-3">
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={handleCancelNewParcel}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      onClick={handleConfirmNewParcel}
-                    >
-                      Continue
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+
         </div>
       </SurveyorLayout>
     );
@@ -1391,80 +1163,8 @@ export default function HouseholdSurveyPage() {
             </p>
           </div>
         </div>
-        {/* Parcel-based identification section */}
-        <div className="col-span-full bg-blue-500/10 p-4 rounded-lg border border-blue-500/20 pb-4">
-          <h3 className="font-medium text-blue-300 mb-3">Parcel-Based Household Identification</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">
-                Parcel ID
-              </label>
-              <Input
-                type="number"
-                value={manualParcelInput}
-                onChange={handleManualParcelInput}
-                placeholder="Enter parcel ID"
-                required
-              />
-              {isCheckingParcel && <p className="text-xs text-slate-500 mt-1">Checking parcel data...</p>}
-              {parcels.length === 0 && !isCheckingParcel && manualParcelInput && (
-                <p className="text-xs text-yellow-600 mt-1">
-                  No existing data found for this parcel.
-                </p>
-              )}
-            </div>
+
             
-            <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1 ">
-                Property Number
-              </label>
-              {properties.length > 0 ? (
-                <Select
-                  value={selectedProperty?.toString() || ""}
-                  onChange={handlePropertyChange}
-                  disabled={loadingProperties}
-                  required
-                  options={[
-                    ...properties.map(property => ({ value: property.toString(), label: property.toString() }))
-                  ]}
-                />
-              ) : (
-                <Input
-                  type="number"
-                  value={selectedProperty?.toString() || ""}
-                  onChange={(e) => {
-                    const value = e.target.value ? parseInt(e.target.value) : undefined;
-                    setSelectedProperty(value || null);
-                    if (value && selectedParcel) {
-                      setFormData(prev => ({
-                        ...prev,
-                        propertyNo: value,
-                        houseDoorNo: `${selectedParcel}-${value}`
-                      }));
-                    }
-                  }}
-                  placeholder="Enter property number"
-                  required
-                />
-              )}
-              {loadingProperties && <p className="text-xs text-slate-500 mt-1">Loading properties...</p>}
-              {properties.length === 0 && !loadingProperties && selectedParcel && (
-                <p className="text-xs text-blue-600 mt-1">
-                  No existing properties found. You can enter a new property number.
-                </p>
-              )}
-            </div>
-            <div>
-              <button
-                onClick={handleIdentifyParcel}
-                className="w-full mt-4 bg-blue-500 text-white rounded-lg py-2 transition-colors hover:bg-blue-600"
-              >
-                Search Parcel ID
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* Accordion Sections */}
         <div className="space-y-4 my-6 ">
@@ -2731,7 +2431,11 @@ export default function HouseholdSurveyPage() {
     <HouseholdSurveyModal
         isOpen={showCompletionModal}
         onClose={() => router.push("/surveyor/dashboard")}
-        onSubmit={() => setShowCompletionModal(false)}
+        onSubmit={() => {
+          setShowCompletionModal(false);
+          // Redirect back to the dashboard to show the HouseholdSurveySelector again
+          router.push("/surveyor/dashboard");
+        }}
         houseDoorNo={lastSubmittedHouseNo}
         slumName={slum?.slumName || ""}
         completedCount={householdProgress.completed}
