@@ -41,7 +41,8 @@ const {
   getParcelsBySlum,
   getPropertiesBySlumAndParcel,
   getHouseholdSurveyByParcel,
-  importHouseholds
+  importHouseholds,
+  getNextNewParcelId
 } = require('../../controllers/survey/householdSurveyController');
 
 const router = express.Router();
@@ -99,6 +100,8 @@ router.get('/household-surveys/properties/:slumId/:parcelId', auth, authorize('S
 router.get('/household-surveys/by-parcel/:slumId/:parcelId/:propertyNo', auth, authorize('SURVEYOR'), getHouseholdSurveyByParcel);
 // Import household data in bulk
 router.post('/household-surveys/import', auth, authorize('ADMIN', 'SUPERVISOR'), importHouseholds);
+// Get next available new parcel ID (N001, N002, etc.)
+router.get('/household-surveys/next-new-parcel/:slumId', auth, authorize('SURVEYOR'), getNextNewParcelId);
 
 // ===== ASSIGNMENT ROUTES =====
 // Create new assignment

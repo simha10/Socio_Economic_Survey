@@ -720,6 +720,23 @@ class ApiService {
     }
   }
 
+  public async getNextNewParcelId(slumId: string): Promise<ApiResponse<{ nextParcelId: string }>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/surveys/household-surveys/next-new-parcel/${slumId}`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
+
   // Assignment endpoints
   public async assignSlumToSurveyor(surveyorId: string, slumId: string): Promise<ApiResponse> {
     try {

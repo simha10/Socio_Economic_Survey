@@ -102,7 +102,6 @@ exports.createOrGetHouseholdSurvey = async (req, res) => {
       }
       
       await survey.save();
-      console.log(`Created new household survey for slum ${slumId}, parcel ${parcelId}, property ${propertyNo}, house ${houseDoorNo}`);
     }
 
     await survey.populate([
@@ -240,7 +239,7 @@ exports.updateHouseholdSurvey = async (req, res) => {
       await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
     }
 
-    console.log(`Updated household survey ${surveyId}`);
+    
     sendSuccess(res, survey, 'Survey updated successfully');
   } catch (error) {
     console.error('Error in updateHouseholdSurvey:', error.message);
@@ -282,8 +281,7 @@ exports.submitHouseholdSurvey = async (req, res) => {
       return sendError(res, 'Not authorized to submit this survey', 403);
     }
 
-    // Log incoming data for debugging
-    console.log('Incoming form data:', JSON.stringify(req.body, null, 2));
+
     
     // Update survey with form data directly (flat structure)
     // Ensure numeric fields have proper values
@@ -312,18 +310,12 @@ exports.submitHouseholdSurvey = async (req, res) => {
     
     // Auto-calculation is now handled in the frontend. Backend will accept whatever values are sent.
     
-    console.log('Sanitized data:', JSON.stringify(sanitizedData, null, 2));
-    console.log('Excluded fields:', { 
-      householdId: !!req.body.householdId, 
-      houseDoorNo: !!req.body.houseDoorNo, 
-      slum: !!req.body.slum, 
-      surveyor: !!req.body.surveyor 
-    });
+
     
     // Try assignment with error handling
     try {
       Object.assign(survey, sanitizedData);
-      console.log('Assignment successful');
+      
     } catch (assignError) {
       console.error('Error during Object.assign:', assignError);
       console.error('Survey object:', survey);
@@ -339,12 +331,9 @@ exports.submitHouseholdSurvey = async (req, res) => {
 
     // Try save with error handling
     try {
-      console.log('Attempting to save survey...');
       await survey.save();
-      console.log('Survey saved successfully');
     } catch (saveError) {
-      console.error('Error during survey.save():', saveError);
-      console.error('Survey object before save:', JSON.stringify(survey.toObject(), null, 2));
+      console.error('Error during survey.save():', saveError.message);
       throw saveError;
     }
     
@@ -365,7 +354,7 @@ exports.submitHouseholdSurvey = async (req, res) => {
     // Update demographic population based on caste and minority status
     await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
 
-    console.log(`Submitted household survey ${surveyId}`);
+
     sendSuccess(res, survey, 'Survey submitted successfully', 200);
   } catch (error) {
     console.error('Error in submitHouseholdSurvey:', error.message);
@@ -444,7 +433,7 @@ exports.deleteHouseholdSurvey = async (req, res) => {
     const slumId = survey.slum;
     
     await HouseholdSurvey.findByIdAndDelete(surveyId);
-    console.log(`Deleted household survey ${surveyId}`);
+
     
     // Update slum population calculation after deletion
     if (slumId) {
@@ -478,9 +467,7 @@ exports.updateSurveySection = async (req, res) => {
       return sendError(res, 'Survey not found', 404);
     }
     
-    console.log(`Updating section: ${section}`);
-    console.log('Data received:', JSON.stringify(data, null, 2));
-    console.log('Survey section exists:', !!survey[section]);
+
 
     // Check authorization
     if (survey.surveyor.toString() !== userId.toString() && req.user.role !== 'ADMIN') {
@@ -531,7 +518,7 @@ exports.updateSurveySection = async (req, res) => {
       await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
     }
 
-    console.log(`Updated survey section: ${section} for survey ${surveyId}`);
+
     sendSuccess(res, survey, `${section} updated successfully`);
   } catch (error) {
     console.error('Error in updateSurveySection:', error.message);
@@ -702,6 +689,58 @@ exports.getHouseholdSurveyByParcel = async (req, res) => {
 };
 
 /**
+ * Get the next available New Parcel ID (N001, N002, etc.) for a slum
+ */
+exports.getNextNewParcelId = async (req, res) => {
+  try {
+    const { slumId } = req.params;
+
+    if (!slumId) {
+      return sendError(res, 'slumId is required', 400);
+    }
+
+    // Find all household surveys for this slum with parcelId starting with 'N'
+    const existingNewParcels = await HouseholdSurvey.find({
+      slum: slumId,
+      parcelId: { $exists: true, $ne: null }
+    }).select('parcelId');
+
+    // Extract numeric parts from parcel IDs that start with 'N'
+    const usedNumbers = existingNewParcels
+      .map(hs => {
+        if (typeof hs.parcelId === 'string' && hs.parcelId.startsWith('N')) {
+          const numPart = hs.parcelId.substring(1);
+          return parseInt(numPart, 10);
+        }
+        return null;
+      })
+      .filter(num => num !== null && !isNaN(num))
+      .sort((a, b) => a - b);
+
+    // Find the next available number
+    let nextNumber = 1;
+    if (usedNumbers.length > 0) {
+      // Check for gaps in the sequence
+      for (let i = 0; i < usedNumbers.length; i++) {
+        if (usedNumbers[i] > nextNumber) {
+          break;
+        }
+        if (usedNumbers[i] === nextNumber) {
+          nextNumber++;
+        }
+      }
+    }
+
+    const nextParcelId = `N${nextNumber.toString().padStart(3, '0')}`;
+    
+    sendSuccess(res, { nextParcelId }, 'Next new parcel ID retrieved successfully');
+  } catch (error) {
+    console.error('Error in getNextNewParcelId:', error.message);
+    sendError(res, error.message || 'Failed to get next new parcel ID', 500);
+  }
+};
+
+/**
  * Bulk import household data from external dataset
  */
 exports.importHouseholds = async (req, res) => {
@@ -768,7 +807,7 @@ exports.importHouseholds = async (req, res) => {
 
     const result = await HouseholdSurvey.bulkWrite(bulkOps);
 
-    console.log(`Imported ${result.upsertedCount || 0} new records and modified ${result.modifiedCount || 0} existing records`);
+
 
     sendSuccess(res, {
       imported: result.upsertedCount || 0,

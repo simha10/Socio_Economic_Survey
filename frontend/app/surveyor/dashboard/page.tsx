@@ -9,6 +9,7 @@ import { MapPin, Users, CheckCircle, CircleEllipsis, ListTodo } from "lucide-rea
 import SurveyConfirmationDialog from "@/components/SurveyConfirmationDialog";
 import EditConfirmationDialog from "@/components/EditConfirmationDialog";
 import HHSCompletionWarningModal from "@/components/HHSCompletionWarningModal";
+import { HouseholdSurveySelector } from "@/components/HouseholdSurveySelector";
 
 interface User {
   _id: string;
@@ -57,13 +58,15 @@ export default function SurveyorDashboard() {
     type: 'slum' | 'household';
     assignmentId: string;
     slumName: string;
+    slumId?: string;
     surveyStatus?: "DRAFT" | "IN PROGRESS" | "SUBMITTED" | "COMPLETED";
     progressCompleted?: number;
     progressTotal?: number;
   } | null>(null);
-  const [surveyData, setSurveyData] = useState<Record<string, any>>({});
+  const [surveyData, setSurveyData] = useState<Record<string, { surveyStatus?: string }>>({});
   const [showEditConfirm, setShowEditConfirm] = useState(false);
   const [showCompletionWarning, setShowCompletionWarning] = useState(false);
+  const [showHouseholdSelector, setShowHouseholdSelector] = useState(false);
 
   useEffect(() => {
     // Verify user is surveyor
@@ -94,7 +97,7 @@ export default function SurveyorDashboard() {
         setAssignments(assignmentsData);
         
         // Load survey data for each assignment
-        const surveyDataMap: Record<string, any> = {};
+        const surveyDataMap: Record<string, { surveyStatus?: string }> = {};
         for (const assignment of assignmentsData) {
           if (assignment.slum?._id) {
             try {
@@ -150,10 +153,11 @@ export default function SurveyorDashboard() {
       type: 'household',
       assignmentId,
       slumName,
+      slumId: assignment?.slum?._id,
       progressCompleted: progress?.completed,
       progressTotal: progress?.total
     });
-    setShowConfirmation(true);
+    setShowHouseholdSelector(true);
   };
 
   const confirmSurvey = () => {
@@ -488,6 +492,14 @@ export default function SurveyorDashboard() {
       <HHSCompletionWarningModal
         isOpen={showCompletionWarning}
         onClose={() => setShowCompletionWarning(false)}
+      />
+      
+      <HouseholdSurveySelector
+        isOpen={showHouseholdSelector}
+        onClose={() => setShowHouseholdSelector(false)}
+        assignmentId={pendingSurvey?.assignmentId || ''}
+        slumId={pendingSurvey?.slumId || ''}
+        slumName={pendingSurvey?.slumName || ''}
       />
     </SurveyorLayout>
   );
