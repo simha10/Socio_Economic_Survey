@@ -229,6 +229,16 @@ npm run seed:locations
 
 # Seed test users (Admin, Supervisor, Surveyor)
 npm run seed:users
+
+# Seed slums data
+npm run seed:slums
+
+# Import household data from JavaScript files
+# First validate the data file:
+node scripts/test-data-parsing.js "../APIS/Slum's_HH_Data/Slum_69.js"
+
+# Then import the data:
+node scripts/seed-slum-households.js 69 "../APIS/Slum's_HH_Data/Slum_69.js"
 ```
 
 #### 2.4 Start Backend Server
