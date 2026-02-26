@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Button from './Button';
 
 interface HouseholdSurveyModalProps {
@@ -9,6 +10,8 @@ interface HouseholdSurveyModalProps {
   onSubmit: () => void;
   houseDoorNo: string;
   slumName: string;
+  slumId: string;
+  assignmentId: string;
   completedCount: number;
   totalCount: number;
 }
@@ -19,9 +22,12 @@ export const HouseholdSurveyModal = ({
   onSubmit,
   houseDoorNo,
   slumName,
+  slumId,
+  assignmentId,
   completedCount,
   totalCount
 }: HouseholdSurveyModalProps) => {
+  const router = useRouter();
   if (!isOpen) return null;
 
   const isAllCompleted = completedCount >= totalCount;
@@ -84,7 +90,10 @@ export const HouseholdSurveyModal = ({
                   Return to Dashboard
                 </Button>
                 <Button
-                  onClick={onSubmit}
+                  onClick={() => {
+                    // Navigate to dashboard and open HouseholdSurveySelector
+                    router.push(`/surveyor/dashboard?openSelector=true&slumId=${slumId}&assignmentId=${assignmentId}&mode=search`);
+                  }}
                 >
                   Continue Surveying
                 </Button>

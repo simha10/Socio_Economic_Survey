@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import SurveyorLayout from "@/components/SurveyorLayout";
 import Card from "@/components/Card";
@@ -166,6 +166,9 @@ export default function HouseholdSurveyPage() {
   // Get surveyId from query parameter, fallback to assignmentId
   const surveyIdFromQuery = searchParams.get('surveyId');
   const surveyIdToUse = surveyIdFromQuery || assignmentId;
+  
+  // Detect if we're in new mode (creating a new survey) vs search mode (editing existing)
+  const isNewMode = !surveyIdFromQuery;
 
   const [slum, setSlum] = useState<{
     _id: string;
@@ -228,8 +231,68 @@ export default function HouseholdSurveyPage() {
   // Completion Modal State
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [householdProgress, setHouseholdProgress] = useState({ completed: 0, total: 0 });
+  
+  // Caching state
+  const [isCacheInitialized, setIsCacheInitialized] = useState(false);
+  const cacheKeyRef = useRef<string>("");
+  const isSubmittingRef = useRef(false);
+  const hasUnsavedChangesRef = useRef(false);
 
 
+
+  // Generate cache key based on survey ID
+  const getCacheKey = useCallback((surveyId: string) => {
+    return `household_survey_${surveyId}_cache`;
+  }, []);
+
+  // Save form data to cache
+  const saveToCache = useCallback((data: HouseholdSurveyForm) => {
+    if (!cacheKeyRef.current || isSubmittingRef.current) return;
+    
+    try {
+      const cacheData = {
+        formData: data,
+        timestamp: Date.now(),
+        version: '1.0'
+      };
+      localStorage.setItem(cacheKeyRef.current, JSON.stringify(cacheData));
+      hasUnsavedChangesRef.current = false;
+    } catch (error) {
+      console.warn('Failed to save to cache:', error);
+    }
+  }, []);
+
+  // Load form data from cache
+  const loadFromCache = useCallback((cacheKey: string) => {
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const cacheData = JSON.parse(cached);
+        // Validate cache version and timestamp (expire after 24 hours)
+        const oneDay = 24 * 60 * 60 * 1000;
+        if (cacheData.version === '1.0' && 
+            Date.now() - cacheData.timestamp < oneDay) {
+          return cacheData.formData as HouseholdSurveyForm;
+        } else {
+          // Clear expired cache
+          localStorage.removeItem(cacheKey);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load from cache:', error);
+      localStorage.removeItem(cacheKey);
+    }
+    return null;
+  }, []);
+
+  // Clear cache
+  const clearCache = useCallback((cacheKey: string) => {
+    try {
+      localStorage.removeItem(cacheKey);
+    } catch (error) {
+      console.warn('Failed to clear cache:', error);
+    }
+  }, []);
 
   // Auto-calculate totals when male/female fields change
   useEffect(() => {
@@ -325,7 +388,66 @@ export default function HouseholdSurveyPage() {
       try {
         setLoading(true);
 
-        // Load specific household survey by ID from query params
+        // Initialize cache key
+        const cacheKey = getCacheKey(surveyIdToUse);
+        cacheKeyRef.current = cacheKey;
+
+        // First, try to load from cache
+        const cachedData = loadFromCache(cacheKey);
+        
+        // Handle new mode (no surveyIdFromQuery) - prioritize cache over DB
+        if (isNewMode) {
+          console.log('[HOUSEHOLD_SURVEY] New mode detected, checking cache first');
+          
+          if (cachedData && !isCacheInitialized) {
+            // Restore from cache in new mode
+            console.log('[HOUSEHOLD_SURVEY] Restoring from cache in new mode');
+            setFormData(cachedData);
+            setIsCacheInitialized(true);
+            hasUnsavedChangesRef.current = false;
+            
+            // Don't fetch DB data in new mode when cache exists - prevents overwriting user data
+            setLoading(false);
+            return;
+          } else {
+            // No cache exists, initialize with empty form but fetch slum info
+            console.log('[HOUSEHOLD_SURVEY] No cache found in new mode, initializing empty form');
+            
+            // Load assignment details to get slum info
+            const assignmentResponse = await apiService.getAssignment(assignmentId);
+            if (assignmentResponse.success && assignmentResponse.data) {
+              setAssignment(assignmentResponse.data);
+              const slumId = assignmentResponse.data.slum._id;
+              
+              // Fetch slum details
+              const slumResponse = await apiService.getSlum(slumId);
+              if (slumResponse.success) {
+                const slumData = slumResponse.data;
+                setSlum(slumData);
+                
+                // Auto-fill slum details
+                setFormData(prev => ({
+                  ...prev,
+                  slumName: slumData.slumName || prev.slumName || "",
+                  ward: typeof slumData.ward === 'object' ? `${slumData.ward.number} - ${slumData.ward.name}` : slumData.ward || prev.ward || "",
+                }));
+              }
+            }
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Handle search mode (existing survey) - always fetch DB data
+        if (cachedData && !isCacheInitialized) {
+          // Restore from cache
+          setFormData(cachedData);
+          setIsCacheInitialized(true);
+          hasUnsavedChangesRef.current = false;
+          console.log('[HOUSEHOLD_SURVEY] Restored form data from cache in search mode');
+        }
+
+        // Load specific household survey by ID from query params (search mode only)
         const householdSurveyResponse = await apiService.getHouseholdSurvey(surveyIdToUse);
 
         if (householdSurveyResponse.success && householdSurveyResponse.data) {
@@ -347,9 +469,11 @@ export default function HouseholdSurveyPage() {
 
           // Set form data with the existing survey data, ensuring all fields are properly mapped
           setFormData(prev => {
-            const updatedData = {
-              ...prev, // Start with existing form data
-              ...surveyData, // Override with survey data
+            // If we already restored from cache, merge with DB data
+            // but prioritize user-entered data
+            const baseData = isCacheInitialized ? prev : {
+              ...prev,
+              ...surveyData,
               slumName: surveyData.slum?.slumName || prev.slumName || "",
               ward: typeof surveyData.slum?.ward === 'object'
                 ? `${surveyData.slum.ward.number} - ${surveyData.slum.ward.name}`
@@ -358,11 +482,11 @@ export default function HouseholdSurveyPage() {
 
             // Ensure required fields mentioned in requirements are properly displayed
             // Construct houseDoorNo as {Parcel Id}-{Property Number} if not already set
-            if (!updatedData.houseDoorNo && updatedData.parcelId !== undefined && updatedData.propertyNo !== undefined) {
-              updatedData.houseDoorNo = `${updatedData.parcelId}-${updatedData.propertyNo}`;
+            if (!baseData.houseDoorNo && baseData.parcelId !== undefined && baseData.propertyNo !== undefined) {
+              baseData.houseDoorNo = `${baseData.parcelId}-${baseData.propertyNo}`;
             }
 
-            return updatedData;
+            return baseData;
           });
         } else {
           // Check if the API call failed due to authorization error
@@ -393,9 +517,6 @@ export default function HouseholdSurveyPage() {
               // Load households for this slum
               await loadHouseholdsForSlum(slumId);
 
-
-
-
               // Fetch initial progress
               await fetchProgress();
             }
@@ -423,7 +544,22 @@ export default function HouseholdSurveyPage() {
     };
 
     loadData();
-  }, [assignmentId, surveyIdFromQuery, router, showToast, fetchProgress, loadHouseholdsForSlum]);
+  }, [assignmentId, surveyIdFromQuery, router, showToast, fetchProgress, loadHouseholdsForSlum, getCacheKey, loadFromCache, isCacheInitialized, surveyIdToUse, isNewMode]);
+
+  // Save to cache whenever form data changes (after initialization)
+  useEffect(() => {
+    if (cacheKeyRef.current) { // isCacheInitialized && 
+      // Debounce the save to avoid too frequent writes
+      const timer = setTimeout(() => {
+        saveToCache(formData);
+        hasUnsavedChangesRef.current = false;
+      }, 1000);
+      
+      hasUnsavedChangesRef.current = true;
+      
+      return () => clearTimeout(timer);
+    }
+  }, [formData, saveToCache]); //cacheKeyRef.current, 
 
   const toggleSection = useCallback((sectionId: string) => {
     setExpandedSections((prev) => {
@@ -947,6 +1083,13 @@ export default function HouseholdSurveyPage() {
       console.log('[HOUSEHOLD_SURVEY] 🚀 handleConfirmSubmit called');
       setSubmitting(true);
       setShowSubmitConfirm(false);
+      isSubmittingRef.current = true;
+
+      // Clear cache before submission since we're about to save to DB
+      if (cacheKeyRef.current) {
+        clearCache(cacheKeyRef.current);
+        console.log('[HOUSEHOLD_SURVEY] Cache cleared on submission');
+      }
 
       // Clear previous errors
       setErrors([]);
@@ -2418,6 +2561,11 @@ export default function HouseholdSurveyPage() {
           message="Are you sure you want to leave this household survey? Your progress will be saved."
           onConfirm={() => {
             setShowBackConfirm(false);
+            // Clear cache when navigating back
+            if (cacheKeyRef.current) {
+              clearCache(cacheKeyRef.current);
+              console.log('[HOUSEHOLD_SURVEY] Cache cleared on back navigation');
+            }
             router.push(backDestination);
           }}
           onCancel={() => setShowBackConfirm(false)}
@@ -2464,11 +2612,13 @@ export default function HouseholdSurveyPage() {
         onClose={() => router.push("/surveyor/dashboard")}
         onSubmit={() => {
           setShowCompletionModal(false);
-          // Redirect back to the dashboard to show the HouseholdSurveySelector again
-          router.push("/surveyor/dashboard");
+          // Redirect to HouseholdSurveySelector for continuing survey
+          window.location.href = `/surveyor/dashboard?slumId=${slum?._id || ""}&assignmentId=${assignmentId}&mode=search`;
         }}
         houseDoorNo={lastSubmittedHouseNo}
         slumName={slum?.slumName || ""}
+        slumId={slum?._id || ""}
+        assignmentId={assignmentId}
         completedCount={householdProgress.completed}
         totalCount={householdProgress.total}
       />

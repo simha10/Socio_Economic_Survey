@@ -69,6 +69,11 @@ export default function SurveyorDashboard() {
   const [showCompletionWarning, setShowCompletionWarning] = useState(false);
   const [showHouseholdSelector, setShowHouseholdSelector] = useState(false);
   const [householdSelectorMode, setHouseholdSelectorMode] = useState<'search' | 'new'>('search');
+  const [householdSelectorParams, setHouseholdSelectorParams] = useState<{
+    assignmentId: string;
+    slumId: string;
+    slumName: string;
+  } | null>(null);
 
   useEffect(() => {
     // Verify user is surveyor
@@ -116,6 +121,35 @@ export default function SurveyorDashboard() {
       loadAssignments();
     }
   }, [pathname]);
+
+  // Handle URL parameters for opening HouseholdSurveySelector
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const openSelector = params.get('openSelector');
+    
+    if (openSelector === 'true') {
+      const slumId = params.get('slumId');
+      const assignmentId = params.get('assignmentId');
+      const mode = params.get('mode') as 'search' | 'new' || 'search';
+      
+      if (slumId && assignmentId) {
+        // Find the assignment to get slum name
+        const assignment = assignments.find(a => a._id === assignmentId);
+        if (assignment) {
+          setHouseholdSelectorParams({
+            assignmentId,
+            slumId,
+            slumName: assignment.slum?.slumName || 'Unknown Slum'
+          });
+          setHouseholdSelectorMode(mode);
+          setShowHouseholdSelector(true);
+          
+          // Remove the parameters from URL
+          router.replace('/surveyor/dashboard');
+        }
+      }
+    }
+  }, [assignments, pathname, router]);
 
   const loadAssignments = async () => {
     try {
@@ -538,10 +572,13 @@ export default function SurveyorDashboard() {
 
       <HouseholdSurveySelector
         isOpen={showHouseholdSelector}
-        onClose={() => setShowHouseholdSelector(false)}
-        assignmentId={pendingSurvey?.assignmentId || ''}
-        slumId={pendingSurvey?.slumId || ''}
-        slumName={pendingSurvey?.slumName || ''}
+        onClose={() => {
+          setShowHouseholdSelector(false);
+          setHouseholdSelectorParams(null);
+        }}
+        assignmentId={householdSelectorParams?.assignmentId || pendingSurvey?.assignmentId || ''}
+        slumId={householdSelectorParams?.slumId || pendingSurvey?.slumId || ''}
+        slumName={householdSelectorParams?.slumName || pendingSurvey?.slumName || ''}
         initialMode={householdSelectorMode}
       />
     </SurveyorLayout>
