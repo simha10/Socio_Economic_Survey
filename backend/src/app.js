@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
@@ -17,6 +18,15 @@ require('./models/SlumSurvey');
 require('./models/HouseholdSurvey');
 
 const app = express();
+
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use(globalLimiter);
 
 // Middleware
 app.use(cors({
@@ -61,8 +71,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ 
     success: false, 
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
+    message: 'Internal server error'
   });
 });
 
@@ -77,12 +86,21 @@ app.use('*', (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB and start server
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/Socio-Economic-Survey')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/Socio-Economic-Survey', {
+  maxPoolSize: 20,
+  minPoolSize: 5,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 10000
+})
   .then(() => {
     console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
+
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
   })
   .catch((error) => {
     console.error('Database connection error:', error);
