@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from './Button';
 
@@ -19,7 +18,6 @@ interface HouseholdSurveyModalProps {
 export const HouseholdSurveyModal = ({
   isOpen,
   onClose,
-  onSubmit,
   houseDoorNo,
   slumName,
   slumId,
@@ -91,8 +89,8 @@ export const HouseholdSurveyModal = ({
                 </Button>
                 <Button
                   onClick={() => {
-                    // Navigate to dashboard and open HouseholdSurveySelector
-                    router.push(`/surveyor/dashboard?openSelector=true&slumId=${slumId}&assignmentId=${assignmentId}&mode=search`);
+                    // Navigate to dashboard with parameters to open HouseholdSurveySelector
+                    router.push(`/surveyor/dashboard?openSelector=true&slumId=${slumId}&assignmentId=${assignmentId}&mode=new`);
                   }}
                 >
                   Continue Surveying

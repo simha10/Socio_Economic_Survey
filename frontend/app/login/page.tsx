@@ -23,34 +23,28 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
-  // Load remembered credentials and toggle state on page load
+  // Load remembered credentials on page load
   useEffect(() => {
-    const loadCredentialsAndState = () => {
-      
+    const loadCredentials = () => {
       // Load remembered credentials
       const rememberedCredentials = localStorage.getItem("rememberedCredentials");
       
-      // Load remembered toggle state
-      const rememberedToggleState = localStorage.getItem("rememberMeState") === 'true';
-      
-      if (rememberedCredentials && rememberedToggleState) {
+      if (rememberedCredentials) {
         try {
           const { username, password } = JSON.parse(rememberedCredentials);
           if (username && password) {
             setFormData({ username, password });
-            setRememberMe(true);
           }
         } catch (error) {
           localStorage.removeItem("rememberedCredentials");
-          localStorage.removeItem("rememberMeState");
           console.error("Error parsing remembered credentials:", error);
         }
       }
     };
     
-    loadCredentialsAndState();
+    loadCredentials();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,11 +84,9 @@ export default function LoginPage() {
             password: formData.password
           };
           localStorage.setItem("rememberedCredentials", JSON.stringify(credentialsToSave));
-          localStorage.setItem("rememberMeState", "true");
         } else {
-          // Clear any previously saved credentials and toggle state
+          // Clear any previously saved credentials
           localStorage.removeItem("rememberedCredentials");
-          localStorage.removeItem("rememberMeState");
         }
 
         const role = userData?.role?.toUpperCase(); // Convert to uppercase to match the enum values
@@ -137,11 +129,15 @@ export default function LoginPage() {
         {/* Header Section */}
         <div className="text-center">
           <div className="relative inline-block">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur-lg opacity-30 animate-pulse"></div>
-            <img 
-              src="/SES_logo.png" 
-              alt="Socio-Economic Survey Logo" 
-              className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-6 relative z-10 drop-shadow-xl hover:scale-110 transition-transform duration-300"
+            <div className="absolute inset-0 bg-linear-to-r from-blue-500 to-cyan-500 rounded-full blur-lg opacity-30 animate-pulse"></div>
+            <Image
+              src="/SES_logo.png"
+              alt="Socio-Economic Survey Logo"
+              width={96}
+              height={96}
+              className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-6 relative z-10 drop-shadow-xl"
+              priority
+              unoptimized={true}
             />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
@@ -150,7 +146,7 @@ export default function LoginPage() {
           <p className="text-slate-400 text-sm">
             Sign in to access the Socio-Economic Survey
           </p>
-          <div className="w-16 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mx-auto mt-4"></div>
+          <div className="w-16 h-0.5 bg-linear-to-r from-blue-500 to-cyan-500 rounded-full mx-auto mt-4"></div>
         </div>
 
         {/* Glass Container */}

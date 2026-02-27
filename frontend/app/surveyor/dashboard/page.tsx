@@ -135,21 +135,21 @@ export default function SurveyorDashboard() {
       if (slumId && assignmentId) {
         // Find the assignment to get slum name
         const assignment = assignments.find(a => a._id === assignmentId);
-        if (assignment) {
-          setHouseholdSelectorParams({
-            assignmentId,
-            slumId,
-            slumName: assignment.slum?.slumName || 'Unknown Slum'
-          });
-          setHouseholdSelectorMode(mode);
-          setShowHouseholdSelector(true);
-          
-          // Remove the parameters from URL
-          router.replace('/surveyor/dashboard');
-        }
+        const slumName = assignment?.slum?.slumName || 'Unknown Slum';
+        
+        setHouseholdSelectorParams({
+          assignmentId,
+          slumId,
+          slumName
+        });
+        setHouseholdSelectorMode(mode);
+        setShowHouseholdSelector(true);
+        
+        // Remove the parameters from URL
+        router.replace('/surveyor/dashboard');
       }
     }
-  }, [assignments, pathname, router]);
+  }, [pathname, router]); // Removed assignments from dependencies to prevent infinite loop
 
   const loadAssignments = async () => {
     try {
