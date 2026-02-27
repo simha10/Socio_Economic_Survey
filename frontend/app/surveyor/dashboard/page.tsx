@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import SurveyorLayout from "@/components/SurveyorLayout";
 import DashboardStats from "@/components/DashboardStats";
@@ -223,7 +223,7 @@ export default function SurveyorDashboard() {
       }
     }
 
-    setHouseholdSelectorMode('search');
+    setHouseholdSelectorMode('new');
     setShowHouseholdSelector(true);
   };
 

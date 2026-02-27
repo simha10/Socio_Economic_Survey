@@ -737,6 +737,23 @@ class ApiService {
     }
   }
 
+  public async deleteHouseholdSurvey(surveyId: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/surveys/household-surveys/${surveyId}`, {
+        method: 'DELETE',
+        headers: this.getHeaders(),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: any) {
+      return {
+        success: false,
+        user: undefined,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  }
+
   // Assignment endpoints
   public async assignSlumToSurveyor(surveyorId: string, slumId: string): Promise<ApiResponse> {
     try {

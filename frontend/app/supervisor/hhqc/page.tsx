@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import apiService from "@/services/api";
-import Select from "@/components/Select";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
 import InfiniteScrollSelect from "@/components/InfiniteScrollSelect";
 import { HouseholdSurvey } from "@/types/householdSurvey";
+// Icons for edit and delete
+import { Edit3 as EditIcon, Trash2 as DeleteIcon } from "lucide-react";
+import ConfirmationDialog from "@/components/DeleteConfirmationDialog";
 
 export default function HHQCPage() {
   const router = useRouter();
@@ -21,6 +23,8 @@ export default function HHQCPage() {
   const [householdSurveys, setHouseholdSurveys] = useState<HouseholdSurvey[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [deletingSurveyId, setDeletingSurveyId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Load slums and assignments when component mounts
   useEffect(() => {
@@ -79,6 +83,38 @@ export default function HHQCPage() {
   const handleEditRecord = (survey: HouseholdSurvey) => {
     // Navigate to supervisor HHQC edit page
     router.push(`/supervisor/hhqc/${survey._id}`);
+  };
+
+  const handleDeleteClick = (surveyId: string) => {
+    setDeletingSurveyId(surveyId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingSurveyId) return;
+
+    try {
+      const response = await apiService.deleteHouseholdSurvey(deletingSurveyId);
+      
+      if (response.success) {
+        // Remove the deleted survey from the local state
+        setHouseholdSurveys(prev => prev.filter(survey => survey._id !== deletingSurveyId));
+        // Show success message could be added here if needed
+      } else {
+        setError(response.error || 'Failed to delete household survey');
+      }
+    } catch (err) {
+      console.error('Error deleting household survey:', err);
+      setError('Failed to delete household survey');
+    } finally {
+      setShowDeleteConfirm(false);
+      setDeletingSurveyId(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setDeletingSurveyId(null);
   };
 
   return (
@@ -175,15 +211,22 @@ export default function HHQCPage() {
                             {survey.surveyStatus}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <Button 
-                            variant="secondary" 
-                            size="sm"
+                        <td className="px-6 py-4 whitespace-nowrap text-sm flex items-center space-x-2">
+                          <button
                             onClick={() => handleEditRecord(survey)}
                             disabled={!survey._id}
+                            className={`p-2 rounded-md ${survey._id ? 'text-blue-400 hover:bg-blue-500/20 hover:text-blue-300' : 'text-gray-500 cursor-not-allowed'}`}
+                            title="Edit Record"
                           >
-                            Edit Record
-                          </Button>
+                            <EditIcon size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(survey._id!)}
+                            className="p-2 rounded-md text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                            title="Delete Record"
+                          >
+                            <DeleteIcon size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -194,6 +237,17 @@ export default function HHQCPage() {
           </div>
         )}
       </Card>
+      
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteConfirm}
+        onCancel={cancelDelete}
+        onConfirm={confirmDelete}
+        title="Delete Household Survey"
+        message="Are you sure you want to delete this household survey record? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

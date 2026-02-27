@@ -874,6 +874,9 @@ exports.deleteSlumSurvey = async (req, res) => {
 
         await SlumSurvey.findByIdAndDelete(surveyId);
         
+        // Auto-sync household counts after deletion
+        await autoSyncHouseholdCounts(slumId);
+        
         sendSuccess(res, null, 'Survey deleted successfully');
     } catch (error) {
         console.error('Error in deleteSlumSurvey:', error.message);

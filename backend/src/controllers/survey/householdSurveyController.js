@@ -545,7 +545,7 @@ exports.deleteHouseholdSurvey = async (req, res) => {
     }
 
     // Check authorization
-    if (survey.surveyor.toString() !== userId.toString() && req.user.role !== 'ADMIN') {
+    if (survey.surveyor.toString() !== userId.toString() && req.user.role === 'SURVEYOR') {
       return sendError(res, 'Not authorized to delete this survey', 403);
     }
 
@@ -560,6 +560,8 @@ exports.deleteHouseholdSurvey = async (req, res) => {
       await updateSlumPopulationFromHouseholdSurveys(slumId);
       await updateSlumBplPopulationFromHouseholdSurveys(slumId);
       await updateSlumDemographicPopulationFromHouseholdSurveys(slumId);
+      // Auto-sync household counts after deletion
+      await autoSyncHouseholdCounts(slumId);
     }
 
     sendSuccess(res, null, 'Survey deleted successfully');

@@ -42,7 +42,6 @@ export const HouseholdSurveySelector = ({
   const [loading, setLoading] = useState(false);
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isGeneratingParcelId, setIsGeneratingParcelId] = useState(false);
   const [prefetchedData, setPrefetchedData] = useState<HouseholdSurvey | null>(null);
   const [showPrefetchPreview, setShowPrefetchPreview] = useState(false);
 
@@ -72,26 +71,6 @@ export const HouseholdSurveySelector = ({
       console.error('Error loading properties:', error);
     } finally {
       setLoadingProperties(false);
-    }
-  };
-
-  // Auto-generate new parcel ID when in New mode
-  const generateNewParcelId = async () => {
-    if (mode !== 'new') return;
-
-    setIsGeneratingParcelId(true);
-    try {
-      const response = await apiService.getNextNewParcelId(slumId);
-      if (response.success && response.data?.nextParcelId) {
-        setParcelId(response.data.nextParcelId);
-      } else {
-        setError(response.error || 'Failed to generate new parcel ID');
-      }
-    } catch (err) {
-      setError('Failed to generate new parcel ID');
-      console.error('Error generating parcel ID:', err);
-    } finally {
-      setIsGeneratingParcelId(false);
     }
   };
 
@@ -212,9 +191,7 @@ export const HouseholdSurveySelector = ({
     setError(null);
     setPrefetchedData(null);
     setShowPrefetchPreview(false);
-    if (mode === 'new') {
-      generateNewParcelId();
-    }
+    // Removed automatic parcel ID generation on new mode
   }, [mode]);
 
   const handleParcelIdChange = (value: string) => {
@@ -366,7 +343,7 @@ export const HouseholdSurveySelector = ({
                 Parcel ID
                 {mode === 'new' && (
                   <span className="text-xs text-slate-400 ml-2">
-                    (Auto-generated, editable)
+                    (Manual entry)
                   </span>
                 )}
               </label>
@@ -374,13 +351,9 @@ export const HouseholdSurveySelector = ({
                 type="text"
                 value={parcelId}
                 onChange={(e) => handleParcelIdChange(e.target.value)}
-                placeholder={mode === 'search' ? 'Enter Parcel ID (e.g., 101, N001)' : 'Auto-generated...'}
-                disabled={isGeneratingParcelId && mode === 'new'}
+                placeholder="Enter Parcel ID (e.g., 101, 102)"
                 className="w-full"
               />
-              {mode === 'new' && isGeneratingParcelId && (
-                <p className="text-xs text-slate-400 mt-1">Generating parcel ID...</p>
-              )}
             </div>
 
             <div>
@@ -391,7 +364,7 @@ export const HouseholdSurveySelector = ({
                 <Select
                   value={propertyNo}
                   onChange={(e) => setPropertyNo(e.target.value)}
-                  disabled={loadingProperties || mode === 'new'}
+                  disabled={loadingProperties}
                   options={[
                     ...properties.map(property => ({ value: property.toString(), label: property.toString() }))
                   ]}
@@ -404,7 +377,7 @@ export const HouseholdSurveySelector = ({
                   placeholder={
                     loadingProperties
                       ? "Loading properties..."
-                      : properties.length === 0 && parcelId && mode === 'search'
+                      : properties.length === 0 && parcelId
                         ? "Enter new property number"
                         : "Enter Property Number"
                   }
@@ -415,7 +388,7 @@ export const HouseholdSurveySelector = ({
               {loadingProperties && (
                 <p className="text-xs text-slate-400 mt-1">Loading properties...</p>
               )}
-              {properties.length === 0 && parcelId && mode === 'search' && !loadingProperties && (
+              {properties.length === 0 && parcelId && !loadingProperties && (
                 <p className="text-xs text-blue-600 mt-1">
                   No existing properties found. You can enter a new property number.
                 </p>
