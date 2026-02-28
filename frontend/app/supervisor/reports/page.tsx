@@ -14,6 +14,29 @@ interface User {
   role: string;
 }
 
+interface Slum {
+  _id: string;
+  slumName: string;
+  slumId: number;
+  stateCode: string;
+  distCode: string;
+  cityTownCode: string;
+  location?: string;
+  ulbCode?: string;
+  ulbName?: string;
+  ward: {
+    _id: string;
+    number: string;
+    name: string;
+    zone: string;
+  } | string;
+  slumType: string;
+  village: string;
+  landOwnership: string;
+  totalHouseholds: number;
+  area: number;
+}
+
 interface Assignment {
   _id: string;
   surveyor: {
@@ -61,7 +84,7 @@ export default function SupervisorReportsPage() {
       const usersResponse = await apiService.getUsers();
       
       if (assignmentsResponse.success && assignmentsResponse.data) {
-        const assignments: Assignment[] = assignmentsResponse.data;
+        const assignments: Assignment[] = assignmentsResponse.data as Assignment[];
         const totalAssignments = assignments.length;
         const completedAssignments = assignments.filter((a: Assignment) => a.status === 'COMPLETED').length;
         const inProgressAssignments = assignments.filter((a: Assignment) => a.status === 'IN PROGRESS').length;
@@ -93,8 +116,8 @@ export default function SupervisorReportsPage() {
           progressRate,
           totalHouseholdSurveys,
           totalSlumSurveys,
-          totalSlums: slumsResponse.success ? slumsResponse.data?.length || 0 : 0,
-          totalSurveyors: usersResponse.success ? usersResponse.data?.filter((u: User) => u.role === 'SURVEYOR').length || 0 : 0,
+          totalSlums: slumsResponse.success ? (slumsResponse.data as Slum[])?.length || 0 : 0,
+          totalSurveyors: usersResponse.success ? (usersResponse.data as User[])?.filter((u: User) => u.role === 'SURVEYOR').length || 0 : 0,
           assignments
         });
       }
@@ -251,13 +274,13 @@ export default function SupervisorReportsPage() {
           {reportTypes.map((report, index) => (
             <div 
               key={index}
-              className="group relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-slate-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
+              className="group relative overflow-hidden bg-linear-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-slate-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
               onClick={() => alert(`Generating ${report.title} report...`)}
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${report.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+              <div className={`absolute inset-0 bg-linear-to-br ${report.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
               
               <div className="relative z-10">
-                <div className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${report.color} mb-4`}>
+                <div className={`inline-flex p-3 rounded-lg bg-linear-to-br ${report.color} mb-4`}>
                   <div className="text-white">
                     {report.icon}
                   </div>

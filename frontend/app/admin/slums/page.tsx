@@ -63,8 +63,8 @@ export default function AdminSlumsPage() {
       setLoading(true);
       const response = await apiService.getAllSlums(1, 10, undefined, true); // Load all slums
       if (response.success) {
-        setSlums(response.data || []);
-        setFilteredSlums(response.data || []);
+        setSlums(response.data as Slum[] || []);
+        setFilteredSlums(response.data as Slum[] || []);
       } else {
         console.error("Failed to fetch slums:", response.error);
       }
@@ -131,7 +131,7 @@ export default function AdminSlumsPage() {
         setSlumToDelete(null);
         await fetchSlums();
       } else {
-        alert("Failed to delete slum: " + response.message);
+        alert("Failed to delete slum: " + response.error);
       }
     } catch (error) {
       console.error("Error deleting slum:", error);
@@ -200,9 +200,6 @@ export default function AdminSlumsPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-white">Manage Slums</h1>
-            <p className="text-slate-400 mt-2">
-              Create, edit, and manage slum information
-            </p>
           </div>
           <Button
             onClick={handleCreateSlum}

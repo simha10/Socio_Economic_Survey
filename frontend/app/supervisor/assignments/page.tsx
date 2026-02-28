@@ -110,13 +110,13 @@ export default function SupervisorAssignmentsPage() {
         ]);
 
         if (assignmentsRes.success) {
-          setAssignments(assignmentsRes.data || []);
+          setAssignments(assignmentsRes.data as Assignment[] || []);
         }
         if (surveyorsRes.success) {
-          setAvailableUsers(surveyorsRes.data || []);
+          setAvailableUsers(surveyorsRes.data as Surveyor[] || []);
         }
         if (slumsRes.success) {
-          const sortedSlums = [...(slumsRes.data || [])].sort((a, b) => {
+          const sortedSlums = [...(slumsRes.data as Slum[] || [])].sort((a, b) => {
             const nameA = a.slumName || '';
             const nameB = b.slumName || '';
             return nameA.localeCompare(nameB);
@@ -147,7 +147,7 @@ export default function SupervisorAssignmentsPage() {
         // Refresh assignments list
         const assignmentsRes = await apiService.getAllAssignments();
         if (assignmentsRes.success) {
-          setAssignments(assignmentsRes.data || []);
+          setAssignments(assignmentsRes.data as Assignment[] || []);
         }
         // Reset form
         setNewAssignment({
@@ -236,7 +236,7 @@ export default function SupervisorAssignmentsPage() {
         // Refresh assignments to show updated data
         const assignmentsRes = await apiService.getAllAssignments();
         if (assignmentsRes.success) {
-          setAssignments(assignmentsRes.data || []);
+          setAssignments(assignmentsRes.data as Assignment[] || []);
         }
       } else {
         setMessage(`Error: ${response.error || "Failed to update assignment"}`);

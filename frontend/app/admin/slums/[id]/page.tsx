@@ -82,7 +82,7 @@ export default function AdminSlumDetailPage() {
         if (slumId) {
           const response = await apiService.getSlum(slumId);
           if (response.success) {
-            setSlum(response.data?.slum || response.data);
+            setSlum(response.data as Slum || (response.data as { slum: Slum }).slum || null);
           }
         }
       } catch (error) {

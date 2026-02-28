@@ -358,7 +358,7 @@ export default function HouseholdSurveyPage() {
     try {
       const response = await apiService.getMyAssignments();
       if (response.success && response.data) {
-        const currentAssignment = response.data.find((a: {
+        const currentAssignment = (response.data as any[]).find((a: {
           _id: string;
           householdSurveyProgress?: { completed: number; total: number }
         }) => a._id === assignmentId);
@@ -416,13 +416,13 @@ export default function HouseholdSurveyPage() {
             // Load assignment details to get slum info
             const assignmentResponse = await apiService.getAssignment(assignmentId);
             if (assignmentResponse.success && assignmentResponse.data) {
-              setAssignment(assignmentResponse.data);
-              const slumId = assignmentResponse.data.slum._id;
+              setAssignment(assignmentResponse.data as any);
+              const slumId = (assignmentResponse.data as any).slum._id;
               
               // Fetch slum details
               const slumResponse = await apiService.getSlum(slumId);
               if (slumResponse.success) {
-                const slumData = slumResponse.data;
+                const slumData = slumResponse.data as any;
                 setSlum(slumData);
                 
                 // Auto-fill slum details
@@ -447,7 +447,7 @@ export default function HouseholdSurveyPage() {
         
         if (householdSurveyResponse.success && householdSurveyResponse.data) {
           // This is an existing household survey, populate the form with its data
-          const surveyData = householdSurveyResponse.data;
+          const surveyData = householdSurveyResponse.data as any;
         
           // Set slum information
           if (surveyData.slum) {
@@ -516,13 +516,13 @@ export default function HouseholdSurveyPage() {
           // No existing survey found, try to load assignment details to get slum info
           const assignmentResponse = await apiService.getAssignment(assignmentId);
           if (assignmentResponse.success && assignmentResponse.data) {
-            setAssignment(assignmentResponse.data);
-            const slumId = assignmentResponse.data.slum._id;
+            setAssignment(assignmentResponse.data as any);
+            const slumId = (assignmentResponse.data as any).slum._id;
 
             // Fetch slum details
             const slumResponse = await apiService.getSlum(slumId);
             if (slumResponse.success) {
-              const slumData = slumResponse.data;
+              const slumData = slumResponse.data as any;
               setSlum(slumData);
 
               // Auto-fill slum details
@@ -1116,7 +1116,7 @@ export default function HouseholdSurveyPage() {
       // Check if this is an existing survey
       try {
         const existingSurveyResponse = await apiService.getHouseholdSurvey(surveyIdToUse);
-        isExistingSurvey = existingSurveyResponse.success && existingSurveyResponse.data;
+        isExistingSurvey = existingSurveyResponse.success && !!existingSurveyResponse.data;
       } catch (error) {
         console.error('Error checking existing survey:', error);
         isExistingSurvey = false;
@@ -1150,10 +1150,10 @@ export default function HouseholdSurveyPage() {
           setShowCompletionModal(true);
         } else {
           console.error('[HOUSEHOLD_SURVEY] ❌ Submission failed:', {
-            message: response.message,
+            message: response.error,
             error: response.error
           });
-          showToast(response.message || "Failed to submit survey", "error");
+          showToast(response.error || "Failed to submit survey", "error");
           return;
         }
       } else {
@@ -1184,7 +1184,7 @@ export default function HouseholdSurveyPage() {
           return;
         }
 
-        surveyIdToUse = surveyResponse.data._id;
+        surveyIdToUse = (surveyResponse.data as any)._id;
         console.log('[HOUSEHOLD_SURVEY] 🎯 Submitting new survey with ID:', surveyIdToUse);
 
         // Submit the new survey
@@ -1203,7 +1203,7 @@ export default function HouseholdSurveyPage() {
 
         console.log('[HOUSEHOLD_SURVEY] 📡 API Response received:', {
           success: response.success,
-          message: response.message,
+          message: response.error,
           hasData: !!response.data,
           dataKeys: response.data ? Object.keys(response.data) : []
         });
@@ -1292,7 +1292,7 @@ export default function HouseholdSurveyPage() {
           await fetchProgress(); // Fetch updated progress
           setShowCompletionModal(true);
         } else {
-          showToast(response.message || "Failed to submit survey", "error");
+          showToast(response.error || "Failed to submit survey", "error");
         }
       }
     } catch (error) {

@@ -180,7 +180,7 @@ export default function SlumForm({
           area: 0,
         });
       } else {
-        setError(response.message || "Failed to save slum");
+        setError(response.error || "Failed to save slum");
       }
     } catch (err) {
       setError("Error saving slum");

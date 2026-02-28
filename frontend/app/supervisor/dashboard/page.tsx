@@ -28,6 +28,29 @@ interface Assignment {
   };
 }
 
+interface Slum {
+  _id: string;
+  slumName: string;
+  slumId: number;
+  stateCode: string;
+  distCode: string;
+  cityTownCode: string;
+  location?: string;
+  ulbCode?: string;
+  ulbName?: string;
+  ward: {
+    _id: string;
+    number: string;
+    name: string;
+    zone: string;
+  } | string;
+  slumType: string;
+  village: string;
+  landOwnership: string;
+  totalHouseholds: number;
+  area: number;
+}
+
 interface DashboardStats {
   totalSlums: number;
   totalAssignments: number;
@@ -87,7 +110,7 @@ export default function SupervisorDashboardPage() {
       const usersResponse = await apiService.getUsers();
       
       if (assignmentsResponse.success && assignmentsResponse.data) {
-        const assignments: Assignment[] = assignmentsResponse.data;
+        const assignments: Assignment[] = assignmentsResponse.data as Assignment[];
         const totalAssignments = assignments.length;
         const completedAssignments = assignments.filter((a: Assignment) => a.status === 'COMPLETED').length;
         const inProgressAssignments = assignments.filter((a: Assignment) => a.status === 'IN PROGRESS').length;
@@ -125,7 +148,7 @@ export default function SupervisorDashboardPage() {
           inProgressAssignments,
           pendingAssignments,
           totalSurveyors: usersResponse.success ? 
-            usersResponse.data?.filter((u: User) => u.role === 'SURVEYOR').length : 0,
+            (usersResponse.data as User[])?.filter((u: User) => u.role === 'SURVEYOR').length : 0,
           completedSlumSurveys,
           totalHouseholdSurveys: totalCompletedHouseholdSurveys,
           totalHouseholds: totalHouseholdsCount,
@@ -136,7 +159,7 @@ export default function SupervisorDashboardPage() {
       if (slumsResponse.success) {
         setDashboardStats(prev => ({
           ...prev,
-          totalSlums: slumsResponse.data?.length || 0
+          totalSlums: (slumsResponse.data as Slum[])?.length || 0
         }));
       }
     } catch (error) {

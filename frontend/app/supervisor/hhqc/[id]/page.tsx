@@ -163,7 +163,7 @@ export default function HHQCEditPage() {
     debtOutstanding: undefined,
     notes: "",
   });
-  const [errors, setErrors] = useState<any[]>([]);
+  const [errors, setErrors] = useState<unknown[]>([]);
   const [originalData, setOriginalData] = useState<HouseholdSurvey | null>(null);
 
   // Monitor formData changes
@@ -261,7 +261,7 @@ export default function HHQCEditPage() {
         const response = await apiService.get(`/surveys/household-surveys/${params.id}`);
         
         if (response.success && response.data) {
-          const surveyData = response.data;
+          const surveyData = response.data as HouseholdSurvey;
           setOriginalData(surveyData);
           
           // Populate form data with all survey fields
@@ -406,11 +406,11 @@ export default function HHQCEditPage() {
         alert("Record updated successfully!");
         router.push("/supervisor/hhqc");
       } else {
-        alert("Failed to update record: " + (response.message || "Unknown error"));
+        alert("Failed to update record: " + (response.error || "Unknown error"));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating survey:", error);
-      alert("Failed to update record: " + (error.message || "Unknown error"));
+      alert("Failed to update record: " + (error instanceof Error ? error.message : "Unknown error"));
     } finally {
       setSaving(false);
     }

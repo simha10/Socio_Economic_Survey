@@ -72,7 +72,7 @@ export default function SupervisorSlumDetailPage() {
         if (slumId) {
           const response = await apiService.getSlum(slumId);
           if (response.success) {
-            setSlum(response.data?.slum || response.data);
+            setSlum(response.data as Slum || (response.data as { slum: Slum }).slum || null);
           } else {
             console.error('Failed to fetch slum:', response.error);
           }

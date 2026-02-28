@@ -811,8 +811,8 @@ export default function SlumSurveyPage() {
         // First, fetch the assignment to get the slum ID
         const assignmentResponse = await apiService.getAssignment(assignmentId);
         if (assignmentResponse.success && assignmentResponse.data) {
-          setAssignment(assignmentResponse.data);
-          const slumId = assignmentResponse.data.slum._id;
+          setAssignment(assignmentResponse.data as any);
+          const slumId = (assignmentResponse.data as any).slum._id;
 
           // Update form data with the actual slum ID
           setFormData((prev) => ({
@@ -824,14 +824,14 @@ export default function SlumSurveyPage() {
           // The assignment controller populates the slum with ward details
           let assignmentWardData = null;
           
-          if (assignmentResponse.success && assignmentResponse.data?.slum?.ward) {
-            assignmentWardData = assignmentResponse.data.slum.ward;
+          if (assignmentResponse.success && (assignmentResponse.data as any)?.slum?.ward) {
+            assignmentWardData = (assignmentResponse.data as any).slum.ward;
           }
 
           // Now fetch the slum details
           const slumResponse = await apiService.getSlum(slumId);
           if (slumResponse.success) {
-            const slumData = slumResponse.data;
+            const slumData = slumResponse.data as any;
             setSlum(slumData);
             
             // Auto-fill slum details with initial values from slum data
@@ -861,7 +861,7 @@ export default function SlumSurveyPage() {
               try {
                 const statesResponse = await apiService.getStates();
                 if (statesResponse.success) {
-                  const state = statesResponse.data.find((s: any) => s.code === slumData.stateCode);
+                  const state = (statesResponse.data as any[]).find((s: any) => s.code === slumData.stateCode);
                   if (state) {
                     setFormData(prev => ({
                       ...prev,
@@ -879,7 +879,7 @@ export default function SlumSurveyPage() {
               try {
                 const districtsResponse = await apiService.getDistricts();
                 if (districtsResponse.success) {
-                  const district = districtsResponse.data.find((d: any) => d.code === slumData.distCode);
+                  const district = (districtsResponse.data as any[]).find((d: any) => d.code === slumData.distCode);
                   if (district) {
                     setFormData(prev => ({
                       ...prev,
@@ -897,7 +897,7 @@ export default function SlumSurveyPage() {
               try {
                 const wardResponse = await apiService.get(`/admin/wards/${slumData.ward}`);
                 if (wardResponse.success) {
-                  const wardData = wardResponse.data;
+                  const wardData = wardResponse.data as any;
                   setFormData(prev => ({
                     ...prev,
                     wardNumber: wardData.number || "",
@@ -916,7 +916,7 @@ export default function SlumSurveyPage() {
           // Create or get the slum survey
           const surveyResponse = await apiService.createOrGetSlumSurvey(slumId);
           if (surveyResponse.success) {
-            const surveyData = surveyResponse.data;
+            const surveyData = surveyResponse.data as any;
             setSlumSurvey(surveyData);
             
             // Set completion percentage from existing survey data
@@ -2640,7 +2640,7 @@ export default function SlumSurveyPage() {
         // Redirect to dashboard after successful submission
         router.push('/surveyor/dashboard');
       } else {
-        showToast(response.message || "Failed to submit survey", "error");
+        showToast(response.error || "Failed to submit survey", "error");
       }
     } catch (error) {
       console.error("Error submitting survey:", error);
@@ -3271,12 +3271,12 @@ export default function SlumSurveyPage() {
         );
         
         if (response.success) {
-          showToast(`Section saved successfully! (${response.data?.completionPercentage || 0}% complete)`, "success");
+          showToast(`Section saved successfully! (${(response.data as any)?.completionPercentage || 0}% complete)`, "success");
           // Update local state with new completion percentage
-          if (response.data?.completionPercentage !== undefined) {
+          if ((response.data as any)?.completionPercentage !== undefined) {
             setFormData(prev => ({
               ...prev,
-              completionPercentage: response.data.completionPercentage
+              completionPercentage: (response.data as any).completionPercentage
             }));
           }
           // Move to next step

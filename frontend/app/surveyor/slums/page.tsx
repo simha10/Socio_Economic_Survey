@@ -55,7 +55,7 @@ export default function SlumsPage() {
         const response = await apiService.getMyAssignments();
         if (response.success) {
           // Extract slum data from assignments
-          const assignedSlums = (response.data || []).map((assignment: Assignment) => assignment.slum);
+          const assignedSlums = (response.data as any[] || []).map((assignment: Assignment) => assignment.slum);
           setSlums(assignedSlums);
         } else {
           showToast("Failed to load assigned slums", "error");

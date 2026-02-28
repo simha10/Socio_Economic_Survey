@@ -59,8 +59,8 @@ export default function SupervisorSlumsPage() {
       const response = await apiService.getAllSlums(1, 10, undefined, true); // Load all slums
       console.log('SupervisorSlumsPage: Fetched slums response', response);
       if (response.success) {
-        setSlums(response.data || []);
-        console.log('SupervisorSlumsPage: Set slums state with', response.data?.length, 'items');
+        setSlums(response.data as Slum[] || []);
+        console.log('SupervisorSlumsPage: Set slums state with', (response.data as Slum[])?.length, 'items');
       } else {
         console.error("Failed to fetch slums:", response.error);
       }

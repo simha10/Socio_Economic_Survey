@@ -11,6 +11,44 @@ import { HouseholdSurvey } from "@/types/householdSurvey";
 import { Edit3 as EditIcon, Trash2 as DeleteIcon } from "lucide-react";
 import ConfirmationDialog from "@/components/DeleteConfirmationDialog";
 
+interface Slum {
+  _id: string;
+  slumName: string;
+  slumId: number;
+  stateCode: string;
+  distCode: string;
+  cityTownCode: string;
+  location?: string;
+  ulbCode?: string;
+  ulbName?: string;
+  ward: {
+    _id: string;
+    number: string;
+    name: string;
+    zone: string;
+  } | string;
+  slumType: string;
+  village: string;
+  landOwnership: string;
+  totalHouseholds: number;
+  area: number;
+}
+
+interface Assignment {
+  _id: string;
+  status: string;
+  surveyor: {
+    _id: string;
+    name: string;
+    username: string;
+  };
+  slum: Slum;
+  householdSurveyProgress?: {
+    completed: number;
+    total: number;
+  };
+}
+
 export default function HHQCPage() {
   const router = useRouter();
 
@@ -18,10 +56,10 @@ export default function HHQCPage() {
     router.push("/supervisor/dashboard");
   };
   const [loading, setLoading] = useState(true);
-  const [slums, setSlums] = useState<any[]>([]);
+  const [slums, setSlums] = useState<Slum[]>([]);
   const [selectedSlum, setSelectedSlum] = useState<string>("");
   const [householdSurveys, setHouseholdSurveys] = useState<HouseholdSurvey[]>([]);
-  const [assignments, setAssignments] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [deletingSurveyId, setDeletingSurveyId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -33,7 +71,7 @@ export default function HHQCPage() {
         // Load slums
         const slumsResponse = await apiService.get("/admin/slums");
         // Sort slums alphabetically by name
-        const sortedSlums = [...(slumsResponse.data || [])].sort((a, b) => {
+        const sortedSlums = [...(slumsResponse.data as Slum[] || [])].sort((a, b) => {
           const nameA = a.slumName || '';
           const nameB = b.slumName || '';
           return nameA.localeCompare(nameB);
@@ -43,7 +81,7 @@ export default function HHQCPage() {
         // Load all assignments for supervisor to find the correct assignment later
         const assignmentsResponse = await apiService.getAllAssignments();
         if (assignmentsResponse.success) {
-          setAssignments(assignmentsResponse.data || []);
+          setAssignments(assignmentsResponse.data as Assignment[] || []);
         }
 
         setLoading(false);
@@ -68,7 +106,7 @@ export default function HHQCPage() {
       try {
         setLoading(true);
         const response = await apiService.getHouseholdSurveysBySlum(selectedSlum);
-        setHouseholdSurveys(Array.isArray(response.data) ? response.data : response.data.surveys || []);
+        setHouseholdSurveys(Array.isArray(response.data) ? response.data as HouseholdSurvey[] : []);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching household surveys:", err);

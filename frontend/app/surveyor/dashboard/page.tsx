@@ -158,7 +158,7 @@ export default function SurveyorDashboard() {
       const response = await apiService.getMyAssignments();
       if (response.success) {
         console.log("Assignments loaded:", response.data);
-        const assignmentsData = response.data || [];
+        const assignmentsData = response.data as Assignment[] || [];
         setAssignments(assignmentsData);
 
         // Load survey data for each assignment
@@ -168,7 +168,7 @@ export default function SurveyorDashboard() {
             try {
               const surveyResponse = await apiService.createOrGetSlumSurvey(assignment.slum._id);
               if (surveyResponse.success) {
-                surveyDataMap[assignment._id] = surveyResponse.data;
+                surveyDataMap[assignment._id] = surveyResponse.data as { surveyStatus?: string };
               }
             } catch (error) {
               console.error(`Failed to load survey for assignment ${assignment._id}:`, error);

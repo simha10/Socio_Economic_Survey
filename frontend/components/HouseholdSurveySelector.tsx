@@ -65,7 +65,7 @@ export const HouseholdSurveySelector = ({
           setPropertyNo('');
         }
       } else {
-        console.error('Failed to load properties:', response.message);
+        console.error('Failed to load properties:', response.error);
       }
     } catch (error) {
       console.error('Error loading properties:', error);
@@ -140,10 +140,10 @@ export const HouseholdSurveySelector = ({
 
       if (response.success && response.data) {
         // Successfully created new household survey - redirect to it
-        const surveyData = response.data;
+        const surveyData = response.data as any;
         // Use the survey ID for the URL, but ensure we're using the assignment ID from the survey if available
-        const targetAssignmentId = surveyData.assignment?._id || assignmentId;
-        router.push(`/surveyor/household-survey/${targetAssignmentId}?surveyId=${response.data._id}`);
+        const targetAssignmentId = (surveyData as any).assignment?._id || assignmentId;
+        router.push(`/surveyor/household-survey/${targetAssignmentId}?surveyId=${(response.data as any)._id}`);
       } else {
         setError(response.error || 'Failed to create new household survey');
       }

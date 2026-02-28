@@ -43,14 +43,14 @@ export default function SlumDetailsPage() {
         setLoading(true);
         const slumResponse = await apiService.getSlum(slumId);
         if (slumResponse.success) {
-          setSlum(slumResponse.data);
+          setSlum(slumResponse.data as Slum);
         }
 
         // Try to get existing slum survey
         try {
           const surveyResponse = await apiService.createOrGetSlumSurvey(slumId);
           if (surveyResponse.success) {
-            setSlumSurvey(surveyResponse.data);
+            setSlumSurvey(surveyResponse.data as SlumSurvey);
           }
         } catch (error) {
           console.warn("Could not load slum survey", error);

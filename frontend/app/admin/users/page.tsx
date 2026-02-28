@@ -75,7 +75,7 @@ export default function AdminUsersPage() {
       setLoading(true);
       const response = await apiService.listUsers();
       if (response.success && response.data) {
-        setUsers(response.data);
+        setUsers(response.data as User[]);
       } else {
         console.error("Failed to load users:", response.error);
         setUsers([]);
@@ -210,9 +210,6 @@ export default function AdminUsersPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-white">User Management</h1>
-            <p className="text-slate-400 mt-2">
-              Create and manage system users
-            </p>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}

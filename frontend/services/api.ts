@@ -2,7 +2,7 @@
 
 import { API_BASE_URL } from '@/utils/constants';
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   user?: { _id: string; username: string; name: string; role: string; } | undefined;
   success: boolean;
   message?: string;
@@ -41,7 +41,7 @@ class ApiService {
       const contentType = response.headers.get('content-type');
       const contentLength = response.headers.get('content-length');
 
-      let errorData: any = {};
+      let errorData: { message?: string; error?: string } = {};
 
       // Only try to parse as JSON if content-type is JSON and body is not empty
       if (contentType && contentType.includes('application/json') && contentLength !== '0') {
@@ -75,7 +75,7 @@ class ApiService {
     console.log('API Success Response:', data);
     // The backend returns the response directly with success, user, token at the root level
     // So we return it as is, since it already matches our ApiResponse structure
-    return data;
+    return data as ApiResponse<T>;
   }
 
   public setToken(token: string): void {
@@ -113,21 +113,21 @@ class ApiService {
       console.log('ApiService: Login response processed', { success: result.success, result });
 
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Better error logging to capture network errors
       console.error('ApiService: Login error caught', {
         error,
-        errorMessage: error?.message,
-        errorStack: error?.stack,
-        errorToString: error?.toString ? error.toString() : 'no toString',
+        errorMessage: (error instanceof Error) ? error.message : String(error),
+        errorStack: (error instanceof Error) ? error.stack : undefined,
+        errorToString: (error instanceof Error) ? error.toString() : 'no toString',
         errorType: typeof error,
-        rawError: JSON.stringify(error, Object.getOwnPropertyNames(error)) // This captures all properties
+        rawError: (error instanceof Error) ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : JSON.stringify(error) // This captures all properties
       });
 
       return {
         success: false,
         user: undefined,
-        error: error?.message || (typeof error === 'string' ? error : 'Network error occurred'),
+        error: (error instanceof Error) ? error.message : (typeof error === 'string' ? error : 'Network error occurred'),
       };
     }
   }
@@ -141,11 +141,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -158,11 +158,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -180,11 +180,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -196,11 +196,11 @@ class ApiService {
         headers: this.getHeaders(),
       });
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -212,11 +212,11 @@ class ApiService {
         headers: this.getHeaders(),
       });
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -231,11 +231,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -253,22 +253,13 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
-  }
-
-  public async listUsersWithPasswords(secretKey: string): Promise<ApiResponse> {
-    console.warn('Password display functionality has been removed for security reasons');
-    return {
-      success: false,
-      user: undefined,
-      error: 'Password display functionality has been removed for security reasons',
-    };
   }
 
   public async getUserById(userId: string): Promise<ApiResponse> {
@@ -279,11 +270,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -297,11 +288,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -314,16 +305,16 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
-  public async createSlum(data: any): Promise<ApiResponse> {
+  public async createSlum(data: Record<string, unknown>): Promise<ApiResponse> {
     console.log('ApiService: Sending create slum request', { data, url: `${this.baseUrl}/surveys/slums` });
     try {
       const response = await fetch(`${this.baseUrl}/surveys/slums`, {
@@ -340,25 +331,24 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ApiService: Create slum error caught', {
         error,
-        errorMessage: error?.message,
-        errorStack: error?.stack,
-        errorToString: error?.toString ? error.toString() : 'no toString',
+        errorMessage: (error instanceof Error) ? error.message : String(error),
+        errorStack: (error instanceof Error) ? error.stack : undefined,
         errorType: typeof error,
-        rawError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+        rawError: error ? JSON.stringify(error, error instanceof Error ? Object.getOwnPropertyNames(error) : []) : 'no error details'
       });
 
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
-  public async updateSlum(id: string, data: any): Promise<ApiResponse> {
+  public async updateSlum(id: string, data: Record<string, unknown>): Promise<ApiResponse> {
     console.log('ApiService: Sending update slum request', { id, data, url: `${this.baseUrl}/surveys/slums/${id}` });
     try {
       const response = await fetch(`${this.baseUrl}/surveys/slums/${id}`, {
@@ -375,20 +365,19 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ApiService: Update slum error caught', {
         error,
-        errorMessage: error?.message,
-        errorStack: error?.stack,
-        errorToString: error?.toString ? error.toString() : 'no toString',
+        errorMessage: (error instanceof Error) ? error.message : String(error),
+        errorStack: (error instanceof Error) ? error.stack : undefined,
         errorType: typeof error,
-        rawError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+        rawError: error ? JSON.stringify(error, error instanceof Error ? Object.getOwnPropertyNames(error) : []) : 'no error details'
       });
 
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -409,20 +398,19 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ApiService: Delete slum error caught', {
         error,
-        errorMessage: error?.message,
-        errorStack: error?.stack,
-        errorToString: error?.toString ? error.toString() : 'no toString',
+        errorMessage: (error instanceof Error) ? error.message : String(error),
+        errorStack: (error instanceof Error) ? error.stack : undefined,
         errorType: typeof error,
-        rawError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+        rawError: error ? JSON.stringify(error, error instanceof Error ? Object.getOwnPropertyNames(error) : []) : 'no error details'
       });
 
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -435,11 +423,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -465,11 +453,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -483,11 +471,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -505,11 +493,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -522,11 +510,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -539,17 +527,17 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
   // Household survey endpoints
-  public async createHouseholdSurvey(data: any): Promise<ApiResponse> {
+  public async createHouseholdSurvey(data: Record<string, unknown>): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/surveys/household`, {
         method: 'POST',
@@ -558,18 +546,18 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
   public async createOrGetHouseholdSurvey(slumId: string, houseDoorNo: string, parcelId?: string, propertyNo?: number): Promise<ApiResponse> {
     try {
-      const requestBody: any = { slumId };
+      const requestBody: Record<string, unknown> = { slumId };
       if (parcelId !== undefined && propertyNo !== undefined) {
         requestBody.parcelId = parcelId;
         requestBody.propertyNo = propertyNo;
@@ -584,11 +572,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -601,16 +589,16 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
-  public async updateHouseholdSurvey(id: string, data: any): Promise<ApiResponse> {
+  public async updateHouseholdSurvey(id: string, data: Record<string, unknown>): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/surveys/household-surveys/${id}`, {
         method: 'PUT',
@@ -619,11 +607,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -641,11 +629,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -659,11 +647,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -676,11 +664,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -693,16 +681,16 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
-  public async importHouseholds(data: any[], slumId: string): Promise<ApiResponse> {
+  public async importHouseholds(data: Record<string, unknown>[], slumId: string): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/surveys/household-surveys/import`, {
         method: 'POST',
@@ -711,11 +699,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -728,11 +716,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -753,20 +741,19 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ApiService: Delete household survey error caught', {
         error,
-        errorMessage: error?.message,
-        errorStack: error?.stack,
-        errorToString: error?.toString ? error.toString() : 'no toString',
+        errorMessage: (error instanceof Error) ? error.message : String(error),
+        errorStack: (error instanceof Error) ? error.stack : undefined,
         errorType: typeof error,
-        rawError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+        rawError: error ? JSON.stringify(error, error instanceof Error ? Object.getOwnPropertyNames(error) : []) : 'no error details'
       });
 
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -794,12 +781,12 @@ class ApiService {
       console.log('assignSlumToSurveyor Result:', result);
 
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('assignSlumToSurveyor Network Error:', error);
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -815,12 +802,12 @@ class ApiService {
       console.log('Response status:', response.status, 'Response OK:', response.ok);
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('getAssignedSlums error:', error);
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -833,11 +820,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -850,11 +837,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -869,12 +856,12 @@ class ApiService {
 
       console.log('getAllAssignments response status:', response.status);
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('getAllAssignments error:', error);
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -889,12 +876,12 @@ class ApiService {
 
       console.log('getAssignment response status:', response.status);
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('getAssignment error:', error);
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -909,11 +896,11 @@ class ApiService {
         body: JSON.stringify(assignmentData),
       });
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -927,11 +914,11 @@ class ApiService {
         headers: this.getHeaders(),
       });
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -949,8 +936,8 @@ class ApiService {
       }
 
       return await response.blob();
-    } catch (error: any) {
-      throw new Error(error.message || 'Network error occurred during export');
+    } catch (error: unknown) {
+      throw new Error((error instanceof Error) ? error.message : 'Network error occurred during export');
     }
   }
 
@@ -966,8 +953,8 @@ class ApiService {
       }
 
       return await response.blob();
-    } catch (error: any) {
-      throw new Error(error.message || 'Network error occurred during export');
+    } catch (error: unknown) {
+      throw new Error((error instanceof Error) ? error.message : 'Network error occurred during export');
     }
   }
 
@@ -980,17 +967,17 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
   // Generic POST method for custom endpoints
-  public async post(endpoint: string, data: any): Promise<ApiResponse> {
+  public async post(endpoint: string, data: Record<string, unknown>): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',
@@ -999,17 +986,17 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
   // Generic PUT method for custom endpoints
-  public async put(endpoint: string, data?: any): Promise<ApiResponse> {
+  public async put(endpoint: string, data?: Record<string, unknown>): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'PUT',
@@ -1018,11 +1005,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -1040,11 +1027,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -1057,11 +1044,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -1075,16 +1062,16 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
-  public async submitSlumSurvey(surveyId: string, data: any): Promise<ApiResponse> {
+  public async submitSlumSurvey(surveyId: string, data: Record<string, unknown>): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/surveys/slum-surveys/${surveyId}/submit`, {
         method: 'POST',
@@ -1093,16 +1080,16 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
-  public async submitHouseholdSurvey(surveyId: string, data: any): Promise<ApiResponse> {
+  public async submitHouseholdSurvey(surveyId: string, data: Record<string, unknown>): Promise<ApiResponse> {
     console.log('[API_SERVICE] 🚀 submitHouseholdSurvey called with:', { surveyId, dataKeys: Object.keys(data) });
 
     try {
@@ -1140,7 +1127,7 @@ class ApiService {
           const errorText = await response.text();
           console.error('[API_SERVICE] ❌ Error response body:', errorText);
         } catch (e) {
-          console.error('[API_SERVICE] ❌ Could not read error response body');
+          console.error('[API_SERVICE] ❌ Could not read error response body:', (e instanceof Error) ? e.message : String(e));
         }
       }
 
@@ -1151,21 +1138,21 @@ class ApiService {
       });
 
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[API_SERVICE] ❌ Network error occurred:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
+        name: (error instanceof Error) ? error.name : 'Unknown Error',
+        message: (error instanceof Error) ? error.message : String(error),
+        stack: (error instanceof Error) ? error.stack : undefined
       });
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
 
-  public async updateSurveySection(surveyId: string, section: string, data: any): Promise<ApiResponse> {
+  public async updateSurveySection(surveyId: string, section: string, data: Record<string, unknown>): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/surveys/slum-surveys/${surveyId}/section`, {
         method: 'PATCH',
@@ -1174,11 +1161,11 @@ class ApiService {
       });
 
       return await this.handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         user: undefined,
-        error: error.message || 'Network error occurred',
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
       };
     }
   }
@@ -1210,11 +1197,11 @@ class ApiService {
         message: data.message,
         data,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Health check failed:', error);
       return {
         success: false,
-        error: error.message || 'Health check failed',
+        error: (error instanceof Error) ? error.message : 'Health check failed',
       };
     }
   }
