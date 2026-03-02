@@ -111,39 +111,70 @@ export default function SupervisorDashboardPage() {
       
       if (assignmentsResponse.success && assignmentsResponse.data) {
         const assignments: Assignment[] = assignmentsResponse.data as Assignment[];
-        const totalAssignments = assignments.length;
-        const completedAssignments = assignments.filter((a: Assignment) => a.status === 'COMPLETED').length;
-        const inProgressAssignments = assignments.filter((a: Assignment) => a.status === 'IN PROGRESS').length;
-        const pendingAssignments = assignments.filter((a: Assignment) => a.status === 'ASSIGNED').length;
         
-        // Count unique slums with assignments
-        const uniqueSlums = new Set(assignments.map((a: Assignment) => a.slum?._id)).size;
-        
-        // Count completed slum surveys (Submitted or Completed)
-        const completedSlumSurveys = assignments.filter((a: Assignment) => 
-          a.slumSurveyStatus === 'SUBMITTED' || a.slumSurveyStatus === 'COMPLETED'
-        ).length;
-        
-        // Count in-progress slum surveys
-        const inProgressSlumSurveys = assignments.filter((a: Assignment) => 
-          a.slumSurveyStatus === 'IN PROGRESS'
-        ).length;
-        
-        // Count completed household surveys and total households
-        let totalCompletedHouseholdSurveys = 0;
-        let totalHouseholdsCount = 0;
+        // Group assignments by slum to handle multiple assignments per slum
+        const uniqueSlums = new Map<string, Assignment[]>();
         for (const assignment of assignments) {
-          if (assignment.householdSurveyProgress) {
-            totalCompletedHouseholdSurveys += assignment.householdSurveyProgress.completed;
-            totalHouseholdsCount += assignment.householdSurveyProgress.total;
-          } else if (assignment.householdSurveyCount) {
-            totalCompletedHouseholdSurveys += assignment.householdSurveyCount;
+          const slumId = assignment.slum?._id;
+          if (slumId) {
+            if (!uniqueSlums.has(slumId)) {
+              uniqueSlums.set(slumId, []);
+            }
+            uniqueSlums.get(slumId)!.push(assignment);
+          }
+        }
+        
+        // Count total unique slums assigned
+        const totalSlumsAssigned = uniqueSlums.size;
+        
+        // Count assignments by status (based on unique slums)
+        let completedAssignments = 0;
+        let inProgressAssignments = 0;
+        let pendingAssignments = 0;
+        
+        for (const [slumId, slumAssignments] of uniqueSlums) {
+          // For assignment status, we can take the status from any assignment for the slum
+          // since they should be synchronized
+          const firstAssignment = slumAssignments[0];
+          if (firstAssignment.status === 'COMPLETED') {
+            completedAssignments++;
+          } else if (firstAssignment.status === 'IN PROGRESS') {
+            inProgressAssignments++;
+          } else if (firstAssignment.status === 'ASSIGNED') {
+            pendingAssignments++;
+          }
+        }
+        
+        // Count slum survey statuses (from first assignment per slum)
+        let completedSlumSurveys = 0;
+        let inProgressSlumSurveys = 0;
+        
+        for (const [slumId, slumAssignments] of uniqueSlums) {
+          const firstAssignment = slumAssignments[0];
+          if (firstAssignment.slumSurveyStatus === 'SUBMITTED' || firstAssignment.slumSurveyStatus === 'COMPLETED') {
+            completedSlumSurveys++;
+          } else if (firstAssignment.slumSurveyStatus === 'IN PROGRESS') {
+            inProgressSlumSurveys++;
+          }
+        }
+        
+        // Count households (from first assignment per slum to avoid duplication)
+        let totalHouseholdsCount = 0;
+        let totalCompletedHouseholdSurveys = 0;
+        
+        for (const [slumId, slumAssignments] of uniqueSlums) {
+          const firstAssignment = slumAssignments[0];
+          if (firstAssignment.householdSurveyProgress) {
+            totalHouseholdsCount += firstAssignment.householdSurveyProgress.total;
+            totalCompletedHouseholdSurveys += firstAssignment.householdSurveyProgress.completed;
+          } else if (firstAssignment.householdSurveyCount) {
+            totalCompletedHouseholdSurveys += firstAssignment.householdSurveyCount;
           }
         }
         
         setDashboardStats({
-          totalSlums: uniqueSlums,
-          totalAssignments,
+          totalSlums: totalSlumsAssigned,
+          totalAssignments: totalSlumsAssigned, // Total unique slums assigned
           completedAssignments,
           inProgressAssignments,
           pendingAssignments,
