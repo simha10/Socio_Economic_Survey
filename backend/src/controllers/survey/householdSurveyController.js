@@ -1,6 +1,6 @@
 const HouseholdSurvey = require('../../models/HouseholdSurvey');
 const Slum = require('../../models/Slum');
-const { updateStatusesFromHouseholdSurvey, updateSlumPopulationFromHouseholdSurveys, updateSlumBplPopulationFromHouseholdSurveys, updateSlumDemographicPopulationFromHouseholdSurveys, autoSyncHouseholdCounts } = require('../../utils/statusSyncHelper');
+const { updateStatusesFromHouseholdSurvey, updateSlumPopulationFromHouseholdSurveys, updateSlumBplPopulationFromHouseholdSurveys, updateSlumDemographicPopulationFromHouseholdSurveys, autoSyncHouseholdCounts, getCanonicalSlumStatus, syncAllAssignmentsForSlum } = require('../../utils/statusSyncHelper');
 const { sendSuccess, sendError } = require('../../utils/helpers/responseHelper');
 const { v4: uuidv4 } = require('uuid');
 
@@ -105,6 +105,11 @@ exports.createOrGetHouseholdSurvey = async (req, res) => {
 
       // Auto-sync household counts when creating new survey
       await autoSyncHouseholdCounts(slumId, userId);
+      
+      // Update statuses across all assignments for this slum
+      // Since a new household survey was created, we need to update assignment statuses
+      const canonicalStatus = await getCanonicalSlumStatus(slumId);
+      await syncAllAssignmentsForSlum(slumId, canonicalStatus);
     }
 
     await survey.populate([
@@ -276,6 +281,12 @@ exports.updateHouseholdSurvey = async (req, res) => {
       await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
     }
 
+    // Auto-sync household counts after update
+    await autoSyncHouseholdCounts(survey.slum._id, userId);
+    
+    // Update statuses across all assignments for this slum
+    const canonicalStatus = await getCanonicalSlumStatus(survey.slum._id);
+    await syncAllAssignmentsForSlum(survey.slum._id, canonicalStatus);
 
     sendSuccess(res, survey, 'Survey updated successfully');
   } catch (error) {
@@ -562,6 +573,10 @@ exports.deleteHouseholdSurvey = async (req, res) => {
       await updateSlumDemographicPopulationFromHouseholdSurveys(slumId);
       // Auto-sync household counts after deletion
       await autoSyncHouseholdCounts(slumId);
+      
+      // Update statuses across all assignments for this slum
+      const canonicalStatus = await getCanonicalSlumStatus(slumId);
+      await syncAllAssignmentsForSlum(slumId, canonicalStatus);
     }
 
     sendSuccess(res, null, 'Survey deleted successfully');
@@ -640,6 +655,12 @@ exports.updateSurveySection = async (req, res) => {
       await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
     }
 
+    // Auto-sync household counts after section update
+    await autoSyncHouseholdCounts(survey.slum._id, userId);
+    
+    // Update statuses across all assignments for this slum
+    const canonicalStatus = await getCanonicalSlumStatus(survey.slum._id);
+    await syncAllAssignmentsForSlum(survey.slum._id, canonicalStatus);
 
     sendSuccess(res, survey, `${section} updated successfully`);
   } catch (error) {
@@ -934,6 +955,10 @@ exports.importHouseholds = async (req, res) => {
 
     // Auto-sync the household counts after import
     await autoSyncHouseholdCounts(slumId);
+    
+    // Update statuses across all assignments for this slum
+    const canonicalStatus = await getCanonicalSlumStatus(slumId);
+    await syncAllAssignmentsForSlum(slumId, canonicalStatus);
 
     sendSuccess(res, {
       imported: result.upsertedCount || 0,
