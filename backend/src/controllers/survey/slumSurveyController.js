@@ -228,7 +228,7 @@ exports.createOrGetSlumSurvey = async (req, res) => {
         // Calculate and update slum population from household surveys
         await updateSlumPopulationFromHouseholdSurveys(slumId);
                 
-        // Calculate and update BPL population from household surveys
+        // Calculate and update BPL population from household surveys (includes noSlumHouseholds)
         await updateSlumBplPopulationFromHouseholdSurveys(slumId);
                 
         // Calculate and update demographic population from household surveys
@@ -236,9 +236,44 @@ exports.createOrGetSlumSurvey = async (req, res) => {
                 
         // Re-fetch the survey to get updated population and BPL data
         survey = await SlumSurvey.findById(survey._id).populate([
-            { path: 'slum', select: 'slumName population' },
+            { path: 'slum', select: 'slumName slumId slumType area totalHouseholds' },
             { path: 'surveyor', select: 'name ' },
         ]);
+        
+        // Populate Part B fields from Slum model if not already set in cityTownSlumProfile
+        // This ensures fields like slumType, areaSqMtrs, and noSlumHouseholds come from the Slum model
+        if (survey.slum) {
+            if (!survey.cityTownSlumProfile) {
+                survey.cityTownSlumProfile = {};
+            }
+            
+            // Set slumType from Slum model
+            if (!survey.cityTownSlumProfile.slumType && survey.slum.slumType) {
+                survey.cityTownSlumProfile.slumType = survey.slum.slumType;
+            }
+            
+            // Set slumIdField from Slum model
+            if (!survey.cityTownSlumProfile.slumIdField && survey.slum.slumId) {
+                survey.cityTownSlumProfile.slumIdField = survey.slum.slumId.toString();
+            }
+            
+            // Set slumName from Slum model
+            if (!survey.cityTownSlumProfile.slumName && survey.slum.slumName) {
+                survey.cityTownSlumProfile.slumName = survey.slum.slumName;
+            }
+            
+            // Set areaSqMtrs from Slum model
+            if (survey.slum.area !== undefined && survey.slum.area !== null) {
+                survey.cityTownSlumProfile.areaSqMtrs = survey.slum.area;
+            }
+            
+            // Set noSlumHouseholds from Slum model's totalHouseholds
+            // Note: noSlumHouseholds is also updated by updateSlumBplPopulationFromHouseholdSurveys
+            // but we use the slum.totalHouseholds as the source of truth here
+            if (survey.slum.totalHouseholds !== undefined && survey.slum.totalHouseholds !== null) {
+                survey.cityTownSlumProfile.noSlumHouseholds = survey.slum.totalHouseholds;
+            }
+        }
                 
         sendSuccess(res, survey, 'Slum survey retrieved/created successfully');
     } catch (error) {
@@ -754,7 +789,8 @@ exports.getSlumSurveyBySlumId = async (req, res) => {
             slum: slumId,
         }).populate([
             { path: 'slum', select: 'slumName population' },
-            { path: 'surveyor', select: 'name ' },
+            { path: 'surveyor', select: 'name username' },
+            { path: 'submittedBy', select: 'name username' }
         ]);
 
         if (!survey) {
@@ -764,7 +800,8 @@ exports.getSlumSurveyBySlumId = async (req, res) => {
         // Check authorization - allow access if:
         // 1. The user is the original surveyor who created it, OR
         // 2. The user is an admin, OR
-        // 3. The user has an assignment to this slum
+        // 3. The user is a supervisor, OR
+        // 4. The user has an assignment to this slum
         const assignment = await Assignment.findOne({
             surveyor: userId,
             slum: survey.slum
@@ -772,6 +809,7 @@ exports.getSlumSurveyBySlumId = async (req, res) => {
         
         if (survey.surveyor.toString() !== userId.toString() && 
             req.user.role !== 'ADMIN' && 
+            req.user.role !== 'SUPERVISOR' && 
             !assignment) {
             return sendError(res, 'Not authorized to access this survey', 403);
         }
@@ -791,7 +829,8 @@ exports.getSlumSurveyBySlumId = async (req, res) => {
             surveyor: userId,
         }).populate([
             { path: 'slum', select: 'slumName population' },
-            { path: 'surveyor', select: 'name ' },
+            { path: 'surveyor', select: 'name username' },
+            { path: 'submittedBy', select: 'name username' }
         ]);
         
         // Use the updated survey for the rest of the function

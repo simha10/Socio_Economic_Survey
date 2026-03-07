@@ -686,6 +686,7 @@ exports.getHouseholdSurveysBySlum = async (req, res) => {
       .populate([
         { path: 'slum', select: 'slumName location ward village', populate: { path: 'ward', select: 'number name zone' } },
         { path: 'surveyor', select: 'name email' },
+        { path: 'submittedBy', select: 'name email username' },
       ])
       .sort({ createdAt: -1 });
 
@@ -693,6 +694,33 @@ exports.getHouseholdSurveysBySlum = async (req, res) => {
   } catch (error) {
     console.error('Error in getHouseholdSurveysBySlum:', error.message);
     sendError(res, error.message || 'Failed to get household surveys', 500);
+  }
+};
+
+/**
+ * Get household survey count for a specific slum (submitted only)
+ */
+exports.getHouseholdSurveyCount = async (req, res) => {
+  try {
+    const { slumId } = req.params;
+    const { status } = req.query;
+
+    if (!slumId) {
+      return sendError(res, 'slumId is required', 400);
+    }
+
+    // Default to 'SUBMITTED' status if not specified
+    const query = { 
+      slum: slumId,
+      surveyStatus: status || 'SUBMITTED'
+    };
+
+    const count = await HouseholdSurvey.countDocuments(query);
+
+    sendSuccess(res, { count }, 'Household survey count retrieved successfully');
+  } catch (error) {
+    console.error('Error in getHouseholdSurveyCount:', error.message);
+    sendError(res, error.message || 'Failed to get household survey count', 500);
   }
 };
 

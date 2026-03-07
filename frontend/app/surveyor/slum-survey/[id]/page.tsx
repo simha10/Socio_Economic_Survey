@@ -543,6 +543,7 @@ export default function SlumSurveyPage() {
   const [user, setUser] = useState<any>(null);
   const [tempFormData, setTempFormData] = useState<Partial<SlumSurveyForm>>({}); // Temporary storage for edit mode changes
   const [isPreviewMode, setIsPreviewMode] = useState(false); // Track if we're in actual preview mode
+  const [showPrefetchedDataModal, setShowPrefetchedDataModal] = useState(false); // Control modal visibility
   
   // Debug logging for state values
   useEffect(() => {
@@ -555,6 +556,40 @@ export default function SlumSurveyPage() {
       slumSurveyId: slumSurvey?._id
     });
   }, [currentStep, isPreviewMode, isEditMode, submitting, saving, slumSurvey]);
+  
+  // Ensure slum data is properly populated in form when slum data is loaded
+  useEffect(() => {
+    if (slum && slum.slumName) {
+      console.log("Ensuring slum data is populated in formData:", {
+        slumType: slum.slumType,
+        slumIdField: slum.slumId,
+        areaSqMtrs: slum.area,
+        noSlumHouseholds: slum.totalHouseholds
+      });
+      
+      setFormData((prev) => ({
+        ...prev,
+        slumName: slum.slumName || prev.slumName,
+        slumIdField: slum.slumId?.toString() || prev.slumIdField || "",
+        areaSqMtrs: slum.area !== undefined ? slum.area : prev.areaSqMtrs,
+        slumType: slum.slumType || prev.slumType,
+        noSlumHouseholds: slum.totalHouseholds !== undefined ? slum.totalHouseholds : prev.noSlumHouseholds,
+        ownershipLandDetail: slum.landOwnership || prev.ownershipLandDetail,
+        stateCode: slum.stateCode || prev.stateCode,
+        districtCode: slum.distCode || prev.districtCode,
+        ulbCode: slum.ulbCode || prev.ulbCode,
+        ulbName: slum.ulbName || prev.ulbName,
+        cityTownCode: slum.cityTownCode || prev.cityTownCode
+      }));
+    }
+  }, [slum]);
+  
+  // Show prefetched data modal when user navigates to Part B (Section 2)
+  useEffect(() => {
+    if (currentStep === 1 && slum && !showPrefetchedDataModal) {
+      setShowPrefetchedDataModal(true);
+    }
+  }, [currentStep, slum]);
 
   // Validation state
   interface FieldError {
@@ -833,13 +868,13 @@ export default function SlumSurveyPage() {
           if (slumResponse.success) {
             const slumData = slumResponse.data as any;
             setSlum(slumData);
-            
+                        
             // Auto-fill slum details with initial values from slum data
             setFormData((prev) => ({
               ...prev,
               slumName: slumData.slumName || "",
               slumIdField: slumData.slumId?.toString() || "",
-              areaSqMtrs: slumData.area || 0,
+              areaSqMtrs: slumData.area !== undefined ? slumData.area : 0,
               stateCode: slumData.stateCode || "",
               districtCode: slumData.distCode || "",
               ulbCode: slumData.ulbCode || "",
@@ -847,13 +882,20 @@ export default function SlumSurveyPage() {
               cityTownCode: slumData.cityTownCode || "",
               slumType: slumData.slumType || "",
               ownershipLand: slumData.landOwnership || "",
-              noSlumHouseholds: slumData.totalHouseholds || 0,
+              noSlumHouseholds: slumData.totalHouseholds !== undefined ? slumData.totalHouseholds : 0,
               
               // Populate ward information from assignment if available
               wardNumber: assignmentWardData?.number || assignmentWardData?.wardNumber || "",
               wardName: assignmentWardData?.name || "",
-              zone: assignmentWardData?.zone || ""
+              zone: assignmentWardData?.zone || "",
+              
+              // Part B: City/Town Slum Profile - populate from Slum model
+              slumPopulation: 0, // Will be calculated from household surveys
+              bplPopulation: 0, // Will be calculated from household surveys
+              bplHouseholds: 0 // Will be calculated from household surveys
             }));
+            
+            console.log("Updated formData with slum data");
 
             // Now fetch additional data to get state and district names
             // Get state by code to populate state name
@@ -1607,8 +1649,11 @@ export default function SlumSurveyPage() {
                 slumIdField: surveyData.cityTownSlumProfile.slumIdField || "",
                 slumName: surveyData.cityTownSlumProfile.slumName || "",
                 areaSqMtrs: surveyData.cityTownSlumProfile.areaSqMtrs || 0,
+                // IMPORTANT: noSlumHouseholds should come from the slum model's totalHouseholds
+                // It represents the actual count of household surveys and is the source of truth
+                noSlumHouseholds: slum?.totalHouseholds !== undefined ? slum.totalHouseholds : (surveyData.cityTownSlumProfile.noSlumHouseholds || 0),
+                // These are calculated from household surveys and stored in the survey
                 slumPopulation: surveyData.cityTownSlumProfile.slumPopulation || 0,
-                noSlumHouseholds: surveyData.cityTownSlumProfile.noSlumHouseholds || 0,
                 bplPopulation: surveyData.cityTownSlumProfile.bplPopulation || 0,
                 bplHouseholds: surveyData.cityTownSlumProfile.bplHouseholds || 0,
               }));
@@ -7391,9 +7436,7 @@ export default function SlumSurveyPage() {
                 </div>
             </div>
         </Card>
-      </div>
-
-
-    </SurveyorLayout>
-  );
+      </div> 
+  </SurveyorLayout>
+);
 }

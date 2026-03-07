@@ -941,9 +941,13 @@ class ApiService {
     }
   }
 
-  public async exportHouseholdSurveys(slumId: string): Promise<Blob> {
+  public async exportHouseholdSurveys(slumId: string, columns?: string): Promise<Blob> {
     try {
-      const response = await fetch(`${this.baseUrl}/export/household-surveys/${slumId}`, {
+      let url = `${this.baseUrl}/export/household-surveys/${slumId}`;
+      if (columns) {
+        url += `?columns=${columns}`;
+      }
+      const response = await fetch(url, {
         method: 'GET',
         headers: this.getHeaders(),
       });
@@ -955,6 +959,64 @@ class ApiService {
       return await response.blob();
     } catch (error: unknown) {
       throw new Error((error instanceof Error) ? error.message : 'Network error occurred during export');
+    }
+  }
+
+  // Get slum survey by slum ID
+  public async getSlumSurveyBySlumId(slumId: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/surveys/slum-surveys/slum/${slumId}`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: unknown) {
+      return {
+        success: false,
+        user: undefined,
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
+      };
+    }
+  }
+
+  // Get household survey count for slum (submitted only)
+  public async getHouseholdSurveyCount(slumId: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/surveys/household-surveys/slum/${slumId}/count`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: unknown) {
+      return {
+        success: false,
+        user: undefined,
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
+      };
+    }
+  }
+
+  // Download Excel for slum survey (CSV format currently)
+  public async downloadSlumSurveyExcel(slumId: string, columns?: string): Promise<Blob> {
+    try {
+      let url = `${this.baseUrl}/export/slum-surveys?slumId=${slumId}`;
+      if (columns) {
+        url += `&columns=${columns}`;
+      }
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.statusText}`);
+      }
+
+      return await response.blob();
+    } catch (error: unknown) {
+      throw new Error((error instanceof Error) ? error.message : 'Network error occurred during download');
     }
   }
 

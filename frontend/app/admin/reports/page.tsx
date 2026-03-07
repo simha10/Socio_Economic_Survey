@@ -812,7 +812,7 @@ interface ApiResponseData {
   data?: HouseholdSurveyData[];
 }
 
-export default function SupervisorReportsPage() {
+export default function AdminReportsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
@@ -1623,7 +1623,7 @@ export default function SupervisorReportsPage() {
 
 
   useEffect(() => {
-    // Verify user is supervisor
+    // Verify user is admin
     const userStr = localStorage.getItem("user");
     if (!userStr) {
       router.push("/login");
@@ -1631,7 +1631,7 @@ export default function SupervisorReportsPage() {
     }
 
     const userData = JSON.parse(userStr);
-    if (userData?.role !== "SUPERVISOR") {
+    if (userData?.role !== "ADMIN") {
       router.push(`/${userData?.role?.toLowerCase()}/dashboard`);
       return;
     }
@@ -1657,7 +1657,7 @@ export default function SupervisorReportsPage() {
 
   return (
     <SupervisorAdminLayout
-      role="SUPERVISOR"
+      role="ADMIN"
       username={user?.name || user?.username}
     >
       <div className="p-6 space-y-6">

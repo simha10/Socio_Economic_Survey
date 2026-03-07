@@ -759,6 +759,11 @@ async function updateSlumBplPopulationFromHouseholdSurveys(slumId) {
     let bplPopulation = 0;
     let bplHouseholds = 0;
     
+    // Calculate total submitted household surveys (for No. of Slum Households)
+    const submittedHouseholds = householdSurveys.filter(hs => 
+      hs.surveyStatus === 'SUBMITTED' || hs.surveyStatus === 'COMPLETED'
+    ).length;
+    
     householdSurveys.forEach(hs => {
       if (hs.belowPovertyLine === 'YES') {
         bplHouseholds += 1;
@@ -782,11 +787,14 @@ async function updateSlumBplPopulationFromHouseholdSurveys(slumId) {
     if (slumSurvey.cityTownSlumProfile) {
       slumSurvey.cityTownSlumProfile.bplPopulation = bplPopulation;
       slumSurvey.cityTownSlumProfile.bplHouseholds = bplHouseholds;
+      // Update No. of Slum Households from submitted household surveys
+      slumSurvey.cityTownSlumProfile.noSlumHouseholds = submittedHouseholds;
     } else {
       // Initialize cityTownSlumProfile if it doesn't exist
       slumSurvey.cityTownSlumProfile = {
         bplPopulation: bplPopulation,
-        bplHouseholds: bplHouseholds
+        bplHouseholds: bplHouseholds,
+        noSlumHouseholds: submittedHouseholds
       };
     }
     
