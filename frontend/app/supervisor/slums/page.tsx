@@ -266,7 +266,7 @@ export default function SupervisorSlumsPage() {
         <EditConfirmationDialog
           isOpen={isEditDialogOpen}
           surveyType="slum"
-          slumName={slumToEdit?.slumName || ''}
+          entityIdentifier={slumToEdit?.slumName || ''}
           onConfirm={handleConfirmEdit}
           onCancel={() => {
             setIsEditDialogOpen(false);

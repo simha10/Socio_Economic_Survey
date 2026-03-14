@@ -55,7 +55,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState<StatCard[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
@@ -88,71 +88,44 @@ export default function AdminDashboardPage() {
 
     setUser(userData);
     setLoading(false);
-    loadDashboardStats();
   }, [router]);
+
+
 
   const loadDashboardStats = async () => {
     setStatsLoading(true);
     try {
-      // Fetch users count
-      const usersResponse = await apiService.listUsers();
-      const usersData = usersResponse.data as User[] || [];
-      const usersCount = usersResponse.success && usersData ? usersData.length : 0;
-      const surveyorsCount = usersResponse.success && usersData 
-        ? usersData.filter((user: User) => user.role === 'SURVEYOR').length 
-        : 0;
-      const supervisorsCount = usersResponse.success && usersData
-        ? usersData.filter((user: User) => user.role === 'SUPERVISOR').length
-        : 0;
-
-      // Fetch slums count
-      const slumsResponse = await apiService.getAllSlums(1, 10, undefined, true); // Load all slums for count
-      const slumsData = slumsResponse.data as Slum[] || [];
-      const slumsCount = slumsResponse.success && slumsData ? slumsData.length : 0;
-
-      // Fetch assignments count
-      const assignmentsResponse = await apiService.getAllAssignments();
+      // Initialize default values
+      let usersCount = 0;
+      let surveyorsCount = 0;
+      let supervisorsCount = 0;
+      let slumsCount = 0;
       let totalAssignments = 0;
       let completedAssignmentsCount = 0;
-      let activeAssignmentsCount = 0;  // Active = not completed
+      let activeAssignmentsCount = 0;
       let completedHouseholdsCount = 0;
       let completedSlumSurveysCount = 0;
       let inProgressSlumSurveysCount = 0;
-      let pendingAssignmentsCount = 0; // Unassigned slums
-      
-      if (assignmentsResponse.success && assignmentsResponse.data) {
-        const assignments = assignmentsResponse.data as Assignment[];
-        totalAssignments = assignments.length;
-        completedAssignmentsCount = assignments.filter((a: Assignment) => a.status === 'COMPLETED').length;
-        activeAssignmentsCount = assignments.filter((a: Assignment) => a.status !== 'COMPLETED').length;  // Active = not completed
-        
-        // Calculate completed households from assignments
-        for (const assignment of assignments) {
-          if (assignment.householdSurveyProgress) {
-            completedHouseholdsCount += assignment.householdSurveyProgress.completed;
-          }
-        }
-      }
-      
-      // Calculate pending assignments (unassigned slums)
-      pendingAssignmentsCount = Math.max(0, slumsCount - totalAssignments);
-
-      // Process assignments for slum survey status counts and household counts
-      if (assignmentsResponse.success && assignmentsResponse.data) {
-        const assignments = assignmentsResponse.data as Assignment[];
-        
-        // Count slum survey statuses from assignments
-        for (const assignment of assignments) {
-          if (assignment.slumSurveyStatus === 'IN PROGRESS') {
-            inProgressSlumSurveysCount++;
-          } else if (assignment.slumSurveyStatus === 'SUBMITTED' || assignment.slumSurveyStatus === 'COMPLETED') {
-            completedSlumSurveysCount++;
-          }
-        }
-      }
-      
-      // Calculate total households from slums
+      let pendingAssignmentsCount = 0;
       let totalHouseholdsCount = 0;
+
+      // Fetch users count
+      const usersResponse = await apiService.listUsers();
+      const usersData = usersResponse.data as User[] || [];
+      usersCount = usersResponse.success && usersData ? usersData.length : 0;
+      surveyorsCount = usersResponse.success && usersData 
+        ? usersData.filter((user: User) => user.role === 'SURVEYOR').length 
+        : 0;
+      supervisorsCount = usersResponse.success && usersData
+        ? usersData.filter((user: User) => user.role === 'SUPERVISOR').length
+        : 0;
+
+      // Fetch slums count with a default page size to avoid potential API issues
+      const slumsResponse = await apiService.getAllSlums(1, 100, undefined, true); // Load all slums for count
+      const slumsData = slumsResponse.data as Slum[] || [];
+      slumsCount = slumsResponse.success && slumsData ? slumsData.length : 0;
+
+      // Calculate total households from slums
       if (slumsResponse.success && slumsResponse.data) {
         const slums = slumsResponse.data as Slum[];
         for (const slum of slums) {
@@ -161,6 +134,70 @@ export default function AdminDashboardPage() {
           }
         }
       }
+
+      // Fetch assignments count
+      const assignmentsResponse = await apiService.getAllAssignments();
+      
+      if (assignmentsResponse.success && assignmentsResponse.data) {
+        const assignments = assignmentsResponse.data as Assignment[];
+        
+        // Get unique slums with assignments
+        const uniqueSlums = new Map<string, Assignment[]>();
+        for (const assignment of assignments) {
+          const slumId = assignment.slum?._id;
+          if (slumId) {
+            if (!uniqueSlums.has(slumId)) {
+              uniqueSlums.set(slumId, []);
+            }
+            uniqueSlums.get(slumId)!.push(assignment);
+          }
+        }
+        
+        // Count total unique slums assigned
+        totalAssignments = uniqueSlums.size;
+        
+        // Count completed assignments (slums where all assignments are completed)
+        completedAssignmentsCount = 0;
+        for (const [slumId, slumAssignments] of uniqueSlums) {
+          const allCompleted = slumAssignments.every(a => a.status === 'COMPLETED');
+          if (allCompleted) {
+            completedAssignmentsCount++;
+          }
+        }
+        
+        // Count active assignments (slums with at least one assignment in progress)
+        activeAssignmentsCount = 0;
+        for (const [slumId, slumAssignments] of uniqueSlums) {
+          const hasInProgress = slumAssignments.some(a => a.status === 'IN PROGRESS');
+          if (hasInProgress) {
+            activeAssignmentsCount++;
+          }
+        }
+        
+        // Calculate completed households - take from one assignment per slum
+        completedHouseholdsCount = 0;
+        // Count slum survey statuses from unique slums (take status from first assignment per slum)
+        inProgressSlumSurveysCount = 0;
+        completedSlumSurveysCount = 0;
+        
+        for (const [slumId, slumAssignments] of uniqueSlums) {
+          // Take the first assignment's completed count for this slum
+          const firstAssignment = slumAssignments[0];
+          if (firstAssignment.householdSurveyProgress) {
+            completedHouseholdsCount += firstAssignment.householdSurveyProgress.completed;
+          }
+          
+          // Count slum survey statuses
+          if (firstAssignment.slumSurveyStatus === 'IN PROGRESS') {
+            inProgressSlumSurveysCount++;
+          } else if (firstAssignment.slumSurveyStatus === 'SUBMITTED' || firstAssignment.slumSurveyStatus === 'COMPLETED') {
+            completedSlumSurveysCount++;
+          }
+        }
+      }
+      
+      // Calculate pending assignments (unassigned slums)
+      pendingAssignmentsCount = Math.max(0, slumsCount - totalAssignments);
 
       setDashboardStats({
         totalUsers: usersCount,

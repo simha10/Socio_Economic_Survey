@@ -10,6 +10,7 @@ import { HouseholdSurvey } from "@/types/householdSurvey";
 // Icons for edit and delete
 import { Edit3 as EditIcon, Trash2 as DeleteIcon } from "lucide-react";
 import ConfirmationDialog from "@/components/DeleteConfirmationDialog";
+import EditConfirmationDialog from "@/components/EditConfirmationDialog";
 
 interface Slum {
   _id: string;
@@ -64,6 +65,8 @@ export default function HHQCPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingSurveyId, setDeletingSurveyId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editingSurvey, setEditingSurvey] = useState<HouseholdSurvey | null>(null);
+  const [showEditConfirm, setShowEditConfirm] = useState(false);
 
   // Load slums and assignments when component mounts
   useEffect(() => {
@@ -144,15 +147,8 @@ export default function HHQCPage() {
   }, [selectedSlum]);
 
   const handleEditRecord = (survey: HouseholdSurvey) => {
-    // Store the selected slum in localStorage before navigating
-    if (selectedSlum) {
-      console.log('Saving selected slum to localStorage:', selectedSlum);
-      localStorage.setItem('hhqc-selected-slum', selectedSlum);
-    } else {
-      console.log('No slum selected to save');
-    }
-    // Navigate to supervisor HHQC edit page
-    router.push(`/supervisor/hhqc/${survey._id}`);
+    setEditingSurvey(survey);
+    setShowEditConfirm(true);
   };
 
   const handleDeleteClick = (surveyId: string) => {
@@ -187,6 +183,23 @@ export default function HHQCPage() {
   const cancelDelete = () => {
     setShowDeleteConfirm(false);
     setDeletingSurveyId(null);
+  };
+
+  const confirmEditSurvey = () => {
+    if (editingSurvey && selectedSlum) {
+      // Store the selected slum in localStorage before navigating
+      console.log('Saving selected slum to localStorage:', selectedSlum);
+      localStorage.setItem('hhqc-selected-slum', selectedSlum);
+      // Navigate to supervisor HHQC edit page
+      router.push(`/supervisor/hhqc/${editingSurvey._id}`);
+    }
+    setShowEditConfirm(false);
+    setEditingSurvey(null);
+  };
+
+  const cancelEditSurvey = () => {
+    setShowEditConfirm(false);
+    setEditingSurvey(null);
   };
 
   return (
@@ -325,6 +338,17 @@ export default function HHQCPage() {
         message="Are you sure you want to delete this household survey record? This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
+      />
+
+      {/* Edit Confirmation Dialog */}
+      <EditConfirmationDialog
+        isOpen={showEditConfirm}
+        surveyType="household"
+        entityIdentifier={editingSurvey ? 
+          `${editingSurvey.parcelId || 'N/A'}-${editingSurvey.propertyNo || 'N/A'}` : 
+          'Unknown Household'}
+        onConfirm={confirmEditSurvey}
+        onCancel={cancelEditSurvey}
       />
     </div>
   );

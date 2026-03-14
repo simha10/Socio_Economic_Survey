@@ -2,7 +2,7 @@ const Assignment = require('../../models/Assignment');
 const User = require('../../models/User');
 const Slum = require('../../models/Slum');
 const SlumSurvey = require('../../models/SlumSurvey');
-const { initializeAssignmentStatus } = require('../../utils/statusSyncHelper');
+const { initializeAssignmentStatus, getCanonicalSlumStatus, syncAllAssignmentsForSlum } = require('../../utils/statusSyncHelper');
 
 // Assign slum to surveyor
 const assignSlumToSurveyor = async (req, res) => {
@@ -47,29 +47,39 @@ const assignSlumToSurveyor = async (req, res) => {
       });
     }
 
-    // Check if slum is already assigned to ANY surveyor
-    const slumAlreadyAssigned = await Assignment.findOne({
-      slum: slumId
-    });
-
-    if (slumAlreadyAssigned) {
-      return res.status(400).json({
-        success: false,
-        message: 'This slum is already assigned to another surveyor. A slum can only be assigned to one surveyor.'
-      });
+    // Check if slum already has assignments
+    const existingAssignments = await Assignment.find({ slum: slumId });
+    
+    let initialStatusData = {};
+    if (existingAssignments.length > 0) {
+      // Get the canonical status from existing assignments
+      initialStatusData = await getCanonicalSlumStatus(slumId);
+    } else {
+      // Use default initial values for new slum assignment
+      initialStatusData = {
+        status: 'PENDING',
+        slumSurveyStatus: 'NOT STARTED',
+        householdSurveyProgress: { completed: 0, total: 0 } // to be updated with actual total
+      };
     }
 
-    // Create assignment
+    // Create assignment with proper initial values
     const assignment = new Assignment({
       surveyor: surveyorId,
       slum: slumId,
-      assignedBy: req.user._id
+      assignedBy: req.user._id,
+      status: initialStatusData.status,
+      slumSurveyStatus: initialStatusData.slumSurveyStatus,
+      householdSurveyProgress: initialStatusData.householdSurveyProgress
     });
 
     await assignment.save();
 
-    // Initialize assignment status
-    await initializeAssignmentStatus(assignment._id);
+    // Update with actual household count
+    if (slum) {
+      assignment.householdSurveyProgress.total = slum.totalHouseholds || 0;
+      await assignment.save();
+    }
 
     // Populate references before returning
     const populatedAssignment = await Assignment.findById(assignment._id)
@@ -247,16 +257,16 @@ const getMyAssignments = async (req, res) => {
         slumSurveyStatus = assignment.slumSurveyStatus || slumSurveyStatus;
       }
 
-      // Check Household Survey progress
+      // Calculate progress for this specific assignment (for display purposes in response)
+      // but don't update the assignment record here - that's managed by sync functions
       const householdSurveys = await HouseholdSurvey.find({
-        surveyor: req.user._id,
         slum: assignment.slum._id
-      }).populate('slum', 'slumName totalHouseholds');
+      });
 
       // Get total households in the slum
       const totalHouseholds = assignment.slum?.totalHouseholds || 0;
 
-      // Count only household surveys with SUBMITTED or COMPLETED status
+      // Count only household surveys with SUBMITTED or COMPLETED status across ALL surveyors
       const submittedHouseholdSurveys = householdSurveys.filter(hs =>
         hs.surveyStatus === 'SUBMITTED' || hs.surveyStatus === 'COMPLETED'
       );
@@ -266,16 +276,26 @@ const getMyAssignments = async (req, res) => {
         total: totalHouseholds
       };
 
-      // Persist the householdSurveyProgress to the Assignment model
-      // This ensures the progress is saved and available for future fetches
-      assignment.householdSurveyProgress = householdSurveyProgress;
-      await assignment.save();
+      // Note: We don't save this progress to the assignment record here
+      // because it's just for display purposes in the response
+      // The assignment record's progress is managed by sync functions
+      
+      // Get all surveyors assigned to this slum for inter-communication
+      const allAssignmentsForSlum = await Assignment.find({ slum: assignment.slum._id })
+        .populate('surveyor', 'name username');
+      
+      const assignedSurveyors = allAssignmentsForSlum.map(a => ({
+        _id: a.surveyor._id,
+        name: a.surveyor.name,
+        username: a.surveyor.username
+      }));
 
       return {
         ...assignment.toObject(),
         slumSurveyStatus,
         slumSurveyCompletion,
-        householdSurveyProgress
+        householdSurveyProgress,
+        assignedSurveyors
       };
     }));
 
@@ -309,6 +329,9 @@ const updateSlumSurveyStatus = async (req, res) => {
     assignment.slumSurveyStatus = status;
     await assignment.save();
 
+    // Synchronize status across all assignments for this slum
+    await syncAllAssignmentsForSlum(assignment.slum, { slumSurveyStatus: status });
+
     res.json({
       success: true,
       message: 'Slum survey status updated',
@@ -339,6 +362,9 @@ const updateHouseholdProgress = async (req, res) => {
 
     assignment.householdSurveyProgress = { completed, total };
     await assignment.save();
+
+    // Synchronize progress across all assignments for this slum
+    await syncAllAssignmentsForSlum(assignment.slum, { householdSurveyProgress: { completed, total } });
 
     res.json({
       success: true,
@@ -427,6 +453,11 @@ const updateAssignment = async (req, res) => {
 
     await assignment.save();
 
+    // Synchronize status across all assignments for this slum if status was updated
+    if (status) {
+      await syncAllAssignmentsForSlum(assignment.slum, { status: status });
+    }
+
     // Populate the updated assignment with user and slum data
     const populatedAssignment = await Assignment.findById(assignment._id)
       .populate('surveyor', 'name username role')
@@ -507,6 +538,11 @@ const updateAssignmentStatus = async (req, res) => {
 
     await assignment.save();
 
+    // Synchronize status across all assignments for this slum if status was updated
+    if (status) {
+      await syncAllAssignmentsForSlum(assignment.slum, { status: status });
+    }
+
     res.json({
       success: true,
       message: 'Assignment updated successfully.',
@@ -529,6 +565,7 @@ module.exports = {
   getAssignmentsForSurveyor,
   getMyAssignmentsFormatted,
   updateSlumSurveyStatus,
+  updateHouseholdProgress,
   updateAssignmentStatus,
   updateAssignment,
   deleteAssignment

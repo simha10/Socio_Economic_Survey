@@ -1,12 +1,12 @@
 "use client";
 
-import { Pencil, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import Button from "@/components/Button";
 
 interface EditConfirmationDialogProps {
   isOpen: boolean;
   surveyType: "slum" | "household";
-  slumName: string;
+  entityIdentifier: string;
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
@@ -15,7 +15,7 @@ interface EditConfirmationDialogProps {
 export default function EditConfirmationDialog({
   isOpen,
   surveyType,
-  slumName,
+  entityIdentifier,
   onConfirm,
   onCancel,
   loading = false,
@@ -29,13 +29,13 @@ export default function EditConfirmationDialog({
           <div className="bg-yellow-500/20 p-3 rounded-lg">
             <AlertTriangle className="w-5 h-5 text-yellow-400" />
           </div>
-          <h2 className="text-lg font-bold text-white">Edit {surveyType === "slum" ? "Slum Details" : "Household"} Survey</h2>
+          <h2 className="text-lg font-bold text-white">Edit {surveyType === "slum" ? "Slum" : "Household"} Details</h2>
         </div>
 
         <p className="text-slate-400 mb-6">
           {surveyType === "slum" 
-            ? `Are you sure you want to edit the slum details for "${slumName}"? This will allow you to modify ward number, village, and land ownership information.`
-            : `Are you sure you want to edit the ${surveyType} survey for "${slumName}"? This will allow you to modify the submitted survey data.`}
+            ? `Are you sure you want to edit the slum details for "${entityIdentifier}"? This will allow you to modify ward number, village, and land ownership information.`
+            : `Are you sure you want to edit the ${surveyType} details for household: ${entityIdentifier}? This will allow you to modify the household details.`}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3">          

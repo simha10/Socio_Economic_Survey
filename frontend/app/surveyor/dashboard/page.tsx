@@ -46,6 +46,11 @@ interface Assignment {
     completed: number;
     total: number;
   };
+  assignedSurveyors?: Array<{
+    _id: string;
+    name: string;
+    username: string;
+  }>;
 }
 
 export default function SurveyorDashboard() {
@@ -295,16 +300,28 @@ export default function SurveyorDashboard() {
     setPendingSurvey(null);
   };
 
-  // Calculate stats based on assignment status
-  const totalAssignments = assignments.length;
-  const completedSurveys = assignments.filter(
-    (a) => a.status === "COMPLETED",
+  // Calculate stats based on unique slums to handle multiple assignments per slum
+  const uniqueSlums = new Map<string, Assignment[]>();
+  for (const assignment of assignments) {
+    const slumId = assignment.slum?._id;
+    if (slumId) {
+      if (!uniqueSlums.has(slumId)) {
+        uniqueSlums.set(slumId, []);
+      }
+      uniqueSlums.get(slumId)!.push(assignment);
+    }
+  }
+
+  // Calculate stats based on unique slums
+  const totalSlumsAssigned = uniqueSlums.size;
+  const completedSurveys = Array.from(uniqueSlums.values()).filter(
+    (slumAssignments) => slumAssignments.some(a => a.status === "COMPLETED")
   ).length;
-  const pendingSurveys = assignments.filter(
-    (a) => a.status === "PENDING",
+  const pendingSurveys = Array.from(uniqueSlums.values()).filter(
+    (slumAssignments) => slumAssignments.every(a => a.status === "PENDING")
   ).length;
-  const inProgressSurveys = assignments.filter(
-    (a) => a.status === "IN PROGRESS",
+  const inProgressSurveys = Array.from(uniqueSlums.values()).filter(
+    (slumAssignments) => slumAssignments.some(a => a.status === "IN PROGRESS")
   ).length;
   return (
     <SurveyorLayout username={user?.name || user?.username}>
@@ -314,7 +331,7 @@ export default function SurveyorDashboard() {
         stats={[
           {
             label: "Total Assignments",
-            value: totalAssignments,
+            value: totalSlumsAssigned,
             icon: <Users className="w-5 h-5" />,
             colorClass: "text-blue-500 bg-blue-500/20",
           },
@@ -392,7 +409,7 @@ export default function SurveyorDashboard() {
               <div className="bg-slate-800/80 px-6 py-4 border-b border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">
-                    {`${assignment.slum?.slumName}, (${assignment.slum?.slumId})` || "Unknown Slum"}
+                    {`${assignment.slum?.slumName} (${assignment.slum?.slumId})` || "Unknown Slum"}
                   </h3>
                   <div className="flex flex-col gap-1 text-slate-400 text-sm">
                     <div className="flex items-center gap-2">
@@ -440,6 +457,14 @@ export default function SurveyorDashboard() {
                       </span>{" "}
                       {new Date(assignment.createdAt).toLocaleDateString()}
                     </p>
+                    {assignment.assignedSurveyors && assignment.assignedSurveyors.length > 0 && (
+                      <p className="text-slate-400 text-sm mt-1">
+                        <span className="font-medium text-white">
+                          Assigned Surveyors:
+                        </span>{" "}
+                        {assignment.assignedSurveyors.map(surveyor => surveyor.name).join(", ")}
+                      </p>
+                    )}
                   </div>
 
                   {/* Survey Status Section */}
@@ -450,7 +475,7 @@ export default function SurveyorDashboard() {
                           Slum Survey
                         </span>
                         <span
-                          className={`text-xs font-medium $ {
+                          className={`text-xs font-medium ${
                             (assignment.slumSurveyCompletion || 0) === 0 ? 'text-red-400' :
                             (assignment.slumSurveyCompletion || 0) < 100 ? 'text-amber-400' :
                             'text-green-400'
@@ -465,9 +490,9 @@ export default function SurveyorDashboard() {
                       </div>
                       <div className="w-full bg-slate-700 rounded-full h-2">
                         <div
-                          className={`h-2 rounded-full transition-all $ {
+                          className={`h-2 rounded-full transition-all ${
                             (assignment.slumSurveyCompletion || 0) === 0 ? 'bg-red-500' :
-                            (assignment.slumSurveyCompletion || 0) < 100 ? 'bg-yellow-500' :
+                            (assignment.slumSurveyCompletion || 0) < 100 ? 'bg-amber-500' :
                             'bg-green-500'
                           }`}
                           style={{ width: `${assignment.slumSurveyCompletion || 0}%` }}
@@ -557,7 +582,7 @@ export default function SurveyorDashboard() {
       <EditConfirmationDialog
         isOpen={showEditConfirm}
         surveyType={pendingSurvey?.type || 'slum'}
-        slumName={pendingSurvey?.slumName || ''}
+        entityIdentifier={pendingSurvey?.slumName || ''}
         onConfirm={confirmEditSurvey}
         onCancel={cancelEditSurvey}
       />

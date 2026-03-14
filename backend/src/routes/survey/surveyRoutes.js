@@ -26,7 +26,8 @@ const {
   deleteHouseholdSurvey,
   updateSurveySection: updateHouseholdSurveySection,
   getSurveysSummary,
-  getHouseholdSurveysBySlum
+  getHouseholdSurveysBySlum,
+  getHouseholdSurveyCount
 } = require('../../controllers/survey/householdSurveyController');
 const {
   createOrGetSlumSurvey,
@@ -90,6 +91,8 @@ router.delete('/household-surveys/:surveyId', auth, deleteHouseholdSurvey);
 router.get('/household-surveys/summary/all', auth, getSurveysSummary);
 // Get all household surveys for a specific slum
 router.get('/household-surveys/slum/:slumId', auth, authorize('SUPERVISOR', 'ADMIN'), getHouseholdSurveysBySlum);
+// Get household survey count for a specific slum (submitted only)
+router.get('/household-surveys/slum/:slumId/count', auth, authorize('SUPERVISOR', 'ADMIN'), getHouseholdSurveyCount);
 
 // ===== PARCEL-BASED HOUSEHOLD ROUTES =====
 // Get all distinct parcel IDs for a slum

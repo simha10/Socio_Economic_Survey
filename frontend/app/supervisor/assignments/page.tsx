@@ -8,7 +8,6 @@ import ModernTable from "@/components/ModernTable";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Card from "@/components/Card";
 import Button from "@/components/Button";
-import Select from "@/components/Select";
 import InfiniteScrollSelect from "@/components/InfiniteScrollSelect";
 
 interface Assignment {
@@ -39,6 +38,11 @@ interface AssignmentFormData {
   slum: string;      // ID of the slum
 }
 
+interface MultiAssignmentFormData {
+  slum: string;      // ID of the slum
+  surveyors: string[]; // Array of surveyor IDs
+}
+
 interface Surveyor {
   _id: string;
   username: string;
@@ -67,10 +71,11 @@ export default function SupervisorAssignmentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [newAssignment, setNewAssignment] = useState({
-    surveyorId: "",
-    slumId: "",
+  const [multiAssignment, setMultiAssignment] = useState<MultiAssignmentFormData>({
+    slum: "",
+    surveyors: [],
   });
+  const [showSurveyorDropdown, setShowSurveyorDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
@@ -82,6 +87,8 @@ export default function SupervisorAssignmentsPage() {
   const [availableUsers, setAvailableUsers] = useState<Surveyor[]>([]);
   const [showUpdateConfirm, setShowUpdateConfirm] = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
   const [assignmentToEdit, setAssignmentToEdit] = useState<Assignment | null>(null);
 
   useEffect(() => {
@@ -135,53 +142,124 @@ export default function SupervisorAssignmentsPage() {
     fetchData();
   }, [router]);
 
-  const handleCreateAssignment = async () => {
+  const handleCreateMultipleAssignments = async () => {
+    if (!multiAssignment.slum || multiAssignment.surveyors.length === 0) {
+      setError("Please select a slum and at least one surveyor");
+      return;
+    }
+
     try {
       setError(null);
-      const response = await apiService.assignSlumToSurveyor(
-        newAssignment.surveyorId,
-        newAssignment.slumId,
-      );
+      setSubmitting(true);
+      
+      // Create assignments for each selected surveyor
+      for (const surveyorId of multiAssignment.surveyors) {
+        const response = await apiService.assignSlumToSurveyor(
+          surveyorId,
+          multiAssignment.slum,
+        );
+        
+        if (!response.success) {
+          console.error(`Failed to assign slum to surveyor ${surveyorId}:`, response.error);
+        }
+      }
 
+      // Refresh assignments list
+      const assignmentsRes = await apiService.getAllAssignments();
+      if (assignmentsRes.success) {
+        setAssignments(assignmentsRes.data as Assignment[] || []);
+      }
+      
+      // Reset form
+      setMultiAssignment({
+        slum: "",
+        surveyors: [],
+      });
+      setMessage("Multiple assignments created successfully");
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : "Error creating multiple assignments";
+      console.error("Error creating multiple assignments:", error);
+      setError(errorMsg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleSurveyorSelection = (surveyorId: string) => {
+    setMultiAssignment(prev => {
+      if (prev.surveyors.includes(surveyorId)) {
+        return {
+          ...prev,
+          surveyors: prev.surveyors.filter(id => id !== surveyorId)
+        };
+      } else {
+        return {
+          ...prev,
+          surveyors: [...prev.surveyors, surveyorId]
+        };
+      }
+    });
+  };
+
+  // Function to get already assigned surveyors for a slum
+  const getAssignedSurveyorsForSlum = (slumId: string): string[] => {
+    return assignments
+      .filter(assignment => assignment.slum?._id === slumId)
+      .map(assignment => assignment.surveyor?._id)
+      .filter((id): id is string => id !== undefined);
+  };
+
+  // Filter available surveyors based on selected slum
+  const getFilteredSurveyors = (): Surveyor[] => {
+    if (!multiAssignment.slum) return availableUsers;
+    
+    const assignedSurveyorIds = getAssignedSurveyorsForSlum(multiAssignment.slum);
+    return availableUsers.filter(surveyor => !assignedSurveyorIds.includes(surveyor._id));
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    setAssignmentToDelete(assignmentId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteAssignment = async () => {
+    if (!assignmentToDelete) return;
+
+    try {
+      console.log('Confirming delete for assignment ID:', assignmentToDelete);
+      const response = await apiService.deleteAssignment(assignmentToDelete);
       if (response.success) {
-        // Refresh assignments list
+        setMessage("Assignment deleted successfully");
+        setError(null);
+        // Refresh assignments to show updated data
         const assignmentsRes = await apiService.getAllAssignments();
         if (assignmentsRes.success) {
           setAssignments(assignmentsRes.data as Assignment[] || []);
         }
-        // Reset form
-        setNewAssignment({
-          surveyorId: "",
-          slumId: "",
-        });
-        setMessage("Assignment created successfully");
       } else {
-        const errorMsg = response.error || "Unknown error occurred";
-        console.error("Failed to create assignment:", errorMsg);
-        setError(errorMsg);
+        const errorMsg = response.error || "Failed to delete assignment";
+        setError(`Error: ${errorMsg}`);
+        setMessage("");
       }
     } catch (error: unknown) {
-      const errorMsg = error instanceof Error ? error.message : "Error creating assignment";
-      console.error("Error creating assignment:", error);
-      setError(errorMsg);
+      setMessage(`Error: ${error instanceof Error ? error.message : "Failed to delete assignment"}`);
+    } finally {
+      setShowDeleteConfirm(false);
+      setAssignmentToDelete(null);
     }
   };
 
-  // Get list of already assigned slum IDs
-  const assignedSlumIds = new Set(
-    assignments
-      .filter(a => a.slum !== null) // Only include assignments with valid slum
-      .map((a) => a.slum!._id)
-  );
+  const cancelDeleteAssignment = () => {
+    setShowDeleteConfirm(false);
+    setAssignmentToDelete(null);
+  };
 
-  // Filter slums to only show those not yet assigned
-  const availableSlums = slums
-    .filter((slum) => !assignedSlumIds.has(slum._id))
-    .sort((a, b) => {
-      const nameA = a.slumName || '';
-      const nameB = b.slumName || '';
-      return nameA.localeCompare(nameB);
-    }); // Sort slums alphabetically by name
+  // Show all slums in the dropdown (multiple assignments allowed)
+  const availableSlums = [...slums].sort((a, b) => {
+    const nameA = a.slumName || '';
+    const nameB = b.slumName || '';
+    return nameA.localeCompare(nameB);
+  });
 
   const handleEditAssignment = (assignment: Assignment) => {
     setAssignmentToEdit(assignment);
@@ -357,58 +435,91 @@ export default function SupervisorAssignmentsPage() {
           </div>
         )}
 
-        {/* Create Assignment Form */}
+        {/* Create Multiple Assignment Form */}
         <Card>
           <h2 className="text-lg font-bold text-primary mb-4">
-            Create New Assignment
+            Create Assignments
           </h2>
-          {availableSlums.length === 0 ? (
-            <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
-              <p>
-                ✓ All slums have been assigned! Every slum is now assigned to a surveyor.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Select
-                label="Surveyor"
-                value={newAssignment.surveyorId}
-                onChange={(e) =>
-                  setNewAssignment({
-                    ...newAssignment,
-                    surveyorId: e.target.value,
-                  })
-                }
-                options={[...availableUsers.map((s) => ({
-                    value: s._id,
-                    label: `${s.name}`,
-                  }))]
-                }
-                placeholder="Select a surveyor..."
-              />
-              <InfiniteScrollSelect
-                label="Slum"
-                value={newAssignment.slumId}
-                onChange={(value) => setNewAssignment({ ...newAssignment, slumId: value })}
-                options={availableSlums.map((s) => ({
-                  value: s._id,
-                  label: `${s.slumName} (${s.slumId})`,
-                }))}
-                placeholder="Select a slum..."
-                disabled={availableSlums.length === 0}
-              />
-              <div className="flex items-end">
-                <Button
-                  variant="primary"
-                  fullWidth
-                  onClick={handleCreateAssignment}
-                  disabled={!newAssignment.surveyorId || !newAssignment.slumId}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InfiniteScrollSelect
+              label="Slum"
+              value={multiAssignment.slum}
+              onChange={(value) => setMultiAssignment({ ...multiAssignment, slum: value, surveyors: [] })} // Reset surveyors when slum changes
+              options={availableSlums.map((s) => ({
+                value: s._id,
+                label: `${s.slumName} (${s.slumId})`,
+              }))}
+              placeholder="Select a slum..."
+            />
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Select Surveyors
+              </label>
+              <div className="relative">
+                <div 
+                  className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer min-h-10.5 flex items-center"
+                  onClick={() => setShowSurveyorDropdown(!showSurveyorDropdown)}
                 >
-                  Assign
-                </Button>
+                  {multiAssignment.surveyors.length > 0 ? (
+                    <span className="text-slate-300">
+                      {multiAssignment.surveyors.length} surveyor{multiAssignment.surveyors.length !== 1 ? 's' : ''} selected
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">Select surveyors...</span>
+                  )}
+                  <svg 
+                    className={`ml-auto w-4 h-4 text-slate-400 transition-transform ${showSurveyorDropdown ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                          
+                {showSurveyorDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {getFilteredSurveyors().length > 0 ? (
+                      getFilteredSurveyors().map((surveyor) => (
+                        <div 
+                          key={surveyor._id} 
+                          className="flex items-center p-3 hover:bg-slate-700 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSurveyorSelection(surveyor._id);
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={multiAssignment.surveyors.includes(surveyor._id)}
+                            onChange={() => toggleSurveyorSelection(surveyor._id)}
+                            className="mr-3 h-4 w-4 text-cyan-600 rounded focus:ring-cyan-500"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <label className="text-slate-300 cursor-pointer grow">
+                            {surveyor.name}
+                          </label>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 text-slate-400 italic">
+                        All surveyors are already assigned to this slum
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
+          <div className="mt-4">
+            <Button
+              variant="primary"
+              onClick={handleCreateMultipleAssignments}
+              disabled={!multiAssignment.slum || multiAssignment.surveyors.length === 0}
+            >
+              Assign Selected Surveyor(s)
+            </Button>
+          </div>
         </Card>
 
         {/* Edit Assignment Form */}
@@ -594,12 +705,59 @@ export default function SupervisorAssignmentsPage() {
                         />
                       </svg>
                     </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Delete clicked for row:', row._id);
+                        handleDeleteAssignment(row._id);
+                      }}
+                      className="text-red-400 hover:text-red-300 transition-colors cursor-pointer"
+                      title="Delete"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 ),
               }
             ]}
           />
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-bold text-white mb-4">Confirm Delete</h3>
+              <p className="text-slate-300 mb-6">Are you sure you want to delete this assignment? This action cannot be undone.</p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={cancelDeleteAssignment}
+                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteAssignment}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors cursor-pointer"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       </div>
     </SupervisorAdminLayout>

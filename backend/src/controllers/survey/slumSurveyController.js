@@ -37,7 +37,9 @@ exports.createOrGetSlumSurvey = async (req, res) => {
         }
 
         // Check if survey already exists
-        let survey = await SlumSurvey.findOne({ slum: slumId, surveyor: userId });
+        // Look for existing SlumSurvey for this slum regardless of surveyor
+        // There should be only one SlumSurvey per slum, not per surveyor
+        let survey = await SlumSurvey.findOne({ slum: slumId });
 
         if (!survey) {
             // Validate that slum has required ward reference
@@ -106,7 +108,7 @@ exports.createOrGetSlumSurvey = async (req, res) => {
             // Create new survey with default values and populate required references
             survey = new SlumSurvey({
                 slum: slumId,
-                surveyor: userId,
+                surveyor: userId, // Store the original creator
                 ward: finalWardData._id,
                 district: districtData._id,
                 state: districtData.state,
@@ -226,7 +228,7 @@ exports.createOrGetSlumSurvey = async (req, res) => {
         // Calculate and update slum population from household surveys
         await updateSlumPopulationFromHouseholdSurveys(slumId);
                 
-        // Calculate and update BPL population from household surveys
+        // Calculate and update BPL population from household surveys (includes noSlumHouseholds)
         await updateSlumBplPopulationFromHouseholdSurveys(slumId);
                 
         // Calculate and update demographic population from household surveys
@@ -234,9 +236,44 @@ exports.createOrGetSlumSurvey = async (req, res) => {
                 
         // Re-fetch the survey to get updated population and BPL data
         survey = await SlumSurvey.findById(survey._id).populate([
-            { path: 'slum', select: 'slumName population' },
+            { path: 'slum', select: 'slumName slumId slumType area totalHouseholds' },
             { path: 'surveyor', select: 'name ' },
         ]);
+        
+        // Populate Part B fields from Slum model if not already set in cityTownSlumProfile
+        // This ensures fields like slumType, areaSqMtrs, and noSlumHouseholds come from the Slum model
+        if (survey.slum) {
+            if (!survey.cityTownSlumProfile) {
+                survey.cityTownSlumProfile = {};
+            }
+            
+            // Set slumType from Slum model
+            if (!survey.cityTownSlumProfile.slumType && survey.slum.slumType) {
+                survey.cityTownSlumProfile.slumType = survey.slum.slumType;
+            }
+            
+            // Set slumIdField from Slum model
+            if (!survey.cityTownSlumProfile.slumIdField && survey.slum.slumId) {
+                survey.cityTownSlumProfile.slumIdField = survey.slum.slumId.toString();
+            }
+            
+            // Set slumName from Slum model
+            if (!survey.cityTownSlumProfile.slumName && survey.slum.slumName) {
+                survey.cityTownSlumProfile.slumName = survey.slum.slumName;
+            }
+            
+            // Set areaSqMtrs from Slum model
+            if (survey.slum.area !== undefined && survey.slum.area !== null) {
+                survey.cityTownSlumProfile.areaSqMtrs = survey.slum.area;
+            }
+            
+            // Set noSlumHouseholds from Slum model's totalHouseholds
+            // Note: noSlumHouseholds is also updated by updateSlumBplPopulationFromHouseholdSurveys
+            // but we use the slum.totalHouseholds as the source of truth here
+            if (survey.slum.totalHouseholds !== undefined && survey.slum.totalHouseholds !== null) {
+                survey.cityTownSlumProfile.noSlumHouseholds = survey.slum.totalHouseholds;
+            }
+        }
                 
         sendSuccess(res, survey, 'Slum survey retrieved/created successfully');
     } catch (error) {
@@ -259,6 +296,23 @@ exports.getSlumSurvey = async (req, res) => {
 
         if (!survey) {
             return sendError(res, 'Survey not found', 404);
+        }
+        
+        const userId = req.user.id || req.user._id;
+
+        // Check authorization - allow access if:
+        // 1. The user is the original surveyor who created it, OR
+        // 2. The user is an admin, OR
+        // 3. The user has an assignment to this slum
+        const assignment = await Assignment.findOne({
+            surveyor: userId,
+            slum: survey.slum
+        });
+        
+        if (survey.surveyor.toString() !== userId.toString() && 
+            req.user.role !== 'ADMIN' && 
+            !assignment) {
+            return sendError(res, 'Not authorized to access this survey', 403);
         }
 
         // Calculate and update slum population from household surveys
@@ -397,8 +451,18 @@ exports.updateSlumSurvey = async (req, res) => {
             return sendError(res, 'Survey not found', 404);
         }
 
-        // Check authorization
-        if (survey.surveyor.toString() !== userId.toString() && req.user.role !== 'ADMIN') {
+        // Check authorization - allow access if:
+        // 1. The survey was originally created by this surveyor, OR
+        // 2. The user is an admin, OR
+        // 3. The user has an assignment to this slum
+        const assignment = await Assignment.findOne({
+            surveyor: userId,
+            slum: survey.slum
+        });
+        
+        if (survey.surveyor.toString() !== userId.toString() && 
+            req.user.role !== 'ADMIN' && 
+            !assignment) {
             return sendError(res, 'Not authorized to update this survey', 403);
         }
 
@@ -552,8 +616,18 @@ exports.submitSlumSurvey = async (req, res) => {
             return sendError(res, 'Survey not found', 404);
         }
 
-        // Check authorization
-        if (survey.surveyor.toString() !== userId.toString() && req.user.role !== 'ADMIN') {
+        // Check authorization - allow access if:
+        // 1. The survey was originally created by this surveyor, OR
+        // 2. The user is an admin, OR
+        // 3. The user has an assignment to this slum
+        const assignment = await Assignment.findOne({
+            surveyor: userId,
+            slum: survey.slum
+        });
+        
+        if (survey.surveyor.toString() !== userId.toString() && 
+            req.user.role !== 'ADMIN' && 
+            !assignment) {
             return sendError(res, 'Not authorized to submit this survey', 403);
         }
 
@@ -710,16 +784,34 @@ exports.getSlumSurveyBySlumId = async (req, res) => {
         const { slumId } = req.params;
         const userId = req.user.id || req.user._id;
 
+        // Find the survey for the slum (there should be only one per slum)
         const survey = await SlumSurvey.findOne({
             slum: slumId,
-            surveyor: userId,
         }).populate([
             { path: 'slum', select: 'slumName population' },
-            { path: 'surveyor', select: 'name ' },
+            { path: 'surveyor', select: 'name username' },
+            { path: 'submittedBy', select: 'name username' }
         ]);
 
         if (!survey) {
             return sendError(res, 'Survey not found for this slum', 404);
+        }
+        
+        // Check authorization - allow access if:
+        // 1. The user is the original surveyor who created it, OR
+        // 2. The user is an admin, OR
+        // 3. The user is a supervisor, OR
+        // 4. The user has an assignment to this slum
+        const assignment = await Assignment.findOne({
+            surveyor: userId,
+            slum: survey.slum
+        });
+        
+        if (survey.surveyor.toString() !== userId.toString() && 
+            req.user.role !== 'ADMIN' && 
+            req.user.role !== 'SUPERVISOR' && 
+            !assignment) {
+            return sendError(res, 'Not authorized to access this survey', 403);
         }
 
         // Calculate and update slum population from household surveys
@@ -737,7 +829,8 @@ exports.getSlumSurveyBySlumId = async (req, res) => {
             surveyor: userId,
         }).populate([
             { path: 'slum', select: 'slumName population' },
-            { path: 'surveyor', select: 'name ' },
+            { path: 'surveyor', select: 'name username' },
+            { path: 'submittedBy', select: 'name username' }
         ]);
         
         // Use the updated survey for the rest of the function
@@ -867,8 +960,18 @@ exports.deleteSlumSurvey = async (req, res) => {
             return sendError(res, 'Can only delete DRAFT surveys', 400);
         }
 
-        // Check authorization
-        if (survey.surveyor.toString() !== userId.toString() && req.user.role !== 'ADMIN') {
+        // Check authorization - allow access if:
+        // 1. The survey was originally created by this surveyor, OR
+        // 2. The user is an admin, OR
+        // 3. The user has an assignment to this slum
+        const assignment = await Assignment.findOne({
+            surveyor: userId,
+            slum: survey.slum
+        });
+        
+        if (survey.surveyor.toString() !== userId.toString() && 
+            req.user.role !== 'ADMIN' && 
+            !assignment) {
             return sendError(res, 'Not authorized to delete this survey', 403);
         }
 
@@ -932,8 +1035,18 @@ exports.updateSurveySection = async (req, res) => {
             return sendError(res, 'Survey not found', 404);
         }
 
-        // Check authorization
-        if (survey.surveyor.toString() !== userId.toString() && req.user.role !== 'ADMIN') {
+        // Check authorization - allow access if:
+        // 1. The survey was originally created by this surveyor, OR
+        // 2. The user is an admin, OR
+        // 3. The user has an assignment to this slum
+        const assignment = await Assignment.findOne({
+            surveyor: userId,
+            slum: survey.slum
+        });
+        
+        if (survey.surveyor.toString() !== userId.toString() && 
+            req.user.role !== 'ADMIN' && 
+            !assignment) {
             return sendError(res, 'Not authorized to update this survey', 403);
         }
 

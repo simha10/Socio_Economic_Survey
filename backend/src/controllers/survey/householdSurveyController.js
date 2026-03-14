@@ -1,6 +1,6 @@
 const HouseholdSurvey = require('../../models/HouseholdSurvey');
 const Slum = require('../../models/Slum');
-const { updateStatusesFromHouseholdSurvey, updateSlumPopulationFromHouseholdSurveys, updateSlumBplPopulationFromHouseholdSurveys, updateSlumDemographicPopulationFromHouseholdSurveys, autoSyncHouseholdCounts } = require('../../utils/statusSyncHelper');
+const { updateStatusesFromHouseholdSurvey, updateSlumPopulationFromHouseholdSurveys, updateSlumBplPopulationFromHouseholdSurveys, updateSlumDemographicPopulationFromHouseholdSurveys, autoSyncHouseholdCounts, getCanonicalSlumStatus, syncAllAssignmentsForSlum } = require('../../utils/statusSyncHelper');
 const { sendSuccess, sendError } = require('../../utils/helpers/responseHelper');
 const { v4: uuidv4 } = require('uuid');
 
@@ -105,6 +105,11 @@ exports.createOrGetHouseholdSurvey = async (req, res) => {
 
       // Auto-sync household counts when creating new survey
       await autoSyncHouseholdCounts(slumId, userId);
+      
+      // Update statuses across all assignments for this slum
+      // Since a new household survey was created, we need to update assignment statuses
+      const canonicalStatus = await getCanonicalSlumStatus(slumId);
+      await syncAllAssignmentsForSlum(slumId, canonicalStatus);
     }
 
     await survey.populate([
@@ -276,6 +281,12 @@ exports.updateHouseholdSurvey = async (req, res) => {
       await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
     }
 
+    // Auto-sync household counts after update
+    await autoSyncHouseholdCounts(survey.slum._id, userId);
+    
+    // Update statuses across all assignments for this slum
+    const canonicalStatus = await getCanonicalSlumStatus(survey.slum._id);
+    await syncAllAssignmentsForSlum(survey.slum._id, canonicalStatus);
 
     sendSuccess(res, survey, 'Survey updated successfully');
   } catch (error) {
@@ -544,8 +555,8 @@ exports.deleteHouseholdSurvey = async (req, res) => {
       return sendError(res, 'Can only delete DRAFT surveys', 400);
     }
 
-    // Check authorization
-    if (survey.surveyor.toString() !== userId.toString() && req.user.role === 'SURVEYOR') {
+    // Check authorization - handle case where surveyor might be undefined (e.g., imported records)
+    if (survey.surveyor && survey.surveyor.toString() !== userId.toString() && req.user.role === 'SURVEYOR') {
       return sendError(res, 'Not authorized to delete this survey', 403);
     }
 
@@ -562,6 +573,10 @@ exports.deleteHouseholdSurvey = async (req, res) => {
       await updateSlumDemographicPopulationFromHouseholdSurveys(slumId);
       // Auto-sync household counts after deletion
       await autoSyncHouseholdCounts(slumId);
+      
+      // Update statuses across all assignments for this slum
+      const canonicalStatus = await getCanonicalSlumStatus(slumId);
+      await syncAllAssignmentsForSlum(slumId, canonicalStatus);
     }
 
     sendSuccess(res, null, 'Survey deleted successfully');
@@ -640,6 +655,12 @@ exports.updateSurveySection = async (req, res) => {
       await updateSlumDemographicPopulationFromHouseholdSurveys(survey.slum._id);
     }
 
+    // Auto-sync household counts after section update
+    await autoSyncHouseholdCounts(survey.slum._id, userId);
+    
+    // Update statuses across all assignments for this slum
+    const canonicalStatus = await getCanonicalSlumStatus(survey.slum._id);
+    await syncAllAssignmentsForSlum(survey.slum._id, canonicalStatus);
 
     sendSuccess(res, survey, `${section} updated successfully`);
   } catch (error) {
@@ -665,6 +686,7 @@ exports.getHouseholdSurveysBySlum = async (req, res) => {
       .populate([
         { path: 'slum', select: 'slumName location ward village', populate: { path: 'ward', select: 'number name zone' } },
         { path: 'surveyor', select: 'name email' },
+        { path: 'submittedBy', select: 'name email username' },
       ])
       .sort({ createdAt: -1 });
 
@@ -672,6 +694,33 @@ exports.getHouseholdSurveysBySlum = async (req, res) => {
   } catch (error) {
     console.error('Error in getHouseholdSurveysBySlum:', error.message);
     sendError(res, error.message || 'Failed to get household surveys', 500);
+  }
+};
+
+/**
+ * Get household survey count for a specific slum (submitted only)
+ */
+exports.getHouseholdSurveyCount = async (req, res) => {
+  try {
+    const { slumId } = req.params;
+    const { status } = req.query;
+
+    if (!slumId) {
+      return sendError(res, 'slumId is required', 400);
+    }
+
+    // Default to 'SUBMITTED' status if not specified
+    const query = { 
+      slum: slumId,
+      surveyStatus: status || 'SUBMITTED'
+    };
+
+    const count = await HouseholdSurvey.countDocuments(query);
+
+    sendSuccess(res, { count }, 'Household survey count retrieved successfully');
+  } catch (error) {
+    console.error('Error in getHouseholdSurveyCount:', error.message);
+    sendError(res, error.message || 'Failed to get household survey count', 500);
   }
 };
 
@@ -934,6 +983,10 @@ exports.importHouseholds = async (req, res) => {
 
     // Auto-sync the household counts after import
     await autoSyncHouseholdCounts(slumId);
+    
+    // Update statuses across all assignments for this slum
+    const canonicalStatus = await getCanonicalSlumStatus(slumId);
+    await syncAllAssignmentsForSlum(slumId, canonicalStatus);
 
     sendSuccess(res, {
       imported: result.upsertedCount || 0,
