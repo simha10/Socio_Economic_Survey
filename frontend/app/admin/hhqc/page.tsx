@@ -55,7 +55,7 @@ export default function HHQCPage() {
   const isFirstMount = useRef(true);
 
   const handleBack = () => {
-    router.push("/supervisor/dashboard");
+    router.push("/admin/dashboard");
   };
   const [loading, setLoading] = useState(true);
   const [slums, setSlums] = useState<Slum[]>([]);
@@ -83,7 +83,7 @@ export default function HHQCPage() {
         });
         setSlums(sortedSlums);
 
-        // Load all assignments for supervisor to find the correct assignment later
+        // Load all assignments for admin to find the correct assignment later
         const assignmentsResponse = await apiService.getAllAssignments();
         if (assignmentsResponse.success) {
           setAssignments(assignmentsResponse.data as Assignment[] || []);
@@ -193,8 +193,8 @@ export default function HHQCPage() {
       // Store the selected slum in localStorage before navigating
       console.log('Saving selected slum to localStorage:', selectedSlum);
       localStorage.setItem('hhqc-selected-slum', selectedSlum);
-      // Navigate to supervisor HHQC edit page
-      router.push(`/supervisor/hhqc/${editingSurvey._id}`);
+      // Navigate to admin HHQC edit page
+      router.push(`/admin/hhqc/${editingSurvey._id}`);
     }
     setShowEditConfirm(false);
     setEditingSurvey(null);
@@ -257,7 +257,7 @@ export default function HHQCPage() {
                         Door No
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
-                        Head of the Family
+                        Head of Family
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
                         Family Members

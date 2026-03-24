@@ -28,6 +28,7 @@ const adminItems = [
   { href: "/admin/slums", label: "Slums", icon: Map },
   { href: "/admin/assignments", label: "Assignments", icon: CheckSquare },
   { href: "/admin/reports", label: "Reports", icon: TrendingUp },
+  { href: "/admin/hhqc", label: "HHQC", icon: CheckSquare },
 ];
 
 const surveyorItems = [

@@ -87,6 +87,7 @@ export default function AssignmentsPage() {
   const [availableUsers, setAvailableUsers] = useState<Surveyor[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
+  const [isDeletingAssignment, setIsDeletingAssignment] = useState(false);
   const [showUpdateConfirm, setShowUpdateConfirm] = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
   const [assignmentToEdit, setAssignmentToEdit] = useState<Assignment | null>(null);
@@ -301,6 +302,7 @@ export default function AssignmentsPage() {
   const confirmDeleteAssignment = async () => {
     if (!assignmentToDelete) return;
 
+    setIsDeletingAssignment(true);
     try {
       console.log('Confirming delete for assignment ID:', assignmentToDelete);
       const response = await apiService.deleteAssignment(assignmentToDelete);
@@ -320,6 +322,7 @@ export default function AssignmentsPage() {
     } catch (error: unknown) {
       setMessage(`Error: ${error instanceof Error ? error.message : "Failed to delete assignment"}`);
     } finally {
+      setIsDeletingAssignment(false);
       setShowDeleteConfirm(false);
       setAssignmentToDelete(null);
     }
@@ -375,15 +378,17 @@ export default function AssignmentsPage() {
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={cancelDeleteAssignment}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors cursor-pointer"
+                  disabled={isDeletingAssignment}
+                  className={`px-4 py-2 bg-slate-600 ${isDeletingAssignment ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-500 cursor-pointer'} text-white rounded-lg transition-colors`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDeleteAssignment}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors cursor-pointer"
+                  disabled={isDeletingAssignment}
+                  className={`px-4 py-2 bg-red-600 ${isDeletingAssignment ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-500 cursor-pointer'} text-white rounded-lg transition-colors`}
                 >
-                  Delete
+                  {isDeletingAssignment ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>

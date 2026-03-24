@@ -51,6 +51,22 @@ export default function AdminUsersPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [roleFilter, setRoleFilter] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
+  const roleWeights = { ADMIN: 1, SUPERVISOR: 2, SURVEYOR: 3 };
+
+  const filteredUsers = users
+    .filter((u) => {
+      const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
+      const matchesSearch = u.username.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesRole && matchesSearch;
+    })
+    .sort((a, b) => {
+      const roleDiff = roleWeights[a.role] - roleWeights[b.role];
+      if (roleDiff !== 0) return roleDiff;
+      return a.name.localeCompare(b.name);
+    });
 
   useEffect(() => {
     // Verify user is admin
@@ -219,14 +235,15 @@ export default function AdminUsersPage() {
           </button>
         </div>
 
-        {/* Create User Form */}
+        {/* Create User Form Modal */}
         {showForm && !editingUser && (
-          <div className="bg-slate-900 border border-slate-700 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-white mb-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 max-w-md w-full overflow-y-auto max-h-[90vh] shadow-xl">
+              <h2 className="text-xl font-bold text-white mb-4">
               Create New User
             </h2>
             <form onSubmit={handleCreateUser} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Full Name
@@ -257,9 +274,6 @@ export default function AdminUsersPage() {
                     required
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Password
@@ -285,7 +299,6 @@ export default function AdminUsersPage() {
                       setFormData({ ...formData, role: e.target.value as "ADMIN" | "SUPERVISOR" | "SURVEYOR" })
                     }
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-
                   >
                     <option value="SURVEYOR">Surveyor</option>
                     <option value="SUPERVISOR">Supervisor</option>
@@ -323,17 +336,19 @@ export default function AdminUsersPage() {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         )}
 
-        {/* Edit User Form */}
+        {/* Edit User Form Modal */}
         {editingUser && (
-          <div className="bg-slate-900 border border-slate-700 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-white mb-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 max-w-md w-full overflow-y-auto max-h-[90vh] shadow-xl">
+              <h2 className="text-xl font-bold text-white mb-4">
               Edit User: {editingUser.username}
             </h2>
             <form onSubmit={handleUpdateUser} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Full Name
@@ -364,12 +379,9 @@ export default function AdminUsersPage() {
                     required
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Password (Leave blank to keep current)
+                    Password <span className="text-xs text-slate-400">(leave blank to keep)</span>
                   </label>
                   <input
                     type="password"
@@ -442,11 +454,50 @@ export default function AdminUsersPage() {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         )}
 
         {/* Users List */}
         <div className="bg-slate-900 border border-slate-700 rounded-lg overflow-hidden">
+          {/* Filters */}
+          <div className="p-4 border-b border-slate-700 flex flex-col sm:flex-row gap-4 justify-between items-center bg-slate-800/50">
+            <h2 className="text-lg font-semibold text-white">Users List</h2>
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <div className="relative w-full sm:w-auto">
+                <input
+                  type="text"
+                  placeholder="Search username..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 min-w-[200px]"
+                />
+                <svg
+                  className="absolute left-3 top-2.5 h-5 w-5 text-slate-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="w-full sm:w-auto bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              >
+                <option value="ALL">All Roles</option>
+                <option value="ADMIN">Admin</option>
+                <option value="SUPERVISOR">Supervisor</option>
+                <option value="SURVEYOR">Surveyor</option>
+              </select>
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -469,17 +520,17 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.length === 0 ? (
+                {filteredUsers.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
                       className="py-8 px-4 text-center text-slate-400"
                     >
-                      No users yet. Create one to get started!
+                      {users.length === 0 ? "No users yet. Create one to get started!" : "No users found matching filters."}
                     </td>
                   </tr>
                 ) : (
-                  users.map((user) => (
+                  filteredUsers.map((user) => (
                     <tr
                       key={user._id}
                       className="border-b border-slate-700 hover:bg-slate-800/50"
