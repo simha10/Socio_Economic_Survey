@@ -9,6 +9,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import Card from "@/components/Card";
 import Button from "@/components/Button";
 import InfiniteScrollSelect from "@/components/InfiniteScrollSelect";
+import { useToast } from "@/components/Toast";
 
 interface Assignment {
   _id: string;
@@ -21,12 +22,14 @@ interface Assignment {
     _id: string;
     slumName: string;
     slumId: number;
-    ward?: {
-      _id: string;
-      number: string;
-      name: string;
-      zone: string;
-    } | string;
+    ward?:
+      | {
+          _id: string;
+          number: string;
+          name: string;
+          zone: string;
+        }
+      | string;
   } | null;
   status: string;
   createdAt: string;
@@ -54,43 +57,50 @@ interface User {
 }
 
 interface AssignmentFormData {
-  status: 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-  surveyor: string;  // ID of the surveyor
-  slum: string;      // ID of the slum
+  status: "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+  surveyor: string; // ID of the surveyor
+  slum: string; // ID of the slum
 }
 
 interface MultiAssignmentFormData {
-  slum: string;      // ID of the slum
+  slum: string; // ID of the slum
   surveyors: string[]; // Array of surveyor IDs
 }
 
 export default function AssignmentsPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [slums, setSlums] = useState<Slum[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [multiAssignment, setMultiAssignment] = useState<MultiAssignmentFormData>({
-    slum: "",
-    surveyors: [],
-  });
+  const [multiAssignment, setMultiAssignment] =
+    useState<MultiAssignmentFormData>({
+      slum: "",
+      surveyors: [],
+    });
   const [showSurveyorDropdown, setShowSurveyorDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
-  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(
+    null,
+  );
   const [editFormData, setEditFormData] = useState<AssignmentFormData>({
-    status: 'PENDING',
-    surveyor: '',
-    slum: '',
+    status: "PENDING",
+    surveyor: "",
+    slum: "",
   });
   const [availableUsers, setAvailableUsers] = useState<Surveyor[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(
+    null,
+  );
   const [isDeletingAssignment, setIsDeletingAssignment] = useState(false);
   const [showUpdateConfirm, setShowUpdateConfirm] = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
-  const [assignmentToEdit, setAssignmentToEdit] = useState<Assignment | null>(null);
+  const [assignmentToEdit, setAssignmentToEdit] = useState<Assignment | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -118,23 +128,25 @@ export default function AssignmentsPage() {
         ]);
 
         if (assignmentsRes.success) {
-          setAssignments(assignmentsRes.data as Assignment[] || []);
+          setAssignments((assignmentsRes.data as Assignment[]) || []);
         }
         if (surveyorsRes.success) {
-          setAvailableUsers(surveyorsRes.data as Surveyor[] || []);
+          setAvailableUsers((surveyorsRes.data as Surveyor[]) || []);
         }
         if (slumsRes.success) {
-          const sortedSlums = [...(slumsRes.data as Slum[] || [])].sort((a, b) => {
-            const nameA = a.slumName || '';
-            const nameB = b.slumName || '';
-            return nameA.localeCompare(nameB);
-          });
+          const sortedSlums = [...((slumsRes.data as Slum[]) || [])].sort(
+            (a, b) => {
+              const nameA = a.slumName || "";
+              const nameB = b.slumName || "";
+              return nameA.localeCompare(nameB);
+            },
+          );
           setSlums(sortedSlums);
         }
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error("Error loading data:", error);
         setError("Failed to load data. Please refresh the page.");
-        router.push('/login');
+        router.push("/login");
       } finally {
         setLoading(false);
       }
@@ -152,33 +164,39 @@ export default function AssignmentsPage() {
     try {
       setError(null);
       setSubmitting(true);
-      
+
       // Create assignments for each selected surveyor
       for (const surveyorId of multiAssignment.surveyors) {
         const response = await apiService.assignSlumToSurveyor(
           surveyorId,
           multiAssignment.slum,
         );
-        
+
         if (!response.success) {
-          console.error(`Failed to assign slum to surveyor ${surveyorId}:`, response.error);
+          console.error(
+            `Failed to assign slum to surveyor ${surveyorId}:`,
+            response.error,
+          );
         }
       }
 
       // Refresh assignments list
       const assignmentsRes = await apiService.getAllAssignments();
       if (assignmentsRes.success) {
-        setAssignments(assignmentsRes.data as Assignment[] || []);
+        setAssignments((assignmentsRes.data as Assignment[]) || []);
       }
-      
+
       // Reset form
       setMultiAssignment({
         slum: "",
         surveyors: [],
       });
-      setMessage("Multiple assignments created successfully");
+      showToast("Multiple assignments created successfully", "success", 3000);
     } catch (error: unknown) {
-      const errorMsg = error instanceof Error ? error.message : "Error creating multiple assignments";
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : "Error creating multiple assignments";
       console.error("Error creating multiple assignments:", error);
       setError(errorMsg);
     } finally {
@@ -187,16 +205,16 @@ export default function AssignmentsPage() {
   };
 
   const toggleSurveyorSelection = (surveyorId: string) => {
-    setMultiAssignment(prev => {
+    setMultiAssignment((prev) => {
       if (prev.surveyors.includes(surveyorId)) {
         return {
           ...prev,
-          surveyors: prev.surveyors.filter(id => id !== surveyorId)
+          surveyors: prev.surveyors.filter((id) => id !== surveyorId),
         };
       } else {
         return {
           ...prev,
-          surveyors: [...prev.surveyors, surveyorId]
+          surveyors: [...prev.surveyors, surveyorId],
         };
       }
     });
@@ -205,23 +223,27 @@ export default function AssignmentsPage() {
   // Function to get already assigned surveyors for a slum
   const getAssignedSurveyorsForSlum = (slumId: string): string[] => {
     return assignments
-      .filter(assignment => assignment.slum?._id === slumId)
-      .map(assignment => assignment.surveyor?._id)
+      .filter((assignment) => assignment.slum?._id === slumId)
+      .map((assignment) => assignment.surveyor?._id)
       .filter((id): id is string => id !== undefined);
   };
 
   // Filter available surveyors based on selected slum
   const getFilteredSurveyors = (): Surveyor[] => {
     if (!multiAssignment.slum) return availableUsers;
-    
-    const assignedSurveyorIds = getAssignedSurveyorsForSlum(multiAssignment.slum);
-    return availableUsers.filter(surveyor => !assignedSurveyorIds.includes(surveyor._id));
+
+    const assignedSurveyorIds = getAssignedSurveyorsForSlum(
+      multiAssignment.slum,
+    );
+    return availableUsers.filter(
+      (surveyor) => !assignedSurveyorIds.includes(surveyor._id),
+    );
   };
 
   // Show all slums in the dropdown (multiple assignments allowed)
   const availableSlums = [...slums].sort((a, b) => {
-    const nameA = a.slumName || '';
-    const nameB = b.slumName || '';
+    const nameA = a.slumName || "";
+    const nameB = b.slumName || "";
     return nameA.localeCompare(nameB);
   });
 
@@ -234,9 +256,13 @@ export default function AssignmentsPage() {
     if (assignmentToEdit) {
       setEditingAssignment(assignmentToEdit);
       setEditFormData({
-        status: assignmentToEdit.status as "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED",
-        surveyor: assignmentToEdit.surveyor?._id || '',
-        slum: assignmentToEdit.slum?._id || '', // Keep the slum constant
+        status: assignmentToEdit.status as
+          | "PENDING"
+          | "ACTIVE"
+          | "COMPLETED"
+          | "CANCELLED",
+        surveyor: assignmentToEdit.surveyor?._id || "",
+        slum: assignmentToEdit.slum?._id || "", // Keep the slum constant
       });
       setShowEditConfirm(false);
       setAssignmentToEdit(null);
@@ -260,7 +286,6 @@ export default function AssignmentsPage() {
     if (!editingAssignment) return;
 
     setSubmitting(true);
-    setMessage("");
     setShowUpdateConfirm(false);
 
     try {
@@ -271,20 +296,31 @@ export default function AssignmentsPage() {
         // Note: slum is intentionally excluded as it should remain constant
       };
 
-      const response = await apiService.updateAssignment(editingAssignment._id, updateData);
+      const response = await apiService.updateAssignment(
+        editingAssignment._id,
+        updateData,
+      );
       if (response.success) {
-        setMessage("Assignment updated successfully");
+        showToast("Assignment updated successfully", "success", 3000);
         setEditingAssignment(null);
         // Refresh assignments to show updated data
         const assignmentsRes = await apiService.getAllAssignments();
         if (assignmentsRes.success) {
-          setAssignments(assignmentsRes.data as Assignment[] || []);
+          setAssignments((assignmentsRes.data as Assignment[]) || []);
         }
       } else {
-        setMessage(`Error: ${response.error || "Failed to update assignment"}`);
+        showToast(
+          response.error || "Failed to update assignment",
+          "error",
+          3000,
+        );
       }
     } catch (error: unknown) {
-      setMessage(`Error: ${error instanceof Error ? error.message : "Failed to update assignment"}`);
+      showToast(
+        error instanceof Error ? error.message : "Failed to update assignment",
+        "error",
+        3000,
+      );
     } finally {
       setSubmitting(false);
     }
@@ -304,23 +340,26 @@ export default function AssignmentsPage() {
 
     setIsDeletingAssignment(true);
     try {
-      console.log('Confirming delete for assignment ID:', assignmentToDelete);
+      console.log("Confirming delete for assignment ID:", assignmentToDelete);
       const response = await apiService.deleteAssignment(assignmentToDelete);
       if (response.success) {
-        setMessage("Assignment deleted successfully");
+        showToast("Assignment deleted successfully", "success", 3000);
         setError(null);
         // Refresh assignments to show updated data
         const assignmentsRes = await apiService.getAllAssignments();
         if (assignmentsRes.success) {
-          setAssignments(assignmentsRes.data as Assignment[] || []);
+          setAssignments((assignmentsRes.data as Assignment[]) || []);
         }
       } else {
         const errorMsg = response.error || "Failed to delete assignment";
         setError(`Error: ${errorMsg}`);
-        setMessage("");
       }
     } catch (error: unknown) {
-      setMessage(`Error: ${error instanceof Error ? error.message : "Failed to delete assignment"}`);
+      showToast(
+        error instanceof Error ? error.message : "Failed to delete assignment",
+        "error",
+        3000,
+      );
     } finally {
       setIsDeletingAssignment(false);
       setShowDeleteConfirm(false);
@@ -335,12 +374,14 @@ export default function AssignmentsPage() {
 
   const handleCancelEdit = () => {
     setEditingAssignment(null);
-    setMessage("");
   };
 
   if (loading) {
     return (
-      <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
+      <SupervisorAdminLayout
+        role="ADMIN"
+        username={user?.name || user?.username}
+      >
         <div className="flex items-center justify-center min-h-96">
           <LoadingSpinner />
         </div>
@@ -350,7 +391,10 @@ export default function AssignmentsPage() {
 
   if (error) {
     return (
-      <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
+      <SupervisorAdminLayout
+        role="ADMIN"
+        username={user?.name || user?.username}
+      >
         <div className="bg-red-900/30 border border-red-700 rounded-lg p-6">
           <h3 className="text-red-300 font-bold mb-2">Error</h3>
           <p className="text-red-400">{error}</p>
@@ -373,20 +417,25 @@ export default function AssignmentsPage() {
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-bold text-white mb-4">Confirm Deletion</h3>
-              <p className="text-slate-300 mb-6">Are you sure you want to delete this assignment? This action cannot be undone.</p>
+              <h3 className="text-lg font-bold text-white mb-4">
+                Confirm Deletion
+              </h3>
+              <p className="text-slate-300 mb-6">
+                Are you sure you want to delete this assignment? This action
+                cannot be undone.
+              </p>
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={cancelDeleteAssignment}
                   disabled={isDeletingAssignment}
-                  className={`px-4 py-2 bg-slate-600 ${isDeletingAssignment ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-500 cursor-pointer'} text-white rounded-lg transition-colors`}
+                  className={`px-4 py-2 bg-slate-600 ${isDeletingAssignment ? "opacity-50 cursor-not-allowed" : "hover:bg-slate-500 cursor-pointer"} text-white rounded-lg transition-colors`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDeleteAssignment}
                   disabled={isDeletingAssignment}
-                  className={`px-4 py-2 bg-red-600 ${isDeletingAssignment ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-500 cursor-pointer'} text-white rounded-lg transition-colors`}
+                  className={`px-4 py-2 bg-red-600 ${isDeletingAssignment ? "opacity-50 cursor-not-allowed" : "hover:bg-red-500 cursor-pointer"} text-white rounded-lg transition-colors`}
                 >
                   {isDeletingAssignment ? "Deleting..." : "Delete"}
                 </button>
@@ -399,8 +448,13 @@ export default function AssignmentsPage() {
         {showUpdateConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-bold text-white mb-4">Confirm Update</h3>
-              <p className="text-slate-300 mb-6">Are you sure you want to update this assignment? Please review the changes before proceeding.</p>
+              <h3 className="text-lg font-bold text-white mb-4">
+                Confirm Update
+              </h3>
+              <p className="text-slate-300 mb-6">
+                Are you sure you want to update this assignment? Please review
+                the changes before proceeding.
+              </p>
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={cancelUpdateAssignment}
@@ -423,8 +477,12 @@ export default function AssignmentsPage() {
         {showEditConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-bold text-white mb-4">Confirm Edit</h3>
-              <p className="text-slate-300 mb-6">Are you sure you want to edit this assignment?</p>
+              <h3 className="text-lg font-bold text-white mb-4">
+                Confirm Edit
+              </h3>
+              <p className="text-slate-300 mb-6">
+                Are you sure you want to edit this assignment?
+              </p>
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={cancelEditAssignment}
@@ -450,19 +508,6 @@ export default function AssignmentsPage() {
             </h1>
           </div>
 
-          {/* Status Messages */}
-          {message && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-              <span className="block sm:inline">{message}</span>
-              <button
-                onClick={() => setMessage("")}
-                className="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer"
-              >
-                <span className="text-2xl leading-none">&times;</span>
-              </button>
-            </div>
-          )}
-
           {/* Error Display */}
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
@@ -485,7 +530,13 @@ export default function AssignmentsPage() {
               <InfiniteScrollSelect
                 label="Slum"
                 value={multiAssignment.slum}
-                onChange={(value) => setMultiAssignment({ ...multiAssignment, slum: value, surveyors: [] })} // Reset surveyors when slum changes
+                onChange={(value) =>
+                  setMultiAssignment({
+                    ...multiAssignment,
+                    slum: value,
+                    surveyors: [],
+                  })
+                } // Reset surveyors when slum changes
                 options={availableSlums.map((s) => ({
                   value: s._id,
                   label: `${s.slumName} (${s.slumId})`,
@@ -497,33 +548,44 @@ export default function AssignmentsPage() {
                   Select Surveyors
                 </label>
                 <div className="relative">
-                  <div 
+                  <div
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer min-h-10.5 flex items-center"
-                    onClick={() => setShowSurveyorDropdown(!showSurveyorDropdown)}
+                    onClick={() =>
+                      setShowSurveyorDropdown(!showSurveyorDropdown)
+                    }
                   >
                     {multiAssignment.surveyors.length > 0 ? (
                       <span className="text-slate-300">
-                        {multiAssignment.surveyors.length} surveyor{multiAssignment.surveyors.length !== 1 ? 's' : ''} selected
+                        {multiAssignment.surveyors.length} surveyor
+                        {multiAssignment.surveyors.length !== 1 ? "s" : ""}{" "}
+                        selected
                       </span>
                     ) : (
-                      <span className="text-slate-400">Select surveyors...</span>
+                      <span className="text-slate-400">
+                        Select surveyors...
+                      </span>
                     )}
-                    <svg 
-                      className={`ml-auto w-4 h-4 text-slate-400 transition-transform ${showSurveyorDropdown ? 'rotate-180' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
+                    <svg
+                      className={`ml-auto w-4 h-4 text-slate-400 transition-transform ${showSurveyorDropdown ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
-                  
+
                   {showSurveyorDropdown && (
                     <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {getFilteredSurveyors().length > 0 ? (
                         getFilteredSurveyors().map((surveyor) => (
-                          <div 
-                            key={surveyor._id} 
+                          <div
+                            key={surveyor._id}
                             className="flex items-center p-3 hover:bg-slate-700 cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -532,8 +594,12 @@ export default function AssignmentsPage() {
                           >
                             <input
                               type="checkbox"
-                              checked={multiAssignment.surveyors.includes(surveyor._id)}
-                              onChange={() => toggleSurveyorSelection(surveyor._id)}
+                              checked={multiAssignment.surveyors.includes(
+                                surveyor._id,
+                              )}
+                              onChange={() =>
+                                toggleSurveyorSelection(surveyor._id)
+                              }
                               className="mr-3 h-4 w-4 text-cyan-600 rounded focus:ring-cyan-500"
                               onClick={(e) => e.stopPropagation()}
                             />
@@ -557,7 +623,10 @@ export default function AssignmentsPage() {
                 variant="primary"
                 className="cursor-pointer"
                 onClick={handleCreateMultipleAssignments}
-                disabled={!multiAssignment.slum || multiAssignment.surveyors.length === 0}
+                disabled={
+                  !multiAssignment.slum ||
+                  multiAssignment.surveyors.length === 0
+                }
               >
                 Assign Selected Surveyor(s)
               </Button>
@@ -568,7 +637,8 @@ export default function AssignmentsPage() {
           {editingAssignment && (
             <Card>
               <h2 className="text-xl font-bold text-white mb-4">
-                Edit Assignment: {editingAssignment.surveyor?.name || 'N/A'} - {editingAssignment.slum?.slumName || 'N/A'}
+                Edit Assignment: {editingAssignment.surveyor?.name || "N/A"} -{" "}
+                {editingAssignment.slum?.slumName || "N/A"}
               </h2>
               <form onSubmit={handleUpdateAssignment} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -579,7 +649,10 @@ export default function AssignmentsPage() {
                     <select
                       value={editFormData.surveyor}
                       onChange={(e) =>
-                        setEditFormData({ ...editFormData, surveyor: e.target.value })
+                        setEditFormData({
+                          ...editFormData,
+                          surveyor: e.target.value,
+                        })
                       }
                       className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       required
@@ -598,7 +671,7 @@ export default function AssignmentsPage() {
                     </label>
                     <input
                       type="text"
-                      value={`${editingAssignment?.slum?.slumName || 'N/A'}`}
+                      value={`${editingAssignment?.slum?.slumName || "N/A"}`}
                       readOnly
                       className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
                     />
@@ -606,8 +679,7 @@ export default function AssignmentsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                  </div>
+                  <div></div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
                       Status
@@ -615,7 +687,14 @@ export default function AssignmentsPage() {
                     <select
                       value={editFormData.status}
                       onChange={(e) =>
-                        setEditFormData({ ...editFormData, status: e.target.value as "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED" })
+                        setEditFormData({
+                          ...editFormData,
+                          status: e.target.value as
+                            | "PENDING"
+                            | "ACTIVE"
+                            | "COMPLETED"
+                            | "CANCELLED",
+                        })
                       }
                       className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     >
@@ -630,7 +709,12 @@ export default function AssignmentsPage() {
                 {/* Internal card messages removed in favor of global messages */}
 
                 <div className="flex gap-4">
-                  <Button type="button" onClick={() => setShowUpdateConfirm(true)} disabled={submitting} className="cursor-pointer">
+                  <Button
+                    type="button"
+                    onClick={() => setShowUpdateConfirm(true)}
+                    disabled={submitting}
+                    className="cursor-pointer"
+                  >
                     {submitting ? "Updating..." : "Update Assignment"}
                   </Button>
                   <Button
@@ -660,18 +744,22 @@ export default function AssignmentsPage() {
                   header: "Surveyor",
                   accessorKey: (row) => row.surveyor?.name || "Unknown",
                   sortable: true,
+                  sortAccessor: (row) => row.surveyor?.name || "Unknown",
                   className: "font-medium text-white",
                 },
                 {
                   header: "Slum",
-                  accessorKey: (row) => `${row.slum?.slumName || "Unknown"} (${row.slum?.slumId || "Unknown"})` as string,
+                  accessorKey: (row) =>
+                    `${row.slum?.slumName || "Unknown"} (${row.slum?.slumId || "Unknown"})` as string,
                   sortable: true,
+                  sortAccessor: (row) =>
+                    `${row.slum?.slumName || "Unknown"} (${row.slum?.slumId || "Unknown"})`,
                 },
                 {
                   header: "Zone",
                   accessorKey: (row) => {
                     if (row.slum?.ward) {
-                      if (typeof row.slum.ward === 'object') {
+                      if (typeof row.slum.ward === "object") {
                         return `${row.slum.ward.zone}`;
                       } else {
                         return "Unknown Zone";
@@ -680,12 +768,18 @@ export default function AssignmentsPage() {
                     return "Unknown Zone";
                   },
                   sortable: true,
+                  sortAccessor: (row) => {
+                    if (row.slum?.ward && typeof row.slum.ward === "object") {
+                      return row.slum.ward.zone;
+                    }
+                    return "Unknown Zone";
+                  },
                 },
                 {
                   header: "Ward",
                   accessorKey: (row) => {
                     if (row.slum?.ward) {
-                      if (typeof row.slum.ward === 'object') {
+                      if (typeof row.slum.ward === "object") {
                         return `Ward ${row.slum.ward.number} (${row.slum.ward.name})`;
                       } else {
                         return "Unknown Ward";
@@ -694,26 +788,37 @@ export default function AssignmentsPage() {
                     return "Unknown Ward";
                   },
                   sortable: true,
+                  sortAccessor: (row) => {
+                    if (row.slum?.ward && typeof row.slum.ward === "object") {
+                      return `Ward ${row.slum.ward.number} (${row.slum.ward.name})`;
+                    }
+                    return "Unknown Ward";
+                  },
                 },
                 {
                   header: "Status",
                   accessorKey: (row) => (
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${row.status === "COMPLETED"
-                        ? "bg-green-500/20 text-green-400"
-                        : row.status === "IN PROGRESS"
-                          ? "bg-blue-500/20 text-blue-400"
-                          : "bg-yellow-500/20 text-yellow-400"
-                        }`}
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        row.status === "COMPLETED"
+                          ? "bg-green-500/20 text-green-400"
+                          : row.status === "IN PROGRESS"
+                            ? "bg-blue-500/20 text-blue-400"
+                            : "bg-yellow-500/20 text-yellow-400"
+                      }`}
                     >
                       {row.status}
                     </span>
                   ),
+                  sortable: true,
+                  sortAccessor: (row) => row.status,
                 },
                 {
                   header: "Assigned",
-                  accessorKey: (row) => new Date(row.createdAt).toLocaleDateString(),
+                  accessorKey: (row) =>
+                    new Date(row.createdAt).toLocaleDateString(),
                   sortable: true,
+                  sortAccessor: (row) => new Date(row.createdAt).getTime(),
                 },
                 {
                   header: "Actions",
@@ -744,7 +849,7 @@ export default function AssignmentsPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log('Delete clicked for row:', row._id);
+                          console.log("Delete clicked for row:", row._id);
                           handleDeleteAssignment(row._id);
                         }}
                         className="text-red-400 hover:text-red-300 transition-colors cursor-pointer"
@@ -766,7 +871,7 @@ export default function AssignmentsPage() {
                       </button>
                     </div>
                   ),
-                }
+                },
               ]}
             />
           </div>

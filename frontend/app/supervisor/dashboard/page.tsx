@@ -5,7 +5,15 @@ import { useRouter } from "next/navigation";
 import SupervisorAdminLayout from "@/components/SupervisorAdminLayout";
 import DashboardStats from "@/components/DashboardStats";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { Users, CheckCircle, Clock, MapPin, TrendingUp, Calendar, RefreshCw } from "lucide-react";
+import {
+  Users,
+  CheckCircle,
+  Clock,
+  MapPin,
+  TrendingUp,
+  Calendar,
+  RefreshCw,
+} from "lucide-react";
 import apiService from "@/services/api";
 
 interface User {
@@ -19,6 +27,7 @@ interface Assignment {
   status: string;
   slum?: {
     _id: string;
+    totalHouseholds?: number;
   };
   slumSurveyStatus?: string;
   householdSurveyCount?: number;
@@ -38,12 +47,14 @@ interface Slum {
   location?: string;
   ulbCode?: string;
   ulbName?: string;
-  ward: {
-    _id: string;
-    number: string;
-    name: string;
-    zone: string;
-  } | string;
+  ward:
+    | {
+        _id: string;
+        number: string;
+        name: string;
+        zone: string;
+      }
+    | string;
   slumType: string;
   village: string;
   landOwnership: string;
@@ -100,17 +111,20 @@ export default function SupervisorDashboardPage() {
     setLoading(false);
   }, [router]);
 
-
-
   const loadDashboardStats = async () => {
     setStatsLoading(true);
     try {
-      // Fetch all assignments to calculate statistics
-      const assignmentsResponse = await apiService.getAllAssignments();
+      // Fetch ALL assignments with high limit to get complete data
+      const assignmentsResponse = await apiService.getAllAssignments(1, 1000);
       const usersResponse = await apiService.getUsers();
       // Fetch slums with a default page size to avoid potential API issues
-      const slumsResponse = await apiService.getAllSlums(1, 100, undefined, true); // Load all slums for count
-      
+      const slumsResponse = await apiService.getAllSlums(
+        1,
+        100,
+        undefined,
+        true,
+      ); // Load all slums for count
+
       // Initialize default values
       let totalSlumsAssigned = 0;
       let completedAssignments = 0;
@@ -121,10 +135,11 @@ export default function SupervisorDashboardPage() {
       let totalHouseholdsCount = 0;
       let totalCompletedHouseholdSurveys = 0;
       let totalSurveyors = 0;
-      
+
       if (assignmentsResponse.success && assignmentsResponse.data) {
-        const assignments: Assignment[] = assignmentsResponse.data as Assignment[];
-        
+        const assignments: Assignment[] =
+          assignmentsResponse.data as Assignment[];
+
         // Group assignments by slum to handle multiple assignments per slum
         const uniqueSlums = new Map<string, Assignment[]>();
         for (const assignment of assignments) {
@@ -136,53 +151,66 @@ export default function SupervisorDashboardPage() {
             uniqueSlums.get(slumId)!.push(assignment);
           }
         }
-        
+
         // Count total unique slums assigned
         totalSlumsAssigned = uniqueSlums.size;
-        
+
         // Count assignments by status (based on unique slums)
         for (const [slumId, slumAssignments] of uniqueSlums) {
           // For assignment status, we can take the status from any assignment for the slum
           // since they should be synchronized
           const firstAssignment = slumAssignments[0];
-          if (firstAssignment.status === 'COMPLETED') {
+          if (firstAssignment.status === "COMPLETED") {
             completedAssignments++;
-          } else if (firstAssignment.status === 'IN PROGRESS') {
+          } else if (firstAssignment.status === "IN PROGRESS") {
             inProgressAssignments++;
-          } else if (firstAssignment.status === 'ASSIGNED') {
+          } else if (
+            firstAssignment.status === "ASSIGNED" ||
+            firstAssignment.status === "PENDING"
+          ) {
             pendingAssignments++;
           }
         }
-        
-        // Count slum survey statuses (from first assignment per slum)
+
+        // Count slum survey statuses and households (from first assignment per slum to avoid duplication)
         for (const [slumId, slumAssignments] of uniqueSlums) {
           const firstAssignment = slumAssignments[0];
-          if (firstAssignment.slumSurveyStatus === 'SUBMITTED' || firstAssignment.slumSurveyStatus === 'COMPLETED') {
+
+          // Get total households from the slum data in the assignment
+          if (firstAssignment.slum?.totalHouseholds) {
+            totalHouseholdsCount += firstAssignment.slum.totalHouseholds;
+          }
+
+          // Get completed households from householdSurveyProgress
+          if (firstAssignment.householdSurveyProgress) {
+            totalCompletedHouseholdSurveys +=
+              firstAssignment.householdSurveyProgress.completed;
+          }
+
+          // Count slum survey statuses
+          if (
+            firstAssignment.slumSurveyStatus === "SUBMITTED" ||
+            firstAssignment.slumSurveyStatus === "COMPLETED"
+          ) {
             completedSlumSurveys++;
-          } else if (firstAssignment.slumSurveyStatus === 'IN PROGRESS') {
+          } else if (firstAssignment.slumSurveyStatus === "IN PROGRESS") {
             inProgressSlumSurveys++;
           }
         }
-        
-        // Count households (from first assignment per slum to avoid duplication)
-        for (const [slumId, slumAssignments] of uniqueSlums) {
-          const firstAssignment = slumAssignments[0];
-          if (firstAssignment.householdSurveyProgress) {
-            totalHouseholdsCount += firstAssignment.householdSurveyProgress.total;
-            totalCompletedHouseholdSurveys += firstAssignment.householdSurveyProgress.completed;
-          } else if (firstAssignment.householdSurveyCount) {
-            totalCompletedHouseholdSurveys += firstAssignment.householdSurveyCount;
-          }
-        }
       }
-      
+
       if (usersResponse.success) {
-        totalSurveyors = (usersResponse.data as User[])?.filter((u: User) => u.role === 'SURVEYOR').length || 0;
+        totalSurveyors =
+          (usersResponse.data as User[])?.filter(
+            (u: User) => u.role === "SURVEYOR",
+          ).length || 0;
       }
-      
+
       // Get slums count from the response
-      const slumsCount = slumsResponse.success ? (slumsResponse.data as Slum[])?.length || 0 : 0;
-      
+      const slumsCount = slumsResponse.success
+        ? (slumsResponse.data as Slum[])?.length || 0
+        : 0;
+
       setDashboardStats({
         totalSlums: slumsCount, // Use the actual count from slums API
         totalAssignments: totalSlumsAssigned, // Total unique slums assigned
@@ -196,7 +224,7 @@ export default function SupervisorDashboardPage() {
         inProgressSlumSurveys,
       });
     } catch (error) {
-      console.error('Failed to load dashboard stats:', error);
+      console.error("Failed to load dashboard stats:", error);
     } finally {
       setStatsLoading(false);
     }
@@ -254,7 +282,7 @@ export default function SupervisorDashboardPage() {
               colorClass: "text-blue-500 bg-blue-500/20",
             },
             {
-              label: "Active Assignments",
+              label: "Total Slum Assignments",
               value: dashboardStats.totalAssignments,
               icon: <Users className="w-5 h-5" />,
               colorClass: "text-purple-500 bg-purple-500/20",
@@ -266,14 +294,15 @@ export default function SupervisorDashboardPage() {
               colorClass: "text-cyan-500 bg-cyan-500/20",
             },
             {
-              label: "Completed Slums",
+              label: "Completed Slum Assignments",
               value: dashboardStats.completedAssignments,
               icon: <CheckCircle className="w-5 h-5" />,
               colorClass: "text-green-500 bg-green-500/20",
-              change: dashboardStats.totalAssignments > 0 
-                ? `${Math.round((dashboardStats.completedAssignments / dashboardStats.totalAssignments) * 100)}% completion rate`
-                : "0% completion rate",
-              trend: "up"
+              change:
+                dashboardStats.totalAssignments > 0
+                  ? `${Math.round((dashboardStats.completedAssignments / dashboardStats.totalAssignments) * 100)}% completion rate`
+                  : "0% completion rate",
+              trend: "up",
             },
           ]}
         />
@@ -314,7 +343,6 @@ export default function SupervisorDashboardPage() {
           ]}
         />
       </div>
-
     </SupervisorAdminLayout>
   );
 }

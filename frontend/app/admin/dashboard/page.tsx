@@ -42,7 +42,7 @@ interface Slum {
 interface Assignment {
   _id: string;
   status: string;
-  surveyor: { _id: string; name: string; username: string; };
+  surveyor: { _id: string; name: string; username: string };
   slum: Slum;
   slumSurveyStatus?: string;
   householdSurveyProgress?: {
@@ -63,7 +63,7 @@ export default function AdminDashboardPage() {
     totalSurveyors: 0,
     totalSlums: 0,
     totalAssignments: 0,
-    activeAssignments: 0,  // Add this for In Progress assignments
+    activeAssignments: 0, // Add this for In Progress assignments
     pendingAssignments: 0,
     completedAssignments: 0,
     inProgressSlumSurveys: 0,
@@ -90,8 +90,6 @@ export default function AdminDashboardPage() {
     setLoading(false);
   }, [router]);
 
-
-
   const loadDashboardStats = async () => {
     setStatsLoading(true);
     try {
@@ -111,36 +109,33 @@ export default function AdminDashboardPage() {
 
       // Fetch users count
       const usersResponse = await apiService.listUsers();
-      const usersData = usersResponse.data as User[] || [];
+      const usersData = (usersResponse.data as User[]) || [];
       usersCount = usersResponse.success && usersData ? usersData.length : 0;
-      surveyorsCount = usersResponse.success && usersData 
-        ? usersData.filter((user: User) => user.role === 'SURVEYOR').length 
-        : 0;
-      supervisorsCount = usersResponse.success && usersData
-        ? usersData.filter((user: User) => user.role === 'SUPERVISOR').length
-        : 0;
+      surveyorsCount =
+        usersResponse.success && usersData
+          ? usersData.filter((user: User) => user.role === "SURVEYOR").length
+          : 0;
+      supervisorsCount =
+        usersResponse.success && usersData
+          ? usersData.filter((user: User) => user.role === "SUPERVISOR").length
+          : 0;
 
       // Fetch slums count with a default page size to avoid potential API issues
-      const slumsResponse = await apiService.getAllSlums(1, 100, undefined, true); // Load all slums for count
-      const slumsData = slumsResponse.data as Slum[] || [];
+      const slumsResponse = await apiService.getAllSlums(
+        1,
+        100,
+        undefined,
+        true,
+      ); // Load all slums for count
+      const slumsData = (slumsResponse.data as Slum[]) || [];
       slumsCount = slumsResponse.success && slumsData ? slumsData.length : 0;
 
-      // Calculate total households from slums
-      if (slumsResponse.success && slumsResponse.data) {
-        const slums = slumsResponse.data as Slum[];
-        for (const slum of slums) {
-          if (slum.totalHouseholds) {
-            totalHouseholdsCount += slum.totalHouseholds;
-          }
-        }
-      }
+      // Fetch ALL assignments with high limit to get complete data
+      const assignmentsResponse = await apiService.getAllAssignments(1, 1000);
 
-      // Fetch assignments count
-      const assignmentsResponse = await apiService.getAllAssignments();
-      
       if (assignmentsResponse.success && assignmentsResponse.data) {
         const assignments = assignmentsResponse.data as Assignment[];
-        
+
         // Get unique slums with assignments
         const uniqueSlums = new Map<string, Assignment[]>();
         for (const assignment of assignments) {
@@ -152,50 +147,65 @@ export default function AdminDashboardPage() {
             uniqueSlums.get(slumId)!.push(assignment);
           }
         }
-        
+
         // Count total unique slums assigned
         totalAssignments = uniqueSlums.size;
-        
+
         // Count completed assignments (slums where all assignments are completed)
         completedAssignmentsCount = 0;
         for (const [slumId, slumAssignments] of uniqueSlums) {
-          const allCompleted = slumAssignments.every(a => a.status === 'COMPLETED');
+          const allCompleted = slumAssignments.every(
+            (a) => a.status === "COMPLETED",
+          );
           if (allCompleted) {
             completedAssignmentsCount++;
           }
         }
-        
+
         // Count active assignments (slums with at least one assignment in progress)
         activeAssignmentsCount = 0;
         for (const [slumId, slumAssignments] of uniqueSlums) {
-          const hasInProgress = slumAssignments.some(a => a.status === 'IN PROGRESS');
+          const hasInProgress = slumAssignments.some(
+            (a) => a.status === "IN PROGRESS",
+          );
           if (hasInProgress) {
             activeAssignmentsCount++;
           }
         }
-        
-        // Calculate completed households - take from one assignment per slum
+
+        // Calculate households from unique slums (take first assignment per slum to avoid duplication)
         completedHouseholdsCount = 0;
-        // Count slum survey statuses from unique slums (take status from first assignment per slum)
+        totalHouseholdsCount = 0;
         inProgressSlumSurveysCount = 0;
         completedSlumSurveysCount = 0;
-        
+
         for (const [slumId, slumAssignments] of uniqueSlums) {
-          // Take the first assignment's completed count for this slum
+          // Take the first assignment for this slum to get household data
           const firstAssignment = slumAssignments[0];
-          if (firstAssignment.householdSurveyProgress) {
-            completedHouseholdsCount += firstAssignment.householdSurveyProgress.completed;
+
+          // Get total households from the slum data in the assignment
+          if (firstAssignment.slum?.totalHouseholds) {
+            totalHouseholdsCount += firstAssignment.slum.totalHouseholds;
           }
-          
+
+          // Get completed households from householdSurveyProgress
+          if (firstAssignment.householdSurveyProgress) {
+            completedHouseholdsCount +=
+              firstAssignment.householdSurveyProgress.completed;
+          }
+
           // Count slum survey statuses
-          if (firstAssignment.slumSurveyStatus === 'IN PROGRESS') {
+          if (firstAssignment.slumSurveyStatus === "IN PROGRESS") {
             inProgressSlumSurveysCount++;
-          } else if (firstAssignment.slumSurveyStatus === 'SUBMITTED' || firstAssignment.slumSurveyStatus === 'COMPLETED') {
+          } else if (
+            firstAssignment.slumSurveyStatus === "SUBMITTED" ||
+            firstAssignment.slumSurveyStatus === "COMPLETED"
+          ) {
             completedSlumSurveysCount++;
           }
         }
       }
-      
+
       // Calculate pending assignments (unassigned slums)
       pendingAssignmentsCount = Math.max(0, slumsCount - totalAssignments);
 
@@ -323,32 +333,33 @@ export default function AdminDashboardPage() {
         <DashboardStats
           stats={[
             {
-              label: "Total Assignments",
+              label: "Total Slum Assignments",
               value: dashboardStats.totalAssignments,
               icon: <GitBranch className="w-5 h-5" />,
               colorClass: "text-amber-500 bg-amber-500/20",
             },
             {
-              label: "Active Assignments",
+              label: "Active Slum Assignments",
               value: dashboardStats.activeAssignments,
               icon: <Clock className="w-5 h-5" />,
               colorClass: "text-yellow-500 bg-yellow-500/20",
             },
             {
-              label: "Pending Assignments",
+              label: "Pending Slum Assignments",
               value: dashboardStats.pendingAssignments,
               icon: <Clock className="w-5 h-5" />,
               colorClass: "text-slate-500 bg-slate-500/20",
             },
             {
-              label: "Completed Assignments",
+              label: "Completed Slum Assignments",
               value: dashboardStats.completedAssignments,
               icon: <CheckCircle className="w-5 h-5" />,
               colorClass: "text-green-500 bg-green-500/20",
-              change: dashboardStats.totalAssignments > 0 
-                ? `${Math.round((dashboardStats.completedAssignments / dashboardStats.totalAssignments) * 100)}% completion rate`
-                : "0% completion rate",
-              trend: "up"
+              change:
+                dashboardStats.totalAssignments > 0
+                  ? `${Math.round((dashboardStats.completedAssignments / dashboardStats.totalAssignments) * 100)}% completion rate`
+                  : "0% completion rate",
+              trend: "up",
             },
           ]}
         />

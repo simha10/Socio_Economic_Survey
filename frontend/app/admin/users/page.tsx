@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SupervisorAdminLayout from "@/components/SupervisorAdminLayout";
 import apiService from "@/services/api";
-import { Plus, Trash2, Edit2} from "lucide-react";
+import { Plus, Trash2, Edit2 } from "lucide-react";
 import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
+import { useToast } from "@/components/Toast";
 
 interface User {
   _id: string;
@@ -26,6 +27,7 @@ interface UserFormData {
 
 export default function AdminUsersPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -44,7 +46,6 @@ export default function AdminUsersPage() {
     isActive: true,
   });
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -59,7 +60,9 @@ export default function AdminUsersPage() {
   const filteredUsers = users
     .filter((u) => {
       const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
-      const matchesSearch = u.username.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = u.username
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
       return matchesRole && matchesSearch;
     })
     .sort((a, b) => {
@@ -107,20 +110,23 @@ export default function AdminUsersPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setMessage("");
 
     try {
       const response = await apiService.createUser(formData);
       if (response.success) {
-        setMessage("User created successfully");
+        showToast("User created successfully", "success", 3000);
         setFormData({ username: "", name: "", password: "", role: "SURVEYOR" });
         setShowForm(false);
         loadUsers();
       } else {
-        setMessage(`Error: ${response.error || "Failed to create user"}`);
+        showToast(response.error || "Failed to create user", "error", 3000);
       }
     } catch (error) {
-      setMessage(`Error: ${(error as Error).message || "Failed to create user"}`);
+      showToast(
+        (error as Error).message || "Failed to create user",
+        "error",
+        3000,
+      );
     } finally {
       setSubmitting(false);
     }
@@ -137,7 +143,7 @@ export default function AdminUsersPage() {
       setEditFormData({
         name: userToEdit.name,
         username: userToEdit.username,
-        password: '', // Don't expose existing password for security
+        password: "", // Don't expose existing password for security
         role: userToEdit.role,
         isActive: userToEdit.isActive,
       });
@@ -151,7 +157,6 @@ export default function AdminUsersPage() {
     if (!editingUser) return;
 
     setSubmitting(true);
-    setMessage("");
 
     try {
       // Prepare update data - only include fields that changed
@@ -169,14 +174,18 @@ export default function AdminUsersPage() {
 
       const response = await apiService.updateUser(editingUser._id, updateData);
       if (response.success) {
-        setMessage("User updated successfully");
+        showToast("User updated successfully", "success", 3000);
         setEditingUser(null);
         loadUsers();
       } else {
-        setMessage(`Error: ${response.error || "Failed to update user"}`);
+        showToast(response.error || "Failed to update user", "error", 3000);
       }
     } catch (error) {
-      setMessage(`Error: ${(error as Error).message || "Failed to update user"}`);
+      showToast(
+        (error as Error).message || "Failed to update user",
+        "error",
+        3000,
+      );
     } finally {
       setSubmitting(false);
     }
@@ -194,17 +203,21 @@ export default function AdminUsersPage() {
     try {
       const response = await apiService.deleteUser(userToDelete._id);
       if (response.success) {
-        setMessage("User deleted successfully");
+        showToast("User deleted successfully", "success", 3000);
         setIsDeleteDialogOpen(false);
         setUserToDelete(null);
         loadUsers();
       } else {
-        setMessage(`Error: ${response.error || "Failed to delete user"}`);
+        showToast(response.error || "Failed to delete user", "error", 3000);
         setIsDeleteDialogOpen(false);
         setUserToDelete(null);
       }
     } catch (error) {
-      setMessage(`Error: ${(error as Error).message || "Failed to delete user"}`);
+      showToast(
+        (error as Error).message || "Failed to delete user",
+        "error",
+        3000,
+      );
       setIsDeleteDialogOpen(false);
       setUserToDelete(null);
     } finally {
@@ -216,7 +229,6 @@ export default function AdminUsersPage() {
     setFormData({ username: "", name: "", password: "", role: "SURVEYOR" });
     setEditingUser(null);
     setShowForm(false);
-    setMessage("");
   };
 
   return (
@@ -240,102 +252,96 @@ export default function AdminUsersPage() {
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 max-w-md w-full overflow-y-auto max-h-[90vh] shadow-xl">
               <h2 className="text-xl font-bold text-white mb-4">
-              Create New User
-            </h2>
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter full name"
-                    required
-                  />
+                Create New User
+              </h2>
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      placeholder="Enter full name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) =>
+                        setFormData({ ...formData, username: e.target.value })
+                      }
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      placeholder="Enter username"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      placeholder="Enter password"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Role
+                    </label>
+                    <select
+                      value={formData.role}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          role: e.target.value as
+                            | "ADMIN"
+                            | "SUPERVISOR"
+                            | "SURVEYOR",
+                        })
+                      }
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    >
+                      <option value="SURVEYOR">Surveyor</option>
+                      <option value="SUPERVISOR">Supervisor</option>
+                      <option value="ADMIN">Admin</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.username}
-                    onChange={(e) =>
-                      setFormData({ ...formData, username: e.target.value })
-                    }
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter username"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter password"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Role
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) =>
-                      setFormData({ ...formData, role: e.target.value as "ADMIN" | "SUPERVISOR" | "SURVEYOR" })
-                    }
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+
+                <div className="flex gap-4">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
                   >
-                    <option value="SURVEYOR">Surveyor</option>
-                    <option value="SUPERVISOR">Supervisor</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
+                    {submitting ? "Creating..." : "Create User"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
                 </div>
-              </div>
-
-              {message && (
-                <div
-                  className={`p-4 rounded-lg text-sm ${
-                    message.includes("Error")
-                      ? "bg-red-900/30 text-red-300"
-                      : "bg-green-900/30 text-green-300"
-                  }`}
-                >
-                  {message}
-                </div>
-              )}
-
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
-                >
-                  {submitting ? "Creating..." : "Create User"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+              </form>
             </div>
           </div>
         )}
@@ -345,115 +351,126 @@ export default function AdminUsersPage() {
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 max-w-md w-full overflow-y-auto max-h-[90vh] shadow-xl">
               <h2 className="text-xl font-bold text-white mb-4">
-              Edit User: {editingUser.username}
-            </h2>
-            <form onSubmit={handleUpdateUser} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={editFormData.name}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, name: e.target.value })
-                    }
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter full name"
-                    required
-                  />
+                Edit User: {editingUser.username}
+              </h2>
+              <form onSubmit={handleUpdateUser} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.name}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          name: e.target.value,
+                        })
+                      }
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      placeholder="Enter full name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.username}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          username: e.target.value,
+                        })
+                      }
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      placeholder="Enter username"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Password{" "}
+                      <span className="text-xs text-slate-400">
+                        (leave blank to keep)
+                      </span>
+                    </label>
+                    <input
+                      type="password"
+                      value={editFormData.password}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          password: e.target.value,
+                        })
+                      }
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      placeholder="Enter new password (optional)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Role
+                    </label>
+                    <select
+                      value={editFormData.role}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          role: e.target.value as
+                            | "ADMIN"
+                            | "SUPERVISOR"
+                            | "SURVEYOR",
+                        })
+                      }
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    >
+                      <option value="SURVEYOR">Surveyor</option>
+                      <option value="SUPERVISOR">Supervisor</option>
+                      <option value="ADMIN">Admin</option>
+                    </select>
+                  </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Username
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={editFormData.isActive}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          isActive: e.target.checked,
+                        })
+                      }
+                      className="rounded text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-slate-300">
+                      Active User
+                    </span>
                   </label>
-                  <input
-                    type="text"
-                    value={editFormData.username}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, username: e.target.value })
-                    }
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter username"
-                    required
-                  />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Password <span className="text-xs text-slate-400">(leave blank to keep)</span>
-                  </label>
-                  <input
-                    type="password"
-                    value={editFormData.password}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, password: e.target.value })
-                    }
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter new password (optional)"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Role
-                  </label>
-                  <select
-                    value={editFormData.role}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, role: e.target.value as "ADMIN" | "SUPERVISOR" | "SURVEYOR" })
-                    }
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+
+                <div className="flex gap-4">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
                   >
-                    <option value="SURVEYOR">Surveyor</option>
-                    <option value="SUPERVISOR">Supervisor</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
+                    {submitting ? "Updating..." : "Update User"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingUser(null)}
+                    className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={editFormData.isActive}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, isActive: e.target.checked })
-                    }
-                    className="rounded text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-slate-300">Active User</span>
-                </label>
-              </div>
-
-              {message && (
-                <div
-                  className={`p-4 rounded-lg text-sm ${
-                    message.includes("Error")
-                      ? "bg-red-900/30 text-red-300"
-                      : "bg-green-900/30 text-green-300"
-                  }`}
-                >
-                  {message}
-                </div>
-              )}
-
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
-                >
-                  {submitting ? "Updating..." : "Update User"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingUser(null)}
-                  className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg font-medium transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+              </form>
             </div>
           </div>
         )}
@@ -470,7 +487,7 @@ export default function AdminUsersPage() {
                   placeholder="Search username..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 min-w-[200px]"
+                  className="w-full bg-slate-800 border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 min-w-50"
                 />
                 <svg
                   className="absolute left-3 top-2.5 h-5 w-5 text-slate-500"
@@ -526,7 +543,9 @@ export default function AdminUsersPage() {
                       colSpan={5}
                       className="py-8 px-4 text-center text-slate-400"
                     >
-                      {users.length === 0 ? "No users yet. Create one to get started!" : "No users found matching filters."}
+                      {users.length === 0
+                        ? "No users yet. Create one to get started!"
+                        : "No users found matching filters."}
                     </td>
                   </tr>
                 ) : (
@@ -549,14 +568,16 @@ export default function AdminUsersPage() {
                       <td className="py-4 px-4 text-sm">
                         <span
                           className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                            user.isActive ? "bg-green-900/30 text-green-300" : "bg-red-900/30 text-red-300"
+                            user.isActive
+                              ? "bg-green-900/30 text-green-300"
+                              : "bg-red-900/30 text-red-300"
                           }`}
                         >
                           {user.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td className="py-4 px-4 text-sm flex gap-2">
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEditUser(user);
@@ -566,7 +587,7 @@ export default function AdminUsersPage() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteUser(user);

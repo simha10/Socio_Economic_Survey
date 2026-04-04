@@ -846,10 +846,10 @@ class ApiService {
     }
   }
 
-  public async getAllAssignments(): Promise<ApiResponse> {
+  public async getAllAssignments(page = 1, limit = 100): Promise<ApiResponse> {
     try {
-      console.log('Fetching all assignments from:', `${this.baseUrl}/surveys/assignments`);
-      const response = await fetch(`${this.baseUrl}/surveys/assignments`, {
+      console.log('Fetching all assignments from:', `${this.baseUrl}/surveys/assignments?page=${page}&limit=${limit}`);
+      const response = await fetch(`${this.baseUrl}/surveys/assignments?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: this.getHeaders(),
       });

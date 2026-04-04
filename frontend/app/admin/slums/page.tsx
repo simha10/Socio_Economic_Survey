@@ -17,12 +17,14 @@ interface Slum {
   stateCode: string;
   distCode: string;
   city: string;
-  ward: {
-    _id: string;
-    number: string;
-    name: string;
-    zone: string;
-  } | number;
+  ward:
+    | {
+        _id: string;
+        number: string;
+        name: string;
+        zone: string;
+      }
+    | number;
   slumType: string;
   village: string;
   landOwnership: string;
@@ -46,7 +48,6 @@ interface User {
 export default function AdminSlumsPage() {
   const router = useRouter();
   const [slums, setSlums] = useState<Slum[]>([]);
-  const [filteredSlums, setFilteredSlums] = useState<Slum[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedSlum, setSelectedSlum] = useState<Slum | null>(null);
@@ -63,8 +64,7 @@ export default function AdminSlumsPage() {
       setLoading(true);
       const response = await apiService.getAllSlums(1, 10, undefined, true); // Load all slums
       if (response.success) {
-        setSlums(response.data as Slum[] || []);
-        setFilteredSlums(response.data as Slum[] || []);
+        setSlums((response.data as Slum[]) || []);
       } else {
         console.error("Failed to fetch slums:", response.error);
       }
@@ -161,29 +161,12 @@ export default function AdminSlumsPage() {
     fetchSlums();
   };
 
-  const handleSearch = (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setFilteredSlums(slums);
-      return;
-    }
-    
-    const filtered = slums.filter((slum) =>
-      slum.slumName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      slum.slumId.toString().includes(searchQuery) ||
-      slum.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      slum.village?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (typeof slum.ward === 'object' && slum.ward !== null && 
-        (slum.ward.number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         slum.ward.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         slum.ward.zone?.toLowerCase().includes(searchQuery.toLowerCase()))) ||
-      slum.ward.toString().includes(searchQuery)
-    );
-    setFilteredSlums(filtered);
-  };
-
   if (loading) {
     return (
-      <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
+      <SupervisorAdminLayout
+        role="ADMIN"
+        username={user?.name || user?.username}
+      >
         <div className="flex items-center justify-center min-h-96">
           <div className="text-2xl font-semibold text-slate-400">
             Loading slums...
@@ -219,9 +202,9 @@ export default function AdminSlumsPage() {
 
         {/* Empty State and Table */}
         <ModernTable
-          data={filteredSlums}
+          data={slums}
           keyField="_id"
-          searchPlaceholder="Search by name, ID, city, village, zone, or ward..."
+          searchPlaceholder="Search by name, ID, city, village, zone, ward, type, households, or area..."
           columns={[
             {
               header: "Slum ID",
@@ -238,23 +221,35 @@ export default function AdminSlumsPage() {
             {
               header: "Zone",
               accessorKey: (row) => {
-                if (typeof row.ward === 'object' && row.ward !== null) {
-                  return row.ward.zone || 'N/A';
+                if (typeof row.ward === "object" && row.ward !== null) {
+                  return row.ward.zone || "N/A";
                 }
-                return 'N/A';
+                return "N/A";
               },
               sortable: true,
+              sortAccessor: (row) => {
+                if (typeof row.ward === "object" && row.ward !== null) {
+                  return row.ward.zone || "N/A";
+                }
+                return "N/A";
+              },
               className: "text-left",
             },
             {
               header: "Ward",
               accessorKey: (row) => {
-                if (typeof row.ward === 'object' && row.ward !== null) {
+                if (typeof row.ward === "object" && row.ward !== null) {
                   return `${row.ward.number} - ${row.ward.name}`;
                 }
-                return row.ward?.toString() || 'N/A';
+                return row.ward?.toString() || "N/A";
               },
               sortable: true,
+              sortAccessor: (row) => {
+                if (typeof row.ward === "object" && row.ward !== null) {
+                  return `${row.ward.number} - ${row.ward.name}`;
+                }
+                return row.ward?.toString() || "N/A";
+              },
               className: "text-left w-50",
             },
             {
@@ -273,26 +268,33 @@ export default function AdminSlumsPage() {
                       : "bg-yellow-500/20 text-yellow-400"
                   }`}
                 >
-                  {row.slumType.replace('_', ' ')}
+                  {row.slumType.replace("_", " ")}
                 </span>
               ),
+              sortable: true,
+              sortAccessor: (row) => row.slumType,
             },
             {
               header: "Households",
               accessorKey: (row) => row.totalHouseholds?.toString() || "0",
               sortable: true,
+              sortAccessor: (row) => row.totalHouseholds || 0,
               className: "text-center font-medium tabular-nums align-middle",
             },
             {
               header: "Area (sq.m)",
               accessorKey: (row) => row.area?.toFixed(2) || "0",
               sortable: true,
+              sortAccessor: (row) => row.area || 0,
               className: "text-right font-medium tabular-nums align-middle",
             },
             {
               header: "Actions",
               accessorKey: (row) => (
-                <div className="flex gap-2 justify-left" onClick={(e) => e.stopPropagation()}>
+                <div
+                  className="flex gap-2 justify-left"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     onClick={() => handleViewSlum(row)}
                     className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded-md transition-colors cursor-pointer"

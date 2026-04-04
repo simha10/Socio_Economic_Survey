@@ -9,6 +9,7 @@ interface Column<T> {
   accessorKey: keyof T | ((row: T) => React.ReactNode);
   className?: string;
   sortable?: boolean;
+  sortAccessor?: keyof T | ((row: T) => string | number); // Separate accessor for sorting
 }
 
 interface ModernTableProps<T> {
@@ -42,35 +43,77 @@ export default function ModernTable<T>({
 
   // Filter data
   const filteredData = data.filter((row) => {
-    // Convert row to a record type for safe property iteration
-    const rowRecord = row as Record<string, unknown>;
-    const rowValues = Object.values(rowRecord);
-    return rowValues.some((value) =>
-      String(value).toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    if (!searchTerm.trim()) return true;
+
+    const query = searchTerm.toLowerCase();
+
+    // Check all column values (including function-based accessors)
+    return columns.some((column) => {
+      let value: any;
+
+      // Get the value using accessorKey
+      if (typeof column.accessorKey === "function") {
+        value = column.accessorKey(row);
+        // If it's a React element, we can't search it, so skip
+        if (React.isValidElement(value)) return false;
+      } else {
+        value = row[column.accessorKey];
+      }
+
+      // Convert to string and check if it includes the search term
+      return String(value).toLowerCase().includes(query);
+    });
   });
 
   // Sort data
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortConfig.key) return 0;
-    
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+
+    let aValue: any;
+    let bValue: any;
+
+    // Check if this is a custom sort key (starts with __sort_)
+    if (String(sortConfig.key).startsWith("__sort_")) {
+      // Find the column by matching the header name
+      const headerName = String(sortConfig.key).replace("__sort_", "");
+      const sortColumn = columns.find((col) => col.header === headerName);
+
+      if (sortColumn && sortColumn.sortAccessor) {
+        // Use custom sort accessor
+        if (typeof sortColumn.sortAccessor === "function") {
+          aValue = sortColumn.sortAccessor(a);
+          bValue = sortColumn.sortAccessor(b);
+        } else {
+          aValue = a[sortColumn.sortAccessor];
+          bValue = b[sortColumn.sortAccessor];
+        }
+      } else {
+        console.warn(
+          "Sort column not found or missing sortAccessor for:",
+          headerName,
+        );
+        return 0; // Can't sort without proper accessor
+      }
+    } else {
+      // Regular string-based accessorKey
+      aValue = a[sortConfig.key];
+      bValue = b[sortConfig.key];
+    }
 
     if (aValue === bValue) return 0;
-    
+
     // Handle mixed string/numeric values
     const aStr = String(aValue);
     const bStr = String(bValue);
     const aNum = parseFloat(aStr);
     const bNum = parseFloat(bStr);
-    
+
     // If both can be converted to numbers, sort numerically
     if (!isNaN(aNum) && !isNaN(bNum)) {
       const comparison = aNum > bNum ? 1 : -1;
       return sortConfig.direction === "asc" ? comparison : -comparison;
     }
-    
+
     // Otherwise, sort as strings
     const comparison = aStr > bStr ? 1 : -1;
     return sortConfig.direction === "asc" ? comparison : -comparison;
@@ -80,17 +123,30 @@ export default function ModernTable<T>({
   const totalPages = Math.ceil(sortedData.length / rowsPerPage);
   const paginatedData = sortedData.slice(
     (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
+    currentPage * rowsPerPage,
   );
 
   const handleSort = (column: Column<T>) => {
-    if (!column.sortable || typeof column.accessorKey !== 'string') return;
+    if (!column.sortable) return;
 
-    const key = column.accessorKey as keyof T;
+    // Determine the key to use for sorting
+    let sortKey: string;
+
+    if (column.sortAccessor) {
+      // If there's a custom sort accessor, use a special key based on header
+      sortKey = `__sort_${column.header}`;
+    } else if (typeof column.accessorKey === "string") {
+      sortKey = column.accessorKey;
+    } else {
+      // Can't sort function-based accessors without sortAccessor
+      console.warn("Cannot sort column without sortAccessor:", column.header);
+      return;
+    }
+
     setSortConfig((current) => ({
-      key,
+      key: sortKey as any,
       direction:
-        current.key === key && current.direction === "asc" ? "desc" : "asc",
+        current.key === sortKey && current.direction === "asc" ? "desc" : "asc",
     }));
   };
 
@@ -122,8 +178,9 @@ export default function ModernTable<T>({
                     key={index}
                     className={cn(
                       "px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider",
-                      column.sortable && "cursor-pointer hover:text-slate-200 transition-colors",
-                      column.className
+                      column.sortable &&
+                        "cursor-pointer hover:text-slate-200 transition-colors",
+                      column.className,
                     )}
                     onClick={() => handleSort(column)}
                   >
@@ -139,16 +196,16 @@ export default function ModernTable<T>({
             </thead>
             <tbody className="divide-y divide-slate-800">
               {isLoading ? (
-                 // Loading skeleton
-                 Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                        {columns.map((_, j) => (
-                            <td key={j} className="px-6 py-4">
-                                <div className="h-4 bg-slate-800 rounded w-3/4"></div>
-                            </td>
-                        ))}
-                    </tr>
-                 ))
+                // Loading skeleton
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    {columns.map((_, j) => (
+                      <td key={j} className="px-6 py-4">
+                        <div className="h-4 bg-slate-800 rounded w-3/4"></div>
+                      </td>
+                    ))}
+                  </tr>
+                ))
               ) : paginatedData.length > 0 ? (
                 paginatedData.map((row) => (
                   <tr
@@ -157,17 +214,20 @@ export default function ModernTable<T>({
                     className={cn(
                       "hover:bg-slate-800/50 transition-colors duration-150",
                       onRowClick && "cursor-pointer",
-                      "group"
+                      "group",
                     )}
                   >
                     {columns.map((column, index) => (
                       <td
                         key={index}
-                        className={cn("px-6 py-4 text-sm text-slate-300 align-middle", column.className)}
+                        className={cn(
+                          "px-6 py-4 text-sm text-slate-300 align-middle",
+                          column.className,
+                        )}
                       >
-                         {typeof column.accessorKey === 'function' 
-                            ? column.accessorKey(row) 
-                            : (row[column.accessorKey] as React.ReactNode)}
+                        {typeof column.accessorKey === "function"
+                          ? column.accessorKey(row)
+                          : (row[column.accessorKey] as React.ReactNode)}
                       </td>
                     ))}
                   </tr>
@@ -198,11 +258,22 @@ export default function ModernTable<T>({
                 <ChevronLeft size={16} />
               </button>
               <span className="text-sm text-slate-300 font-medium">
-                Page {currentPage} of {totalPages || Math.ceil(data.length / rowsPerPage) || 1}
+                Page {currentPage} of{" "}
+                {totalPages || Math.ceil(data.length / rowsPerPage) || 1}
               </span>
               <button
-                onClick={() => setCurrentPage((prev) => Math.min(totalPages || Math.ceil(data.length / rowsPerPage) || 1, prev + 1))}
-                disabled={currentPage === (totalPages || Math.ceil(data.length / rowsPerPage) || 1)}
+                onClick={() =>
+                  setCurrentPage((prev) =>
+                    Math.min(
+                      totalPages || Math.ceil(data.length / rowsPerPage) || 1,
+                      prev + 1,
+                    ),
+                  )
+                }
+                disabled={
+                  currentPage ===
+                  (totalPages || Math.ceil(data.length / rowsPerPage) || 1)
+                }
                 className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight size={16} />

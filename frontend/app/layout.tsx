@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import "./globals.css";
 import { PWAProvider } from "@/contexts/PWAContext";
 import OfflineBanner from "@/components/OfflineBanner";
+import { ToastProvider } from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "Socio-Economic Survey System",
@@ -41,8 +42,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         suppressHydrationWarning={true}
       >
         <PWAProvider>
-          <OfflineBanner />
-          {children}
+          <ToastProvider>
+            <OfflineBanner />
+            {children}
+          </ToastProvider>
         </PWAProvider>
       </body>
     </html>
