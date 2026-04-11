@@ -132,7 +132,7 @@ export default function HHQCEditPage() {
     handicappedTotal: undefined,
     femaleEarningStatus: "",
     belowPovertyLine: "",
-    bplCard: "",
+    bplCard: "NO",
     landTenureStatus: "",
     houseStructure: "",
     roofType: "",
@@ -233,7 +233,7 @@ export default function HHQCEditPage() {
       handicappedTotal: undefined,
       femaleEarningStatus: "",
       belowPovertyLine: "",
-      bplCard: "",
+      bplCard: "NO",
       landTenureStatus: "",
       houseStructure: "",
       roofType: "",
@@ -309,7 +309,7 @@ export default function HHQCEditPage() {
             handicappedTotal: surveyData.handicappedTotal,
             femaleEarningStatus: surveyData.femaleEarningStatus || "",
             belowPovertyLine: surveyData.belowPovertyLine || "",
-            bplCard: surveyData.bplCard || "",
+            bplCard: surveyData.bplCard || "NO",
             landTenureStatus: surveyData.landTenureStatus || "",
             houseStructure: surveyData.houseStructure || "",
             roofType: surveyData.roofType || "",
@@ -549,6 +549,50 @@ export default function HHQCEditPage() {
             <Button onClick={handleSave} disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}
             </Button>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <Input
+              label="Handicapped (Physically)"
+              type="number"
+              value={formData.handicappedPhysically ?? ""}
+              onChange={(e) => handleInputChange("handicappedPhysically", e.target.value ? parseInt(e.target.value) : undefined)}
+            />
+            <Input
+              label="Handicapped (Mentally)"
+              type="number"
+              value={formData.handicappedMentally ?? ""}
+              onChange={(e) => handleInputChange("handicappedMentally", e.target.value ? parseInt(e.target.value) : undefined)}
+            />
+            <Input
+              label="Handicapped (Total)"
+              type="number"
+              value={formData.handicappedTotal ?? ""}
+              disabled
+            />
+            <Select
+              label="If Major Earning Member is Female, Status"
+              value={formData.femaleEarningStatus || ""}
+              onChange={(e) => handleInputChange("femaleEarningStatus", e.target.value)}
+              name="femaleEarningStatus"
+              error={getFieldError("femaleEarningStatus")}
+              options={[{ value: "MARRIED", label: "Married" }, { value: "WIDOWED", label: "Widowed" }, { value: "ABANDONED_SINGLE", label: "Abandoned/Single" }, { value: "DIVORCED", label: "Divorced" }, { value: "UNWED_MOTHER", label: "Unwed mother" }, { value: "OTHER", label: "Other" }]}
+            />
+            <Select
+              label="Is Family Below Poverty Line?"
+              value={formData.belowPovertyLine || ""}
+              onChange={(e) => handleInputChange("belowPovertyLine", e.target.value)}
+              name="belowPovertyLine"
+              options={[{ value: "YES", label: "Yes" }, { value: "NO", label: "No" }, { value: "DONT_KNOW", label: "Don't Know" }]}
+            />
+            {formData.belowPovertyLine === "YES" && (
+              <Select
+                label="BPL card"
+                value={formData.bplCard || ""}
+                onChange={(e) => handleInputChange("bplCard", e.target.value)}
+                name="bplCard"
+                options={[{ value: "YES", label: "Yes" }, { value: "NO", label: "No" }]}
+              />
+            )}
           </div>
         </div>
 
