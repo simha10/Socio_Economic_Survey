@@ -205,18 +205,19 @@ export default function AdminSlumsPage() {
           data={slums}
           keyField="_id"
           searchPlaceholder="Search by name, ID, city, village, zone, ward, type, households, or area..."
+          showSerialNumber={false}
           columns={[
             {
               header: "Slum ID",
               accessorKey: "slumId",
               sortable: true,
-              className: "font-medium text-white text-left",
+              className: "font-medium text-white",
             },
             {
               header: "Name",
               accessorKey: "slumName",
               sortable: true,
-              className: "w-40",
+              className: "min-w-[150px]",
             },
             {
               header: "Zone",
@@ -233,7 +234,7 @@ export default function AdminSlumsPage() {
                 }
                 return "N/A";
               },
-              className: "text-left",
+              className: "min-w-[100px]",
             },
             {
               header: "Ward",
@@ -250,19 +251,19 @@ export default function AdminSlumsPage() {
                 }
                 return row.ward?.toString() || "N/A";
               },
-              className: "text-left w-50",
+              className: "min-w-[120px]",
             },
             {
               header: "Village",
               accessorKey: "village",
               sortable: true,
-              className: "w-40",
+              className: "min-w-[100px]",
             },
             {
               header: "Type",
               accessorKey: (row) => (
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                  className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                     row.slumType === "NOTIFIED"
                       ? "bg-green-500/20 text-green-400"
                       : "bg-yellow-500/20 text-yellow-400"
@@ -273,26 +274,45 @@ export default function AdminSlumsPage() {
               ),
               sortable: true,
               sortAccessor: (row) => row.slumType,
+              className: "whitespace-nowrap",
             },
             {
-              header: "Households",
+              header: "Survey\nStatus",
+              accessorKey: (row) => (
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                    row.surveyStatus === "COMPLETED"
+                      ? "bg-green-500/20 text-green-400"
+                      : row.surveyStatus === "IN PROGRESS"
+                        ? "bg-blue-500/20 text-blue-400"
+                        : "bg-slate-500/20 text-slate-400"
+                  }`}
+                >
+                  {row.surveyStatus || "DRAFT"}
+                </span>
+              ),
+              sortable: true,
+              sortAccessor: "surveyStatus",
+            },
+            {
+              header: "House-\nholds",
               accessorKey: (row) => row.totalHouseholds?.toString() || "0",
               sortable: true,
               sortAccessor: (row) => row.totalHouseholds || 0,
-              className: "text-center font-medium tabular-nums align-middle",
+              className: "text-center font-medium tabular-nums",
             },
             {
-              header: "Area (sq.m)",
+              header: "Area\n(sq.m)",
               accessorKey: (row) => row.area?.toFixed(2) || "0",
               sortable: true,
               sortAccessor: (row) => row.area || 0,
-              className: "text-right font-medium tabular-nums align-middle",
+              className: "text-center font-medium tabular-nums",
             },
             {
               header: "Actions",
               accessorKey: (row) => (
                 <div
-                  className="flex gap-2 justify-left"
+                  className="flex gap-2 justify-center"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
@@ -324,7 +344,7 @@ export default function AdminSlumsPage() {
                   </button>
                 </div>
               ),
-              className: "text-center align-middle",
+              className: "text-center align-middle whitespace-nowrap",
             },
           ]}
         />

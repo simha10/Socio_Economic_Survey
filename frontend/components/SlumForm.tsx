@@ -28,12 +28,15 @@ interface Slum {
   cityTownCode?: string;
   city?: string;
   location?: string;
-  ward?: string | number | {
-    _id?: string;
-    number?: string;
-    name?: string;
-    zone?: string;
-  }; // Can be object or number
+  ward?:
+    | string
+    | number
+    | {
+        _id?: string;
+        number?: string;
+        name?: string;
+        zone?: string;
+      }; // Can be object or number
   slumType?: string;
   village?: string;
   landOwnership?: string;
@@ -61,6 +64,7 @@ export default function SlumForm({
   slum,
   role = "SUPERVISOR", // Default to supervisor permissions
 }: SlumFormProps) {
+  const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     slumId: 0,
@@ -81,15 +85,18 @@ export default function SlumForm({
   // Removed unused state and district loading logic since we're using Input components for display
 
   useEffect(() => {
+    // Set edit mode based on whether slum prop exists
+    setIsEditMode(!!slum);
+
     if (slum) {
       // Handle ward field - it can be an object or a number/string
       let wardValue: string | number = "";
-      if (typeof slum.ward === 'object' && slum.ward !== null) {
+      if (typeof slum.ward === "object" && slum.ward !== null) {
         wardValue = slum.ward.number || "";
       } else {
         wardValue = slum.ward || "";
       }
-      
+
       setFormData({
         name: slum.slumName || slum.name || "",
         slumId: slum.slumId || 0,
@@ -126,15 +133,20 @@ export default function SlumForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    const isNumberField = ['slumId', 'ward', 'totalHouseholds', 'area'].includes(name);
-    
+    const isNumberField = [
+      "slumId",
+      "ward",
+      "totalHouseholds",
+      "area",
+    ].includes(name);
+
     setFormData((prev) => ({
       ...prev,
       [name]: isNumberField ? parseFloat(value) || 0 : value,
     }));
-    
+
     // Removed district loading logic since we're using Input components for display
-    
+
     setError("");
   };
 
@@ -209,7 +221,9 @@ export default function SlumForm({
               {slum ? "Edit Slum Details" : "Register New Slum"}
             </h2>
             <p className="text-sm text-slate-400 mt-1">
-              {slum ? "Update the details below" : "Enter the required information to add a new slum"}
+              {slum
+                ? "Update the details below"
+                : "Enter the required information to add a new slum"}
             </p>
           </div>
         </div>
@@ -231,19 +245,27 @@ export default function SlumForm({
                 onChange={handleChange}
                 placeholder="Enter Slum Name"
                 required
-                readOnly
-                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                readOnly={isEditMode}
+                className={
+                  isEditMode
+                    ? "bg-slate-800/50 cursor-not-allowed opacity-75"
+                    : ""
+                }
               />
               <Input
                 label="Slum ID"
                 name="slumId"
                 type="number"
-                value={formData.slumId || ''}
+                value={formData.slumId || ""}
                 onChange={handleChange}
                 placeholder="Enter unique slum ID"
                 required
-                disabled
-                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                disabled={isEditMode}
+                className={
+                  isEditMode
+                    ? "bg-slate-800/50 cursor-not-allowed opacity-75"
+                    : ""
+                }
               />
             </div>
 
@@ -262,8 +284,12 @@ export default function SlumForm({
                 onChange={handleChange}
                 placeholder="Enter City/Town Code"
                 required
-                disabled
-                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                disabled={isEditMode}
+                className={
+                  isEditMode
+                    ? "bg-slate-800/50 cursor-not-allowed opacity-75"
+                    : ""
+                }
               />
             </div>
 
@@ -275,8 +301,12 @@ export default function SlumForm({
                 onChange={handleChange}
                 placeholder="State code"
                 required
-                readOnly
-                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                readOnly={isEditMode}
+                className={
+                  isEditMode
+                    ? "bg-slate-800/50 cursor-not-allowed opacity-75"
+                    : ""
+                }
               />
               <Input
                 label="District Code"
@@ -285,30 +315,44 @@ export default function SlumForm({
                 onChange={handleChange}
                 placeholder="District code"
                 required
-                readOnly
-                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                readOnly={isEditMode}
+                className={
+                  isEditMode
+                    ? "bg-slate-800/50 cursor-not-allowed opacity-75"
+                    : ""
+                }
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
-                label="City/Town Code"
+                label="City/Town Name"
                 name="cityTownCode"
                 value={formData.cityTownCode}
                 onChange={handleChange}
-                placeholder="Enter City/Town Code"
+                placeholder="Enter City/Town Name"
                 required
-                disabled
-                className="bg-slate-800/50 cursor-not-allowed opacity-75"
+                disabled={isEditMode}
+                className={
+                  isEditMode
+                    ? "bg-slate-800/50 cursor-not-allowed opacity-75"
+                    : ""
+                }
               />
               <Input
                 label="Ward Number"
                 name="ward"
                 type="number"
-                value={formData.ward || ''}
+                value={formData.ward || ""}
                 onChange={handleChange}
                 placeholder="Enter ward number"
                 required
+                disabled={isEditMode}
+                className={
+                  isEditMode
+                    ? "bg-slate-800/50 cursor-not-allowed opacity-75"
+                    : ""
+                }
               />
             </div>
 
@@ -319,8 +363,12 @@ export default function SlumForm({
                 value={formData.slumType}
                 onChange={handleChange}
                 required
-                readOnly={!isAdmin} // Allow admin to edit
-                className={isAdmin ? "" : "bg-slate-800/50 cursor-not-allowed opacity-75"}
+                readOnly={isEditMode && !isAdmin}
+                className={
+                  isEditMode && !isAdmin
+                    ? "bg-slate-800/50 cursor-not-allowed opacity-75"
+                    : ""
+                }
               />
               <Input
                 label="Village"
@@ -343,53 +391,61 @@ export default function SlumForm({
                 label="Total Households (Approx)"
                 name="totalHouseholds"
                 type="number"
-                value={formData.totalHouseholds || ''}
+                value={formData.totalHouseholds || ""}
                 onChange={handleChange}
                 placeholder="0"
                 min="0"
-                disabled={!isAdmin} // Allow admin to edit
-                className={isAdmin ? "" : "bg-slate-800/50 cursor-not-allowed opacity-75"}
+                disabled={isEditMode && !isAdmin}
+                className={
+                  isEditMode && !isAdmin
+                    ? "bg-slate-800/50 cursor-not-allowed opacity-75"
+                    : ""
+                }
               />
             </div>
-            
+
             <div className="max-w-md">
               <Input
                 label="Area (sq.m)"
                 name="area"
                 type="number"
-                value={formData.area || ''}
+                value={formData.area || ""}
                 onChange={handleChange}
                 placeholder="0"
                 min="0"
                 step="0.01"
-                disabled={!isAdmin} // Allow admin to edit
-                className={isAdmin ? "" : "bg-slate-800/50 cursor-not-allowed opacity-75"}
+                disabled={isEditMode && !isAdmin}
+                className={
+                  isEditMode && !isAdmin
+                    ? "bg-slate-800/50 cursor-not-allowed opacity-75"
+                    : ""
+                }
               />
             </div>
-            
+
             {/* Hidden submit for Enter key support */}
             <button type="submit" className="hidden" />
           </form>
         </div>
 
         <div className="p-6 border-t border-slate-800 flex justify-end gap-3 bg-slate-900/50">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={loading}
-              className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
-            <Button 
-                type="button"
-                onClick={handleButtonClick}
-                disabled={loading}
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white"
-            >
-              {loading ? "Saving..." : slum ? "Update Details" : "Create Record"}
-            </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={loading}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleButtonClick}
+            disabled={loading}
+            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white"
+          >
+            {loading ? "Saving..." : slum ? "Update Details" : "Create Record"}
+          </Button>
         </div>
       </div>
     </div>

@@ -684,7 +684,7 @@ exports.getHouseholdSurveysBySlum = async (req, res) => {
 
     const surveys = await HouseholdSurvey.find(query)
       .populate([
-        { path: 'slum', select: 'slumName location ward village', populate: { path: 'ward', select: 'number name zone' } },
+        { path: 'slum', select: 'slumId slumName location ward village', populate: { path: 'ward', select: 'number name zone' } },
         { path: 'surveyor', select: 'name email' },
         { path: 'submittedBy', select: 'name email username' },
       ])

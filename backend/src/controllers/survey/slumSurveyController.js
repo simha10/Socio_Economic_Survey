@@ -788,7 +788,7 @@ exports.getSlumSurveyBySlumId = async (req, res) => {
         const survey = await SlumSurvey.findOne({
             slum: slumId,
         }).populate([
-            { path: 'slum', select: 'slumName population' },
+            { path: 'slum', select: 'slumId slumName population' },
             { path: 'surveyor', select: 'name username' },
             { path: 'submittedBy', select: 'name username' }
         ]);
@@ -828,7 +828,7 @@ exports.getSlumSurveyBySlumId = async (req, res) => {
             slum: slumId,
             surveyor: userId,
         }).populate([
-            { path: 'slum', select: 'slumName population' },
+            { path: 'slum', select: 'slumId slumName population' },
             { path: 'surveyor', select: 'name username' },
             { path: 'submittedBy', select: 'name username' }
         ]);

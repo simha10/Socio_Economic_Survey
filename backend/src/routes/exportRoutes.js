@@ -3,12 +3,25 @@ const { auth, authorize } = require('../middlewares/auth');
 const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const SlumSurvey = require('../models/SlumSurvey');
 const HouseholdSurvey = require('../models/HouseholdSurvey');
 const Slum = require('../models/Slum');
 const surveySections = require('../config/surveySections');
 
 const router = express.Router();
+
+// Rate limiting for export endpoints
+const exportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 export requests per window
+  message: {
+    success: false,
+    message: 'Too many export requests. Please try again later.'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 /**
  * Helper function to insert section headers into worksheet
@@ -79,7 +92,7 @@ const insertSectionHeaders = (worksheet, startRow, sections) => {
 };
 
 // Export slum surveys to Excel
-router.get('/slum-surveys', auth, authorize('ADMIN', 'SUPERVISOR'), async (req, res) => {
+router.get('/slum-surveys', exportLimiter, auth, authorize('ADMIN', 'SUPERVISOR'), async (req, res) => {
   try {
     const { slumId, columns } = req.query;
     
@@ -91,7 +104,7 @@ router.get('/slum-surveys', auth, authorize('ADMIN', 'SUPERVISOR'), async (req, 
     const surveys = await SlumSurvey.find(filter)
       .populate({
         path: 'slum',
-        select: 'slumName location city ward',
+        select: 'slumId slumName location city ward',
         populate: {
           path: 'ward',
           select: 'number name zone'
@@ -776,7 +789,7 @@ router.get('/slum-surveys', auth, authorize('ADMIN', 'SUPERVISOR'), async (req, 
     // Send file
     res.download(filePath, fileName, (err) => {
       if (err) {
-        console.error('Error sending file:', err);
+        // File cleanup failed, but download may have succeeded
       }
       // Clean up temp file after sending
       setTimeout(() => {
@@ -787,7 +800,6 @@ router.get('/slum-surveys', auth, authorize('ADMIN', 'SUPERVISOR'), async (req, 
     });
 
   } catch (error) {
-    console.error('Export slum surveys error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Server error exporting slum surveys.'
@@ -796,7 +808,7 @@ router.get('/slum-surveys', auth, authorize('ADMIN', 'SUPERVISOR'), async (req, 
 });
 
 // Export household surveys to Excel
-router.get('/household-surveys/:slumId', auth, authorize('ADMIN', 'SUPERVISOR'), async (req, res) => {
+router.get('/household-surveys/:slumId', exportLimiter, auth, authorize('ADMIN', 'SUPERVISOR'), async (req, res) => {
   try {
     const { slumId } = req.params;
     const { columns } = req.query;
@@ -1078,6 +1090,300 @@ router.get('/household-surveys/:slumId', auth, authorize('ADMIN', 'SUPERVISOR'),
     // Send file
     res.download(filePath, fileName, (err) => {
       if (err) {
+        // File cleanup failed, but download may have succeeded
+      }
+      // Clean up temp file after sending
+      setTimeout(() => {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }, 1000);
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error exporting household surveys.'
+    });
+  }
+});
+
+// Export household surveys for a ward (all slums in the ward)
+router.get('/household-surveys/ward/:wardId', exportLimiter, auth, authorize('ADMIN', 'SUPERVISOR'), async (req, res) => {
+  try {
+    // Set timeout to 5 minutes for large exports
+    req.setTimeout(300000);
+    res.setTimeout(300000);
+    
+    const { wardId } = req.params;
+    const { columns } = req.query;
+
+    // Validate ward exists and get ward details
+    const Ward = require('../models/Ward');
+    const ward = await Ward.findById(wardId);
+    if (!ward) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ward not found.'
+      });
+    }
+
+    // Find all slums in this ward, sorted by slumId
+    const slums = await Slum.find({ ward: wardId }).sort({ slumId: 1 });
+    
+    if (slums.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No slums found in this ward.'
+      });
+    }
+
+    // Fetch all SUBMITTED household surveys for all slums in the ward
+    const allSurveys = [];
+    
+    for (const slum of slums) {
+      const surveys = await HouseholdSurvey.find({ 
+        slum: slum._id, 
+        surveyStatus: 'SUBMITTED' 
+      })
+        .populate('surveyor', 'name username')
+        .populate('submittedBy', 'name username')
+        .sort({ createdAt: -1 });
+      
+      // Add slum information to each survey for reference
+      const surveysWithSlumData = surveys.map(survey => {
+        const surveyObj = survey.toObject();
+        surveyObj._slumId = slum.slumId;
+        surveyObj._slumName = slum.slumName;
+        return surveyObj;
+      });
+      
+      allSurveys.push(...surveysWithSlumData);
+    }
+
+    if (allSurveys.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No household surveys found for slums in this ward.'
+      });
+    }
+
+    // Create Excel workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Household Surveys');
+
+    // Get column configuration based on selected columns or use all fields
+    let selectedFields = [];
+    if (columns && columns.trim() !== '') {
+      const selectedColumnKeys = columns.split(',');
+      surveySections.householdSurveySections.forEach(section => {
+        section.fields.forEach(field => {
+          if (selectedColumnKeys.includes(field.key)) {
+            selectedFields.push(field);
+          }
+        });
+      });
+    } else {
+      // Use all fields from all sections
+      surveySections.householdSurveySections.forEach(section => {
+        selectedFields.push(...section.fields);
+      });
+    }
+
+    // Define columns with multi-level headers (Section -> Question)
+    const buildHierarchicalColumns = () => {
+      const columns = [];
+      
+      selectedFields.forEach(field => {
+        let fieldSection = null;
+        
+        surveySections.householdSurveySections.forEach(section => {
+          if (section.fields.some(f => f.key === field.key)) {
+            fieldSection = section.label;
+          }
+        });
+        
+        columns.push({
+          header: [fieldSection || '', field.label],
+          key: field.key,
+          width: Math.max(15, Math.min(25, field.label.length + 2))
+        });
+      });
+      
+      return columns;
+    };
+
+    // Define columns with hierarchical headers
+    worksheet.columns = buildHierarchicalColumns();
+    
+    // Style the multi-level header rows
+    const sectionRanges = [];
+    let currentStart = 1;
+    
+    selectedFields.forEach((field, idx) => {
+      const isLast = idx === selectedFields.length - 1;
+      const nextField = selectedFields[idx + 1];
+      
+      let currentSection = null;
+      surveySections.householdSurveySections.forEach(section => {
+        if (section.fields.some(f => f.key === field.key)) {
+          currentSection = section.id;
+        }
+      });
+      
+      let nextSection = null;
+      if (nextField) {
+        surveySections.householdSurveySections.forEach(section => {
+          if (section.fields.some(f => f.key === nextField.key)) {
+            nextSection = section.id;
+          }
+        });
+      }
+      
+      if (isLast || currentSection !== nextSection) {
+        sectionRanges.push({ start: currentStart, end: idx + 1, section: currentSection });
+        currentStart = idx + 2;
+      }
+    });
+    
+    // Style section headers (Row 1)
+    sectionRanges.forEach(({ start, end, section }) => {
+      const sectionLabel = surveySections.householdSurveySections.find(s => s.id === section)?.label || '';
+      worksheet.mergeCells(1, start, 1, end);
+      const cell = worksheet.getCell(1, start);
+      cell.value = sectionLabel;
+      cell.font = { bold: true, size: 11 };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' }
+      };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+    
+    // Style question labels (Row 2)
+    worksheet.getRow(2).eachCell(cell => {
+      cell.font = { bold: true, size: 10 };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD6E4F0' }
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+    
+    // Freeze header rows
+    worksheet.views = [{ state: 'frozen', ySplit: 2 }];
+
+    // Add data rows with mapping function
+    const mapSurveyData = (survey) => {
+      const rowData = {};
+      
+      selectedFields.forEach(field => {
+        let value = null;
+        
+        // Handle slumId and slumName specially for ward-level export
+        if (field.key === 'slumId') {
+          value = survey._slumId || 'N/A';
+        } else if (field.key === 'slumName') {
+          value = survey._slumName || 'N/A';
+        } else if (field.key === 'submittedBy') {
+          // Handle populated submittedBy object
+          if (survey.submittedBy && typeof survey.submittedBy === 'object') {
+            value = survey.submittedBy.name || survey.submittedBy.username || 'N/A';
+          } else {
+            value = survey.submittedBy || 'N/A';
+          }
+        } else if (field.key === 'surveyor') {
+          // Handle populated surveyor object
+          if (survey.surveyor && typeof survey.surveyor === 'object') {
+            value = survey.surveyor.name || survey.surveyor.username || 'N/A';
+          } else {
+            value = survey.surveyor || 'N/A';
+          }
+        } else if (field.getValue) {
+          value = field.getValue(survey);
+        } else {
+          const keys = field.key.split('.');
+          value = keys.reduce((obj, key) => obj?.[key], survey);
+        }
+        
+        // Convert arrays to comma-separated strings
+        if (Array.isArray(value)) {
+          value = value.join(', ');
+        }
+        
+        rowData[field.key] = value !== null && value !== undefined ? value : '';
+      });
+      
+      return rowData;
+    };
+
+    // Add all survey data
+    allSurveys.forEach(survey => {
+      const rowData = mapSurveyData(survey);
+      worksheet.addRow(rowData);
+    });
+    
+    // Style data rows
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 2) { // Skip header rows
+        row.eachCell(cell => {
+          cell.border = {
+            top: { style: 'thin' },
+            bottom: { style: 'thin' },
+            left: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+          cell.alignment = { vertical: 'middle', wrapText: true };
+        });
+        
+        // Alternate row colors for better readability
+        if (rowNumber % 2 === 0) {
+          row.eachCell(cell => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF2F2F2' }
+            };
+          });
+        }
+      }
+    });
+
+    // Create temp directory if it doesn't exist
+    const tempDir = path.join(__dirname, '../../temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    // Save to temp file
+    const now = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000));
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').split('T')[0] + '_' + 
+                      now.toISOString().split('T')[1].split('.')[0].replace(/:/g, '-');
+    
+    const filePath = path.join(tempDir, `ward_${ward.number}_${timestamp}.xlsx`);
+    await workbook.xlsx.writeFile(filePath);
+
+    // Generate filename with ward number and IST timestamp
+    const fileName = `Ward_${ward.number}_Household_Data_${timestamp}.xlsx`;
+
+    // Send file
+    res.download(filePath, fileName, (err) => {
+      if (err) {
         console.error('Error sending file:', err);
       }
       // Clean up temp file after sending
@@ -1089,10 +1395,9 @@ router.get('/household-surveys/:slumId', auth, authorize('ADMIN', 'SUPERVISOR'),
     });
 
   } catch (error) {
-    console.error('Export household surveys error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Server error exporting household surveys.'
+      message: error.message || 'Server error exporting ward household surveys.'
     });
   }
 });

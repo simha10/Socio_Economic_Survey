@@ -1,5 +1,6 @@
 const State = require('../models/State');
 const District = require('../models/District');
+const Ward = require('../models/Ward');
 
 // Get all states
 const getStates = async (req, res) => {
@@ -141,10 +142,31 @@ const getDistrictsByState = async (req, res) => {
   }
 };
 
+// Get all wards
+const getAllWards = async (req, res) => {
+  try {
+    const wards = await Ward.find({})
+      .populate('district', 'name code')
+      .sort({ number: 1 });
+
+    res.json({
+      success: true,
+      data: wards
+    });
+  } catch (error) {
+    console.error('Get wards error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error getting wards.'
+    });
+  }
+};
+
 module.exports = {
   getStates,
   getStateById,
   getDistricts,
   getDistrictById,
-  getDistrictsByState
+  getDistrictsByState,
+  getAllWards
 };

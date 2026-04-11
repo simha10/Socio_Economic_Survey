@@ -24,12 +24,14 @@ interface Slum {
   stateCode: string;
   distCode: string;
   cityTownCode: string;
-  ward: {
-    _id: string;
-    number: string;
-    name: string;
-    zone: string;
-  } | number;
+  ward:
+    | {
+        _id: string;
+        number: string;
+        name: string;
+        zone: string;
+      }
+    | number;
   slumType: string;
   village: string;
   landOwnership: string;
@@ -53,14 +55,18 @@ export default function SupervisorSlumsPage() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const fetchSlums = async () => {
-    console.log('SupervisorSlumsPage: Starting fetchSlums');
+    console.log("SupervisorSlumsPage: Starting fetchSlums");
     try {
       setLoading(true);
       const response = await apiService.getAllSlums(1, 10, undefined, true); // Load all slums
-      console.log('SupervisorSlumsPage: Fetched slums response', response);
+      console.log("SupervisorSlumsPage: Fetched slums response", response);
       if (response.success) {
-        setSlums(response.data as Slum[] || []);
-        console.log('SupervisorSlumsPage: Set slums state with', (response.data as Slum[])?.length, 'items');
+        setSlums((response.data as Slum[]) || []);
+        console.log(
+          "SupervisorSlumsPage: Set slums state with",
+          (response.data as Slum[])?.length,
+          "items",
+        );
       } else {
         console.error("Failed to fetch slums:", response.error);
       }
@@ -68,7 +74,7 @@ export default function SupervisorSlumsPage() {
       console.error("Error fetching slums:", error);
     } finally {
       setLoading(false);
-      console.log('SupervisorSlumsPage: Loading state set to false');
+      console.log("SupervisorSlumsPage: Loading state set to false");
     }
   };
 
@@ -98,15 +104,18 @@ export default function SupervisorSlumsPage() {
   }, [successMessage]);
 
   const handleEditSlum = (slum: Slum) => {
-    console.log('SupervisorSlumsPage: Opening edit confirmation for slum', slum);
+    console.log(
+      "SupervisorSlumsPage: Opening edit confirmation for slum",
+      slum,
+    );
     setSlumToEdit(slum);
     setIsEditDialogOpen(true);
   };
 
   const handleConfirmEdit = () => {
-    console.log('SupervisorSlumsPage: Confirming edit for slum', slumToEdit);
+    console.log("SupervisorSlumsPage: Confirming edit for slum", slumToEdit);
     if (!slumToEdit) return;
-    
+
     setSelectedSlum(slumToEdit);
     setIsFormOpen(true);
     setIsEditDialogOpen(false);
@@ -114,7 +123,7 @@ export default function SupervisorSlumsPage() {
   };
 
   const handleViewSlum = (slum: Slum) => {
-    console.log('SupervisorSlumsPage: Redirecting to view slum', slum._id);
+    console.log("SupervisorSlumsPage: Redirecting to view slum", slum._id);
     router.push(`/supervisor/slums/${slum._id}`);
   };
 
@@ -124,18 +133,23 @@ export default function SupervisorSlumsPage() {
   };
 
   const handleFormSuccess = () => {
-    console.log('SupervisorSlumsPage: Form success callback called', { selectedSlum });
+    console.log("SupervisorSlumsPage: Form success callback called", {
+      selectedSlum,
+    });
     const action = selectedSlum ? "updated" : "created";
     setSuccessMessage(`Slum ${action} successfully`);
     setTimeout(() => {
-      console.log('SupervisorSlumsPage: Fetching slums after', action);
+      console.log("SupervisorSlumsPage: Fetching slums after", action);
       fetchSlums();
     }, 300); // Small delay to prevent race conditions
   };
 
   if (loading) {
     return (
-      <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
+      <SupervisorAdminLayout
+        role="SUPERVISOR"
+        username={user?.name || user?.username}
+      >
         <div className="flex items-center justify-center min-h-[60vh]">
           <LoadingSpinner size="lg" text="Loading slums data..." />
         </div>
@@ -144,7 +158,10 @@ export default function SupervisorSlumsPage() {
   }
 
   return (
-    <SupervisorAdminLayout role="SUPERVISOR" username={user?.name || user?.username}>
+    <SupervisorAdminLayout
+      role="SUPERVISOR"
+      username={user?.name || user?.username}
+    >
       <div className="space-y-6">
         {/* Header Section */}
         <div className="flex justify-between items-center">
@@ -164,76 +181,99 @@ export default function SupervisorSlumsPage() {
           data={slums}
           keyField="_id"
           searchPlaceholder="Search slums by ID, Name, Village..."
+          showSerialNumber={false}
           columns={[
             {
               header: "Slum ID",
               accessorKey: "slumId",
               sortable: true,
-              className: "font-medium text-white align-middle",
+              className: "font-medium text-white",
             },
             {
               header: "Name",
               accessorKey: "slumName",
               sortable: true,
-              className: "align-left w-50",
+              className: "min-w-[150px]",
             },
             {
               header: "Zone",
               accessorKey: (row) => {
-                if (typeof row.ward === 'object' && row.ward !== null) {
-                  return row.ward.zone || 'N/A';
+                if (typeof row.ward === "object" && row.ward !== null) {
+                  return row.ward.zone || "N/A";
                 }
-                return 'N/A';
+                return "N/A";
               },
               sortable: true,
-              className: "align-left",
+              className: "min-w-[100px]",
             },
             {
               header: "Ward",
               accessorKey: (row) => {
-                if (typeof row.ward === 'object' && row.ward !== null) {
+                if (typeof row.ward === "object" && row.ward !== null) {
                   return `${row.ward.number} - ${row.ward.name}`;
                 }
-                return row.ward?.toString() || 'N/A';
+                return row.ward?.toString() || "N/A";
               },
               sortable: true,
-              className: "align-left w-60",
+              className: "min-w-[120px]",
             },
             {
               header: "Village",
               accessorKey: "village",
               sortable: true,
-              className: "align-middle w-40",
+              className: "min-w-[100px]",
             },
             {
               header: "Type",
               accessorKey: (row) => (
                 <span
-                  className={`px-1 py-1 rounded-full align-middle text-xs whitespace-nowrap w-20 ${
+                  className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${
                     row.slumType === "NOTIFIED"
                       ? "bg-green-500/20 text-green-400"
                       : "bg-yellow-500/20 text-yellow-400"
                   }`}
                 >
-                  {row.slumType.replace('_', ' ')}
+                  {row.slumType.replace("_", " ")}
                 </span>
               ),
+              className: "whitespace-nowrap",
             },
             {
-              header: "Households",
+              header: "Survey\nStatus",
+              accessorKey: (row) => (
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                    row.surveyStatus === "COMPLETED"
+                      ? "bg-green-500/20 text-green-400"
+                      : row.surveyStatus === "IN PROGRESS"
+                        ? "bg-blue-500/20 text-blue-400"
+                        : "bg-slate-500/20 text-slate-400"
+                  }`}
+                >
+                  {row.surveyStatus || "DRAFT"}
+                </span>
+              ),
+              sortable: true,
+              sortAccessor: "surveyStatus",
+            },
+            {
+              header: "House-\nholds",
               accessorKey: (row) => row.totalHouseholds?.toString() || "0",
               sortable: true,
-              className: "text-center font-medium tabular-nums align-left w-4",
+              className: "text-center font-medium tabular-nums",
             },
             {
-              header: "Area (sq.m)",
+              header: "Area\n(sq.m)",
               accessorKey: (row) => row.area?.toFixed(2) || "0",
               className: "text-center font-medium tabular-nums",
             },
             {
               header: "Actions",
               accessorKey: (row) => (
-                <div className="flex gap-2 justify-left" onClick={(e) => e.stopPropagation()}>
+                <div
+                  className="flex gap-2 justify-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     onClick={() => handleViewSlum(row)}
                     className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded-md transition-colors"
@@ -250,7 +290,7 @@ export default function SupervisorSlumsPage() {
                   </button>
                 </div>
               ),
-              className: "text-center align-middle",
+              className: "text-center align-middle whitespace-nowrap",
             },
           ]}
         />
@@ -266,7 +306,7 @@ export default function SupervisorSlumsPage() {
         <EditConfirmationDialog
           isOpen={isEditDialogOpen}
           surveyType="slum"
-          entityIdentifier={slumToEdit?.slumName || ''}
+          entityIdentifier={slumToEdit?.slumName || ""}
           onConfirm={handleConfirmEdit}
           onCancel={() => {
             setIsEditDialogOpen(false);

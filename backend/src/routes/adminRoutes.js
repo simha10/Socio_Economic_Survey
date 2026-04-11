@@ -1,6 +1,6 @@
 const express = require('express');
 const { auth, authorize } = require('../middlewares/auth');
-const { getStates, getStateById, getDistricts, getDistrictById, getDistrictsByState } = require('../controllers/locationController');
+const { getStates, getStateById, getDistricts, getDistrictById, getDistrictsByState, getAllWards } = require('../controllers/locationController');
 const { createUser, listUsers, getUserById, updateUser, deleteUser } = require('../controllers/userController');
 const { createSlum, listSlums, getSlumById, updateSlum, deleteSlum } = require('../controllers/slumController');
 
@@ -12,6 +12,7 @@ router.get('/states/:id', auth, getStateById);
 router.get('/districts', auth, getDistricts);
 router.get('/districts/:id', auth, getDistrictById);
 router.get('/districts/state/:stateId', auth, getDistrictsByState);
+router.get('/wards', auth, authorize('ADMIN', 'SUPERVISOR'), getAllWards);
 
 // User management routes (admin only)
 router.post('/users', auth, authorize('ADMIN'), createUser);

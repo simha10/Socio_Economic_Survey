@@ -499,6 +499,7 @@ module.exports = {
       label: 'General Information',
       order: 2,
       fields: [
+        { key: 'slumId', label: 'Slum ID' },
         { key: 'slumName', label: 'Slum Name' },
         { key: 'ward', label: 'Location - Ward No/Name' },
         { key: 'parcelId', label: 'Parcel ID' },

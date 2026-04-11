@@ -2,7 +2,14 @@
 
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Search, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ArrowUpDown,
+} from "lucide-react";
 
 interface Column<T> {
   header: string;
@@ -21,6 +28,7 @@ interface ModernTableProps<T> {
   searchPlaceholder?: string;
   emptyMessage?: string;
   rowsPerPageOptions?: number[];
+  showSerialNumber?: boolean;
 }
 
 export default function ModernTable<T>({
@@ -32,6 +40,7 @@ export default function ModernTable<T>({
   searchPlaceholder = "Search...",
   emptyMessage = "No data found",
   rowsPerPageOptions = [10, 25, 50],
+  showSerialNumber = true,
 }: ModernTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -169,25 +178,30 @@ export default function ModernTable<T>({
 
       {/* Table */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-950/50 border-b border-slate-800">
+                {showSerialNumber && (
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    #
+                  </th>
+                )}
                 {columns.map((column, index) => (
                   <th
                     key={index}
                     className={cn(
-                      "px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider",
+                      "px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider wrap-break-word",
                       column.sortable &&
                         "cursor-pointer hover:text-slate-200 transition-colors",
                       column.className,
                     )}
                     onClick={() => handleSort(column)}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       {column.header}
                       {column.sortable && (
-                        <ArrowUpDown className="h-3 w-3 text-slate-600" />
+                        <ArrowUpDown className="h-3 w-3 text-slate-600 shrink-0" />
                       )}
                     </div>
                   </th>
@@ -199,44 +213,58 @@ export default function ModernTable<T>({
                 // Loading skeleton
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
+                    {showSerialNumber && (
+                      <td className="px-6 py-4">
+                        <div className="h-4 bg-slate-800 rounded w-8"></div>
+                      </td>
+                    )}
                     {columns.map((_, j) => (
-                      <td key={j} className="px-6 py-4">
+                      <td key={j} className="px-4 py-3">
                         <div className="h-4 bg-slate-800 rounded w-3/4"></div>
                       </td>
                     ))}
                   </tr>
                 ))
               ) : paginatedData.length > 0 ? (
-                paginatedData.map((row) => (
-                  <tr
-                    key={String(row[keyField])}
-                    onClick={() => onRowClick && onRowClick(row)}
-                    className={cn(
-                      "hover:bg-slate-800/50 transition-colors duration-150",
-                      onRowClick && "cursor-pointer",
-                      "group",
-                    )}
-                  >
-                    {columns.map((column, index) => (
-                      <td
-                        key={index}
-                        className={cn(
-                          "px-6 py-4 text-sm text-slate-300 align-middle",
-                          column.className,
-                        )}
-                      >
-                        {typeof column.accessorKey === "function"
-                          ? column.accessorKey(row)
-                          : (row[column.accessorKey] as React.ReactNode)}
-                      </td>
-                    ))}
-                  </tr>
-                ))
+                paginatedData.map((row, index) => {
+                  const serialNumber =
+                    (currentPage - 1) * rowsPerPage + index + 1;
+                  return (
+                    <tr
+                      key={String(row[keyField])}
+                      onClick={() => onRowClick && onRowClick(row)}
+                      className={cn(
+                        "hover:bg-slate-800/50 transition-colors duration-150",
+                        onRowClick && "cursor-pointer",
+                        "group",
+                      )}
+                    >
+                      {showSerialNumber && (
+                        <td className="px-6 py-4 text-sm text-slate-400 font-medium">
+                          {serialNumber}
+                        </td>
+                      )}
+                      {columns.map((column, colIndex) => (
+                        <td
+                          key={colIndex}
+                          className={cn(
+                            "px-4 py-3 text-sm text-slate-300 align-middle wrap-break-word",
+                            column.className,
+                          )}
+                        >
+                          {typeof column.accessorKey === "function"
+                            ? column.accessorKey(row)
+                            : (row[column.accessorKey] as React.ReactNode)}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
-                    colSpan={columns.length}
-                    className="px-6 py-12 text-center text-slate-500"
+                    colSpan={columns.length + (showSerialNumber ? 1 : 0)}
+                    className="px-4 py-8 text-center text-slate-500"
                   >
                     {emptyMessage}
                   </td>
@@ -250,10 +278,21 @@ export default function ModernTable<T>({
         <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between bg-slate-900">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
+              {/* First Page Button */}
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="First Page"
+              >
+                <ChevronsLeft size={16} />
+              </button>
+              {/* Previous Page Button */}
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
                 className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Previous Page"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -261,6 +300,7 @@ export default function ModernTable<T>({
                 Page {currentPage} of{" "}
                 {totalPages || Math.ceil(data.length / rowsPerPage) || 1}
               </span>
+              {/* Next Page Button */}
               <button
                 onClick={() =>
                   setCurrentPage((prev) =>
@@ -275,8 +315,25 @@ export default function ModernTable<T>({
                   (totalPages || Math.ceil(data.length / rowsPerPage) || 1)
                 }
                 className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Next Page"
               >
                 <ChevronRight size={16} />
+              </button>
+              {/* Last Page Button */}
+              <button
+                onClick={() =>
+                  setCurrentPage(
+                    totalPages || Math.ceil(data.length / rowsPerPage) || 1,
+                  )
+                }
+                disabled={
+                  currentPage ===
+                  (totalPages || Math.ceil(data.length / rowsPerPage) || 1)
+                }
+                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Last Page"
+              >
+                <ChevronsRight size={16} />
               </button>
             </div>
             <div className="flex items-center gap-2">

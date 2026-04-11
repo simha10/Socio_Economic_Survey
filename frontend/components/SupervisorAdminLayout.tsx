@@ -29,7 +29,6 @@ const LayoutContent = ({
   role,
   username,
 }: SupervisorAdminLayoutProps) => {
-
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-200 font-sans overflow-hidden">
       {/* Sidebar */}
@@ -37,12 +36,12 @@ const LayoutContent = ({
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-slate-950">
-         <header className="h-16 border-b border-slate-800 flex items-center justify-between px-6 md:px-8 bg-slate-950/80 backdrop-blur-md sticky top-0 z-20">
-             <div className="ml-10 md:ml-0 flex flex-col justify-center">
-               <h1 className="text-lg font-bold text-white tracking-tight leading-tight">
-                 {role === "ADMIN" ? "Admin Dashboard" : "Supervisor Panel"}
-               </h1>
-             </div>
+        <header className="h-16 border-b border-slate-800 flex items-center justify-between px-6 md:px-8 bg-slate-950/80 backdrop-blur-md sticky top-0 z-20">
+          <div className="ml-10 md:ml-0 flex flex-col justify-center">
+            <h1 className="text-lg font-bold text-white tracking-tight leading-tight">
+              {role === "ADMIN" ? "Admin Dashboard" : "Supervisor Panel"}
+            </h1>
+          </div>
         </header>
 
         {/* Scrollable Content Canvas */}

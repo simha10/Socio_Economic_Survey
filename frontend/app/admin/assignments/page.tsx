@@ -6,10 +6,10 @@ import apiService from "@/services/api";
 import SupervisorAdminLayout from "@/components/SupervisorAdminLayout";
 import ModernTable from "@/components/ModernTable";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import Card from "@/components/Card";
 import Button from "@/components/Button";
-import InfiniteScrollSelect from "@/components/InfiniteScrollSelect";
+import AssignmentForm from "@/components/AssignmentForm";
 import { useToast } from "@/components/Toast";
+import { Plus } from "lucide-react";
 
 interface Assignment {
   _id: string;
@@ -32,6 +32,11 @@ interface Assignment {
       | string;
   } | null;
   status: string;
+  slumSurveyStatus?: string;
+  householdSurveyProgress?: {
+    completed: number;
+    total: number;
+  };
   createdAt: string;
 }
 
@@ -58,6 +63,8 @@ interface User {
 
 interface AssignmentFormData {
   status: "PENDING" | "IN PROGRESS" | "COMPLETED";
+  surveyor: string;
+  slum: string;
   surveyor: string; // ID of the surveyor
   slum: string; // ID of the slum
 }
@@ -71,41 +78,22 @@ export default function AssignmentsPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [slums, setSlums] = useState<Slum[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [multiAssignment, setMultiAssignment] =
-    useState<MultiAssignmentFormData>({
-      slum: "",
-      surveyors: [],
-    });
-  const [showSurveyorDropdown, setShowSurveyorDropdown] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(
-    null,
-  );
-  const [editFormData, setEditFormData] = useState<AssignmentFormData>({
-    status: "PENDING",
-    surveyor: "",
-    slum: "",
-  });
-  const [availableUsers, setAvailableUsers] = useState<Surveyor[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] =
+    useState<Assignment | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(
     null,
   );
   const [isDeletingAssignment, setIsDeletingAssignment] = useState(false);
-  const [showUpdateConfirm, setShowUpdateConfirm] = useState(false);
-  const [showEditConfirm, setShowEditConfirm] = useState(false);
-  const [assignmentToEdit, setAssignmentToEdit] = useState<Assignment | null>(
-    null,
-  );
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get current user from localStorage
         const userStr = localStorage.getItem("user");
         if (!userStr) {
           router.push("/login");
@@ -120,28 +108,9 @@ export default function AssignmentsPage() {
 
         setUser(userData);
 
-        // Load all data using the same API calls as Supervisor Panel
-        const [surveyorsRes, slumsRes, assignmentsRes] = await Promise.all([
-          apiService.getUsers("SURVEYOR"),
-          apiService.getAllSlums(1, 10, undefined, true), // Load all slums
-          apiService.getAllAssignments(),
-        ]);
-
+        const assignmentsRes = await apiService.getAllAssignments();
         if (assignmentsRes.success) {
           setAssignments((assignmentsRes.data as Assignment[]) || []);
-        }
-        if (surveyorsRes.success) {
-          setAvailableUsers((surveyorsRes.data as Surveyor[]) || []);
-        }
-        if (slumsRes.success) {
-          const sortedSlums = [...((slumsRes.data as Slum[]) || [])].sort(
-            (a, b) => {
-              const nameA = a.slumName || "";
-              const nameB = b.slumName || "";
-              return nameA.localeCompare(nameB);
-            },
-          );
-          setSlums(sortedSlums);
         }
       } catch (error) {
         console.error("Error loading data:", error);
@@ -339,25 +308,20 @@ export default function AssignmentsPage() {
 
     setIsDeletingAssignment(true);
     try {
-      console.log("Confirming delete for assignment ID:", assignmentToDelete);
       const response = await apiService.deleteAssignment(assignmentToDelete);
       if (response.success) {
-        showToast("Assignment deleted successfully", "success", 3000);
-        setError(null);
-        // Refresh assignments to show updated data
         const assignmentsRes = await apiService.getAllAssignments();
         if (assignmentsRes.success) {
           setAssignments((assignmentsRes.data as Assignment[]) || []);
         }
+        setSuccessMessage("Assignment deleted successfully");
+        setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        const errorMsg = response.error || "Failed to delete assignment";
-        setError(`Error: ${errorMsg}`);
+        setError(response.error || "Failed to delete assignment");
       }
     } catch (error: unknown) {
-      showToast(
+      setError(
         error instanceof Error ? error.message : "Failed to delete assignment",
-        "error",
-        3000,
       );
     } finally {
       setIsDeletingAssignment(false);
@@ -371,8 +335,34 @@ export default function AssignmentsPage() {
     setAssignmentToDelete(null);
   };
 
-  const handleCancelEdit = () => {
-    setEditingAssignment(null);
+  // Modal-based assignment handlers
+  const handleCreateAssignment = () => {
+    setSelectedAssignment(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEditAssignmentModal = (assignment: Assignment) => {
+    setSelectedAssignment(assignment);
+    setIsFormOpen(true);
+  };
+
+  const handleFormClose = () => {
+    setIsFormOpen(false);
+    setSelectedAssignment(null);
+  };
+
+  const handleFormSuccess = () => {
+    apiService.getAllAssignments().then((res) => {
+      if (res.success) {
+        setAssignments((res.data as Assignment[]) || []);
+        setSuccessMessage(
+          selectedAssignment
+            ? "Assignment updated successfully"
+            : "Assignment created successfully",
+        );
+        setTimeout(() => setSuccessMessage(""), 3000);
+      }
+    });
   };
 
   if (loading) {
@@ -412,110 +402,37 @@ export default function AssignmentsPage() {
   return (
     <SupervisorAdminLayout role="ADMIN" username={user?.name || user?.username}>
       <div className="relative">
-        {/* Delete Confirmation Dialog */}
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-bold text-white mb-4">
-                Confirm Deletion
-              </h3>
-              <p className="text-slate-300 mb-6">
-                Are you sure you want to delete this assignment? This action
-                cannot be undone.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={cancelDeleteAssignment}
-                  disabled={isDeletingAssignment}
-                  className={`px-4 py-2 bg-slate-600 ${isDeletingAssignment ? "opacity-50 cursor-not-allowed" : "hover:bg-slate-500 cursor-pointer"} text-white rounded-lg transition-colors`}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDeleteAssignment}
-                  disabled={isDeletingAssignment}
-                  className={`px-4 py-2 bg-red-600 ${isDeletingAssignment ? "opacity-50 cursor-not-allowed" : "hover:bg-red-500 cursor-pointer"} text-white rounded-lg transition-colors`}
-                >
-                  {isDeletingAssignment ? "Deleting..." : "Delete"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Update Confirmation Dialog */}
-        {showUpdateConfirm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-bold text-white mb-4">
-                Confirm Update
-              </h3>
-              <p className="text-slate-300 mb-6">
-                Are you sure you want to update this assignment? Please review
-                the changes before proceeding.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={cancelUpdateAssignment}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmUpdateAssignment}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors cursor-pointer"
-                >
-                  Update
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Confirmation Dialog */}
-        {showEditConfirm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-bold text-white mb-4">
-                Confirm Edit
-              </h3>
-              <p className="text-slate-300 mb-6">
-                Are you sure you want to edit this assignment?
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={cancelEditAssignment}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmEditAssignment}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors cursor-pointer"
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-primary">
+            <h1 className="text-3xl font-bold text-primary">
               Manage Assignments
             </h1>
+            <Button
+                onClick={handleCreateAssignment}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Create Assignment
+            </Button>
           </div>
+
+          {/* Success Message */}
+          {successMessage && (
+            <div className="bg-green-500/20 border border-green-500 text-green-400 px-4 py-3 rounded-lg">
+              {successMessage}
+            </div>
+          )}
 
           {/* Error Display */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-              <span className="block sm:inline">{error}</span>
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm flex items-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-2" />
+              {error}
               <button
-                onClick={() => setError(null)}
-                className="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer"
+                onClick={() => setError("")}
+                className="ml-auto text-red-400 hover:text-red-300"
               >
-                <span className="text-2xl leading-none">&times;</span>
+                ×
               </button>
             </div>
           )}
@@ -729,9 +646,6 @@ export default function AssignmentsPage() {
 
           {/* Assignments List */}
           <div>
-            <h2 className="text-xl font-bold text-white mb-4">
-              Current Assignments
-            </h2>
             <ModernTable
               data={assignments}
               keyField="_id"
@@ -793,22 +707,39 @@ export default function AssignmentsPage() {
                   },
                 },
                 {
-                  header: "Status",
+                  header: "Slum Survey\nStatus",
                   accessorKey: (row) => (
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        row.status === "COMPLETED"
-                          ? "bg-green-500/20 text-green-400"
-                          : row.status === "IN PROGRESS"
+                      className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                        row.slumSurveyStatus === "SUBMITTED"
+                          ? "bg-yellow-500/20 text-yellow-400"
+                          : row.slumSurveyStatus === "IN PROGRESS"
                             ? "bg-blue-500/20 text-blue-400"
-                            : "bg-yellow-500/20 text-yellow-400"
+                            : "bg-slate-500/20 text-slate-400"
                       }`}
                     >
-                      {row.status}
+                      {row.slumSurveyStatus || "NOT STARTED"}
                     </span>
                   ),
                   sortable: true,
-                  sortAccessor: (row) => row.status,
+                  sortAccessor: (row) => row.slumSurveyStatus || "NOT STARTED",
+                },
+                {
+                  header: "Total\nHouseholds",
+                  accessorKey: (row) => row.householdSurveyProgress?.total || 0,
+                  sortable: true,
+                  sortAccessor: (row) =>
+                    row.householdSurveyProgress?.total || 0,
+                  className: "text-center font-medium tabular-nums",
+                },
+                {
+                  header: "Completed\nHouseholds",
+                  accessorKey: (row) =>
+                    row.householdSurveyProgress?.completed || 0,
+                  sortable: true,
+                  sortAccessor: (row) =>
+                    row.householdSurveyProgress?.completed || 0,
+                  className: "text-center font-medium tabular-nums",
                 },
                 {
                   header: "Assigned",
@@ -822,10 +753,7 @@ export default function AssignmentsPage() {
                   accessorKey: (row) => (
                     <div className="flex gap-2">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditAssignment(row);
-                        }}
+                        onClick={() => handleEditAssignmentModal(row)}
                         className="text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
                         title="Edit"
                       >
@@ -844,11 +772,7 @@ export default function AssignmentsPage() {
                         </svg>
                       </button>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          console.log("Delete clicked for row:", row._id);
-                          handleDeleteAssignment(row._id);
-                        }}
+                        onClick={() => handleDeleteAssignment(row._id)}
                         className="text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                         title="Delete"
                       >
@@ -874,6 +798,14 @@ export default function AssignmentsPage() {
           </div>
         </div>
       </div>
+
+      {/* Assignment Form Modal */}
+      <AssignmentForm
+        isOpen={isFormOpen}
+        onClose={handleFormClose}
+        onSuccess={handleFormSuccess}
+        assignment={selectedAssignment}
+      />
     </SupervisorAdminLayout>
   );
 }

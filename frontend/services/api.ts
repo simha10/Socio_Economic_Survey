@@ -17,7 +17,6 @@ class ApiService {
 
   constructor() {
     this.baseUrl = API_BASE_URL;
-    console.log('ApiService initialized with baseUrl:', this.baseUrl);
     this.token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   }
 
@@ -1018,6 +1017,46 @@ class ApiService {
       return await response.blob();
     } catch (error: unknown) {
       throw new Error((error instanceof Error) ? error.message : 'Network error occurred during download');
+    }
+  }
+
+  // Get all wards
+  public async getAllWards(): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/admin/wards`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      return await this.handleResponse(response);
+    } catch (error: unknown) {
+      return {
+        success: false,
+        user: undefined,
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
+      };
+    }
+  }
+
+  // Download Excel for ward-level household surveys
+  public async exportWardHouseholdSurveys(wardId: string, columns?: string): Promise<Blob> {
+    try {
+      let url = `${this.baseUrl}/export/household-surveys/ward/${wardId}`;
+      if (columns) {
+        url += `?columns=${columns}`;
+      }
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      return await response.blob();
+    } catch (error: unknown) {
+      throw new Error((error instanceof Error) ? error.message : 'Network error occurred during export');
     }
   }
 
