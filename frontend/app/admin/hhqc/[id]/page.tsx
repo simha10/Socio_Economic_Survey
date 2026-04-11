@@ -129,7 +129,7 @@ export default function HHQCEditPage() {
     handicappedTotal: undefined,
     femaleEarningStatus: "",
     belowPovertyLine: "",
-    bplCard: "",
+    bplCard: "NO",
     landTenureStatus: "",
     houseStructure: "",
     roofType: "",
@@ -218,7 +218,7 @@ export default function HHQCEditPage() {
       handicappedTotal: undefined,
       femaleEarningStatus: "",
       belowPovertyLine: "",
-      bplCard: "",
+      bplCard: "NO",
       landTenureStatus: "",
       houseStructure: "",
       roofType: "",
@@ -292,7 +292,7 @@ export default function HHQCEditPage() {
             handicappedTotal: surveyData.handicappedTotal,
             femaleEarningStatus: surveyData.femaleEarningStatus || "",
             belowPovertyLine: surveyData.belowPovertyLine || "",
-            bplCard: surveyData.bplCard || "",
+            bplCard: surveyData.bplCard || "NO",
             landTenureStatus: surveyData.landTenureStatus || "",
             houseStructure: surveyData.houseStructure || "",
             roofType: surveyData.roofType || "",
@@ -648,13 +648,15 @@ export default function HHQCEditPage() {
               name="belowPovertyLine"
               options={[{ value: "YES", label: "Yes" }, { value: "NO", label: "No" }, { value: "DONT_KNOW", label: "Don't Know" }]}
             />
-            <Select
-              label="BPL card"
-              value={formData.bplCard || ""}
-              onChange={(e) => handleInputChange("bplCard", e.target.value)}
-              name="bplCard"
-              options={[{ value: "YES", label: "Yes" }, { value: "NO", label: "No" }]}
-            />
+            {formData.belowPovertyLine === "YES" && (
+              <Select
+                label="BPL card"
+                value={formData.bplCard || ""}
+                onChange={(e) => handleInputChange("bplCard", e.target.value)}
+                name="bplCard"
+                options={[{ value: "YES", label: "Yes" }, { value: "NO", label: "No" }]}
+              />
+            )}
           </div>
         </div>
 

@@ -57,7 +57,7 @@ interface User {
 }
 
 interface AssignmentFormData {
-  status: "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+  status: "PENDING" | "IN PROGRESS" | "COMPLETED";
   surveyor: string; // ID of the surveyor
   slum: string; // ID of the slum
 }
@@ -258,9 +258,8 @@ export default function AssignmentsPage() {
       setEditFormData({
         status: assignmentToEdit.status as
           | "PENDING"
-          | "ACTIVE"
-          | "COMPLETED"
-          | "CANCELLED",
+          | "IN PROGRESS"
+          | "COMPLETED",
         surveyor: assignmentToEdit.surveyor?._id || "",
         slum: assignmentToEdit.slum?._id || "", // Keep the slum constant
       });
@@ -691,17 +690,15 @@ export default function AssignmentsPage() {
                           ...editFormData,
                           status: e.target.value as
                             | "PENDING"
-                            | "ACTIVE"
-                            | "COMPLETED"
-                            | "CANCELLED",
+                            | "IN PROGRESS"
+                            | "COMPLETED",
                         })
                       }
                       className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     >
                       <option value="PENDING">Pending</option>
-                      <option value="ACTIVE">Active</option>
+                      <option value="IN PROGRESS">In Progress</option>
                       <option value="COMPLETED">Completed</option>
-                      <option value="CANCELLED">Cancelled</option>
                     </select>
                   </div>
                 </div>
