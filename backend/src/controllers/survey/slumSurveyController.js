@@ -1127,21 +1127,12 @@ exports.updateSurveySection = async (req, res) => {
                     data[field] = "";
                 }
             });
-            
-            // Add debug logging
-            console.log('[DEBUG] Processing physicalInfrastructure section');
-            console.log('[DEBUG] sourceDrinkingWater:', typeof data.sourceDrinkingWater, data.sourceDrinkingWater);
-            console.log('[DEBUG] solidWasteManagement:', typeof data.solidWasteManagement, data.solidWasteManagement);
         }
         
         // Initialize section in survey if it doesn't exist yet
         if (!survey[section]) {
             survey[section] = {};
         }
-        
-        // Add debug logging for all sections
-        console.log(`[DEBUG] Processing section: ${section}`);
-        console.log(`[DEBUG] Data received:`, JSON.stringify(data, null, 2));
         
         // Preprocess data to ensure proper initialization for all sections
         if (section === 'economicStatus' && data) {
@@ -1337,18 +1328,8 @@ exports.updateSurveySection = async (req, res) => {
         if (survey[section] && typeof survey[section] === 'object' && data && typeof data === 'object') {
             // Handle nested objects properly to prevent undefined values breaking schema validation
             
-            // Add debug logging
-            console.log('[DEBUG] Before merge - survey[section]:', survey[section]);
-            console.log('[DEBUG] Data to merge:', data);
-            
             // Use deep merge to properly handle nested objects
             survey[section] = deepMerge(survey[section], data);
-            
-            // Add debug logging
-            console.log('[DEBUG] After merge - survey[section]:', survey[section]);
-            
-            // Log the final data being saved
-            console.log(`[DEBUG] Final data for section ${section}:`, JSON.stringify(survey[section], null, 2));
             
             // Ensure nested objects conform to schema - prevent undefined values
             if (section === 'physicalInfrastructure') {
@@ -1515,16 +1496,11 @@ exports.updateSurveySection = async (req, res) => {
         // Add current section to completed sections - all sections should be marked as completed when saved
         if (!survey.completedSections.includes(section)) {
             survey.completedSections.push(section);
-            console.log(`Section ${section} marked as completed. Total completed: ${survey.completedSections.length}`);
-            console.log(`Completed sections:`, survey.completedSections);
-        } else {
-            console.log(`Section ${section} already marked as completed`);
         }
         
         // Calculate completion percentage based on explicitly tracked completed sections
         // Each of the 14 sections contributes ~7.14% to the total completion (100/14)
         const completionPercentage = Math.min(100, Math.round((survey.completedSections.length / 14) * 100));
-        console.log(`Completion calculation: ${survey.completedSections.length}/14 sections = ${completionPercentage}%`);
         survey.completionPercentage = completionPercentage;
         
         // Update survey status based on completion

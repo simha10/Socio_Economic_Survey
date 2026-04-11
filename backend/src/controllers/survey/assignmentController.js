@@ -483,7 +483,6 @@ const updateAssignment = async (req, res) => {
 const deleteAssignment = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('[ASSIGNMENT-CONTROLLER] Delete request received for ID:', id);
 
     const assignment = await Assignment.findById(id);
     if (!assignment) {

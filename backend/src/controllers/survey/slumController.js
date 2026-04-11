@@ -71,15 +71,11 @@ const createSlum = async (req, res) => {
     });
 
     await slum.save();
-    
-    console.log('[DEBUG] Slum saved to database:', slum._id);
 
     // Populate the references before returning
     const populatedSlum = await Slum.findById(slum._id)
       .populate('createdBy', 'name username')
       .populate('ward', 'number name zone');
-      
-    console.log('[DEBUG] Created slum with populated data:', populatedSlum._id);
 
     res.status(201).json({
       success: true,
@@ -100,12 +96,6 @@ const createSlum = async (req, res) => {
 // Get all slums
 const getAllSlums = async (req, res) => {
   try {
-    console.log('[DEBUG] Get all slums request received:', {
-      query: req.query,
-      userId: req.user._id,
-      userRole: req.user.role
-    });
-    
     const { page = 1, limit = 10, stateCode, distCode, search, loadAll } = req.query;
     
     let filter = {};
@@ -128,14 +118,11 @@ const getAllSlums = async (req, res) => {
         { ward: { $regex: search, $options: 'i' } }
       ];
     }
-    
-    console.log('[DEBUG] Slums query filter:', filter);
 
     let slums, total;
     
     // If loadAll parameter is provided, load all slums
     if (loadAll === 'true') {
-      console.log('[DEBUG] Loading all slums without pagination');
       slums = await Slum.find(filter)
         .populate('createdBy', 'name username')
         .populate('ward', 'number name zone')
@@ -154,8 +141,6 @@ const getAllSlums = async (req, res) => {
       const pageNum = parseInt(page) || 1;
       const limitNum = parseInt(limit) || 10; // Default to 10 items per page
       
-      console.log('[DEBUG] Loading slums with pagination:', { page: pageNum, limit: limitNum });
-      
       slums = await Slum.find(filter)
         .populate('createdBy', 'name username')
         .populate('ward', 'number name zone')
@@ -164,9 +149,6 @@ const getAllSlums = async (req, res) => {
         .skip((pageNum - 1) * limitNum);
         
       total = await Slum.countDocuments(filter);
-      
-      console.log('[DEBUG] Retrieved slums count:', slums.length);
-      console.log('[DEBUG] Total slums count:', total);
 
       res.json({
         success: true,
@@ -191,25 +173,16 @@ const getAllSlums = async (req, res) => {
 // Get slum by ID
 const getSlumById = async (req, res) => {
   try {
-    console.log('[DEBUG] Get slum by ID request received:', {
-      slumId: req.params.id,
-      userId: req.user._id,
-      userRole: req.user.role
-    });
-    
     const slum = await Slum.findById(req.params.id)
       .populate('createdBy', 'name username')
       .populate('ward', 'number name zone');
 
     if (!slum) {
-      console.log('[DEBUG] Slum not found for ID:', req.params.id);
       return res.status(404).json({
         success: false,
         message: 'Slum not found.'
       });
     }
-    
-    console.log('[DEBUG] Retrieved slum:', slum._id);
 
     res.json({
       success: true,
@@ -229,29 +202,19 @@ const getSlumById = async (req, res) => {
 // Update slum
 const updateSlum = async (req, res) => {
   try {
-    console.log('[DEBUG] Update slum request received:', {
-      slumId: req.params.id,
-      body: req.body,
-      userId: req.user._id,
-      userRole: req.user.role
-    });
     
     const { name, location, stateCode, distCode, city, ward, slumType, landOwnership, totalHouseholds, village, area, ulbCode, ulbName } = req.body;
 
     const slum = await Slum.findById(req.params.id);
     if (!slum) {
-      console.log('[DEBUG] Slum not found for update:', req.params.id);
       return res.status(404).json({
         success: false,
         message: 'Slum not found.'
       });
     }
-    
-    console.log('[DEBUG] Found existing slum:', slum._id, 'with status:', slum.surveyStatus);
 
     // Prevent editing if slum survey is already submitted
     if (slum.surveyStatus === 'SUBMITTED') {
-      console.log('[DEBUG] Attempt to update submitted slum blocked:', slum._id);
       return res.status(400).json({
         success: false,
         message: 'Cannot edit slum after survey has been submitted.'
@@ -309,8 +272,6 @@ const updateSlum = async (req, res) => {
     )
       .populate('createdBy', 'name username')
       .populate('ward', 'number name zone');
-      
-    console.log('[DEBUG] Successfully updated slum:', updatedSlum._id);
 
     res.json({
       success: true,
@@ -331,26 +292,16 @@ const updateSlum = async (req, res) => {
 // Delete slum (only if survey is in draft status)
 const deleteSlum = async (req, res) => {
   try {
-    console.log('[DEBUG] Delete slum request received:', {
-      slumId: req.params.id,
-      userId: req.user._id,
-      userRole: req.user.role
-    });
-    
     const slum = await Slum.findById(req.params.id);
     if (!slum) {
-      console.log('[DEBUG] Slum not found for deletion:', req.params.id);
       return res.status(404).json({
         success: false,
         message: 'Slum not found.'
       });
     }
-    
-    console.log('[DEBUG] Checking slum status for deletion:', { slumId: slum._id, status: slum.surveyStatus });
 
     // Only allow deletion if survey is in draft status
     if (slum.surveyStatus !== 'DRAFT') {
-      console.log('[DEBUG] Cannot delete slum, survey already submitted:', slum._id);
       return res.status(400).json({
         success: false,
         message: 'Cannot delete slum after survey has been submitted.'
@@ -358,8 +309,6 @@ const deleteSlum = async (req, res) => {
     }
 
     await Slum.findByIdAndDelete(req.params.id);
-    
-    console.log('[DEBUG] Slum deleted successfully:', req.params.id);
 
     res.json({
       success: true,

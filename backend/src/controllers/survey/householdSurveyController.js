@@ -137,7 +137,6 @@ exports.createOrGetHouseholdSurvey = async (req, res) => {
 exports.getHouseholdSurvey = async (req, res) => {
   try {
     const { surveyId } = req.params;
-    console.log('[DEBUG] getHouseholdSurvey called with:', { surveyId, userId: req.user._id, userRole: req.user.role });
 
     const survey = await HouseholdSurvey.findById(surveyId).populate([
       { path: 'slum', select: 'slumName village ward', populate: { path: 'ward', select: 'number name zone' } },
@@ -145,15 +144,8 @@ exports.getHouseholdSurvey = async (req, res) => {
     ]);
 
     if (!survey) {
-      console.log('[DEBUG] Survey not found:', surveyId);
       return sendError(res, 'Survey not found', 404);
     }
-
-    console.log('[DEBUG] Found survey:', {
-      surveyId: survey._id,
-      surveyor: survey.surveyor ? survey.surveyor.toString() : null,
-      slum: survey.slum?.slumName
-    });
 
     // Check authorization - allow:
     // 1. Admins to view all surveys
@@ -179,11 +171,8 @@ exports.getHouseholdSurvey = async (req, res) => {
         });
 
         if (!assignment) {
-          console.log('[DEBUG] ACCESS DENIED - No assignment to slum');
           return sendError(res, 'Not authorized to view this survey. You are not assigned to this slum.', 403);
         }
-
-        console.log('[DEBUG] ACCESS GRANTED - User assigned to slum');
       }
     }
     // Admins and supervisors can view all surveys by default
@@ -315,11 +304,6 @@ exports.updateHouseholdSurvey = async (req, res) => {
  * Submit household survey (mark as SUBMITTED)
  */
 exports.submitHouseholdSurvey = async (req, res) => {
-  console.log(`[SUBMIT_HOUSEHOLD_SURVEY] 🚀 Function started for survey ID: ${req.params.surveyId}`);
-  console.log(`[SUBMIT_HOUSEHOLD_SURVEY] User ID: ${req.user?.id || req.user?._id}`);
-  console.log(`[SUBMIT_HOUSEHOLD_SURVEY] User role: ${req.user?.role}`);
-  console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Request body keys:`, Object.keys(req.body || {}));
-
   try {
     const { surveyId } = req.params;
     const userId = req.user.id || req.user._id;
@@ -390,26 +374,11 @@ exports.submitHouseholdSurvey = async (req, res) => {
 
     // Auto-calculation is now handled in the frontend. Backend will accept whatever values are sent.
 
-
-
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Before Object.assign - survey.surveyStatus: ${survey.surveyStatus}`);
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Sanitized data keys:`, Object.keys(sanitizedData));
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Excluded fields from sanitized data:`, { surveyStatus: surveyStatus in req.body ? 'present' : 'absent' });
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Sanitized data sample:`, {
-      headName: sanitizedData.headName,
-      familyMembersMale: sanitizedData.familyMembersMale,
-      familyMembersFemale: sanitizedData.familyMembersFemale
-    });
-
     // Try assignment with error handling
     try {
       Object.assign(survey, sanitizedData);
-      console.log(`[SUBMIT_HOUSEHOLD_SURVEY] After Object.assign - survey.surveyStatus: ${survey.surveyStatus}`);
-
     } catch (assignError) {
       console.error('Error during Object.assign:', assignError);
-      console.error('Survey object:', survey);
-      console.error('Sanitized data:', sanitizedData);
       throw assignError;
     }
 
@@ -419,39 +388,9 @@ exports.submitHouseholdSurvey = async (req, res) => {
     survey.lastModifiedBy = userId;
     survey.lastModifiedAt = new Date();
 
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Setting surveyStatus to SUBMITTED for survey ID: ${surveyId}`);
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Survey status before save: ${survey.surveyStatus}`);
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Setting submittedBy: ${userId}`);
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Setting submittedAt: ${new Date()}`);
-
     // Try save with error handling
     try {
-      console.log(`[SUBMIT_HOUSEHOLD_SURVEY] About to save survey. Survey object before save:`, {
-        _id: survey._id,
-        surveyStatus: survey.surveyStatus,
-        submittedBy: survey.submittedBy,
-        submittedAt: survey.submittedAt,
-        headName: survey.headName,
-        familyMembersMale: survey.familyMembersMale,
-        familyMembersFemale: survey.familyMembersFemale
-      });
-
       const saveResult = await survey.save();
-      console.log(`[SUBMIT_HOUSEHOLD_SURVEY] ✅ Survey saved successfully!`);
-      console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Status after save: ${survey.surveyStatus}`);
-      console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Submitted By after save: ${survey.submittedBy}`);
-      console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Submitted At after save: ${survey.submittedAt}`);
-      console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Save result keys:`, Object.keys(saveResult || {}));
-
-      console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Survey object after save:`, {
-        _id: survey._id,
-        surveyStatus: survey.surveyStatus,
-        submittedBy: survey.submittedBy,
-        submittedAt: survey.submittedAt,
-        headName: survey.headName,
-        familyMembersMale: survey.familyMembersMale,
-        familyMembersFemale: survey.familyMembersFemale
-      });
     } catch (saveError) {
       console.error('❌ Error during survey.save():', saveError.message);
       console.error('Error stack:', saveError.stack);
@@ -469,11 +408,8 @@ exports.submitHouseholdSurvey = async (req, res) => {
       { path: 'surveyor', select: 'name email' },
     ]);
 
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Updating related statuses...`);
     await updateStatusesFromHouseholdSurvey(surveyId);
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Auto-syncing household counts...`);
     await autoSyncHouseholdCounts(survey.slum._id, userId);
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] Status updates completed`);
 
     // Update slum population based on family members count
     await updateSlumPopulationFromHouseholdSurveys(survey.slum._id);
@@ -504,7 +440,6 @@ exports.submitHouseholdSurvey = async (req, res) => {
       return sendError(res, `Invalid value provided: ${error.message}`, 400);
     }
 
-    console.log(`[SUBMIT_HOUSEHOLD_SURVEY] ❌ Function failed for survey ID: ${req.params.surveyId}`);
     sendError(res, error.message || 'Failed to submit survey', 500);
   }
 };

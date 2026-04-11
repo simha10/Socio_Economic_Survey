@@ -476,14 +476,20 @@ export default function SurveyorDashboard() {
                         </span>
                         <span
                           className={`text-xs font-medium ${
-                            (assignment.slumSurveyCompletion || 0) === 0 ? 'text-red-400' :
-                            (assignment.slumSurveyCompletion || 0) < 100 ? 'text-amber-400' :
-                            'text-green-400'
+                            !assignment.slumSurveyStatus || 
+                            assignment.slumSurveyStatus === 'NOT STARTED' || 
+                            assignment.slumSurveyStatus === 'NOT_STARTED' 
+                              ? 'text-red-400' 
+                              : assignment.slumSurveyStatus === 'IN PROGRESS'
+                                ? 'text-amber-400'
+                                : 'text-green-400'
                           }`}
                         >
-                          {(assignment.slumSurveyCompletion || 0) === 0
+                          {!assignment.slumSurveyStatus || 
+                           assignment.slumSurveyStatus === 'NOT STARTED' || 
+                           assignment.slumSurveyStatus === 'NOT_STARTED'
                             ? "Not Started"
-                            : (assignment.slumSurveyCompletion || 0) < 100
+                            : assignment.slumSurveyStatus === 'IN PROGRESS'
                               ? `${assignment.slumSurveyCompletion || 0}%`
                               : "✓ Completed"}
                         </span>
@@ -491,9 +497,13 @@ export default function SurveyorDashboard() {
                       <div className="w-full bg-slate-700 rounded-full h-2">
                         <div
                           className={`h-2 rounded-full transition-all ${
-                            (assignment.slumSurveyCompletion || 0) === 0 ? 'bg-red-500' :
-                            (assignment.slumSurveyCompletion || 0) < 100 ? 'bg-amber-500' :
-                            'bg-green-500'
+                            !assignment.slumSurveyStatus || 
+                            assignment.slumSurveyStatus === 'NOT STARTED' || 
+                            assignment.slumSurveyStatus === 'NOT_STARTED' 
+                              ? 'bg-red-500' 
+                              : assignment.slumSurveyStatus === 'IN PROGRESS'
+                                ? 'bg-amber-500'
+                                : 'bg-green-500'
                           }`}
                           style={{ width: `${assignment.slumSurveyCompletion || 0}%` }}
                         ></div>

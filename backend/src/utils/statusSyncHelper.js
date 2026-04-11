@@ -55,7 +55,8 @@ async function getExistingSlumStatus(slumId) {
     // Determine status based on whether ANY work has been done on this slum
     let overallStatus = 'PENDING'; // Default when no work has been done by any surveyor
     
-    if (allHouseholdsCompleted && (hasCompletedOrSubmitted || hasInProgress)) {
+    // COMPLETED only if slum survey is SUBMITTED/COMPLETED AND all households are done
+    if (allHouseholdsCompleted && hasCompletedOrSubmitted) {
       overallStatus = 'COMPLETED'; // All work completed for this slum
     } else if (hasInProgress || hasCompletedOrSubmitted || totalCompleted > 0) {
       // If any work has been done on this slum (slum survey started/completed OR household surveys submitted)
@@ -89,8 +90,6 @@ async function getExistingSlumStatus(slumId) {
  */
 async function updateSlumStatus(slumId) {
   try {
-    console.log(`[STATUS_SYNC] Updating status for slum ID: ${slumId}`);
-    
     // Get the slum
     const slum = await Slum.findById(slumId);
     if (!slum) {
@@ -98,22 +97,16 @@ async function updateSlumStatus(slumId) {
       return false;
     }
 
-    console.log(`[STATUS_SYNC] Current slum status: ${slum.surveyStatus}, Slum name: ${slum.slumName}`);
-
     // Get the slum survey for this slum
     const slumSurvey = await SlumSurvey.findOne({ slum: slumId });
     if (!slumSurvey) {
-      console.log(`[STATUS_SYNC] No slum survey found for slum: ${slumId}`);
       // If no slum survey exists, keep slum status as DRAFT
       if (slum.surveyStatus !== 'DRAFT') {
         slum.surveyStatus = 'DRAFT';
         await slum.save();
-        console.log(`[STATUS_SYNC] Slum status updated to DRAFT (no slum survey)`);
       }
       return true;
     }
-
-    console.log(`[STATUS_SYNC] Found slum survey with status: ${slumSurvey.surveyStatus}`);
 
     // Get all household surveys for this slum
     const householdSurveys = await HouseholdSurvey.find({ slum: slumId });
@@ -121,8 +114,6 @@ async function updateSlumStatus(slumId) {
     const submittedHouseholdCount = householdSurveys.filter(hs => 
       hs.surveyStatus === 'SUBMITTED' || hs.surveyStatus === 'COMPLETED'
     ).length;
-
-    console.log(`[STATUS_SYNC] Slum: ${slum.slumName}, Total Households: ${totalHouseholds}, Submitted Households: ${submittedHouseholdCount}`);
 
     // Determine new status based on the required logic
     let newStatus = 'DRAFT';
@@ -154,16 +145,10 @@ async function updateSlumStatus(slumId) {
       }
     }
 
-    console.log(`[STATUS_SYNC] Determined new slum status: ${newStatus}`);
-
     // Update slum status if it changed
     if (slum.surveyStatus !== newStatus) {
-      const oldStatus = slum.surveyStatus;
       slum.surveyStatus = newStatus;
       await slum.save();
-      console.log(`[STATUS_SYNC] Slum status updated from ${oldStatus} to ${newStatus}`);
-    } else {
-      console.log(`[STATUS_SYNC] Slum status unchanged: ${newStatus}`);
     }
 
     return true;
@@ -180,16 +165,12 @@ async function updateSlumStatus(slumId) {
  */
 async function updateAssignmentStatusFromSlumSurvey(slumSurveyId) {
   try {
-    console.log(`[STATUS_SYNC] Updating assignment status from slum survey ID: ${slumSurveyId}`);
-    
     // Get the slum survey
     const slumSurvey = await SlumSurvey.findById(slumSurveyId).populate('slum');
     if (!slumSurvey) {
       console.error(`[STATUS_SYNC] Slum survey not found: ${slumSurveyId}`);
       return false;
     }
-
-    console.log(`[STATUS_SYNC] SlumSurvey status: ${slumSurvey.surveyStatus}, Slum: ${slumSurvey.slum?.slumName}`);
 
     // Map surveyStatus to slumSurveyStatus for assignment
     // Requirement 3: If surveyStatus in Slum Survey is IN PROGRESS, then update the slumSurveyStatus 
@@ -216,27 +197,18 @@ async function updateAssignmentStatusFromSlumSurvey(slumSurveyId) {
     });
 
     if (assignments.length > 0) {
-      console.log(`[STATUS_SYNC] Found ${assignments.length} assignments for slum: ${slumSurvey.slum._id}`);
-      
       // Update slumSurveyStatus for all assignments
       for (const assignment of assignments) {
-        console.log(`[STATUS_SYNC] Processing assignment ID: ${assignment._id}, Current slumSurveyStatus: ${assignment.slumSurveyStatus}, New: ${assignmentStatus}`);
-        
         if (assignment.slumSurveyStatus !== assignmentStatus) {
           assignment.slumSurveyStatus = assignmentStatus;
           await assignment.save();
-          console.log(`[STATUS_SYNC] Assignment ${assignment._id} slumSurveyStatus updated from ${assignment.slumSurveyStatus} to ${assignmentStatus}`);
-        } else {
-          console.log(`[STATUS_SYNC] Assignment ${assignment._id} slumSurveyStatus unchanged: ${assignmentStatus}`);
         }
         
         // Also update the main assignment status
-        console.log(`[STATUS_SYNC] Triggering main assignment status update for assignment: ${assignment._id}`);
         await updateAssignmentMainStatus(assignment._id);
       }
       
       // Update the slum status as well
-      console.log(`[STATUS_SYNC] Triggering slum status update`);
       await updateSlumStatus(slumSurvey.slum._id);
       
       return true;
@@ -258,8 +230,6 @@ async function updateAssignmentStatusFromSlumSurvey(slumSurveyId) {
  */
 async function updateHouseholdSurveyProgress(slumId, surveyorId) {
   try {
-    console.log(`[STATUS_SYNC] Updating household survey progress for slum: ${slumId}, surveyor: ${surveyorId}`);
-
     // Find ALL assignments for this slum (multiple surveyors can be assigned)
     const assignments = await Assignment.find({
       slum: slumId
@@ -290,14 +260,11 @@ async function updateHouseholdSurveyProgress(slumId, surveyorId) {
 
     // Update the householdSurveyProgress for ALL assignments (same aggregated progress)
     for (const assignment of assignments) {
-      const prevProgress = assignment.householdSurveyProgress;
       assignment.householdSurveyProgress = {
         completed: completedCount,
         total: totalCount
       };
       await assignment.save();
-      
-      console.log(`[STATUS_SYNC] Updated assignment ${assignment._id} householdSurveyProgress from ${prevProgress?.completed}/${prevProgress?.total} to ${completedCount}/${totalCount}`);
     }
 
     return true;
@@ -315,8 +282,6 @@ async function updateHouseholdSurveyProgress(slumId, surveyorId) {
  */
 async function autoSyncHouseholdCounts(slumId, surveyorId = null) {
   try {
-    console.log(`[AUTO_SYNC] Auto-syncing household counts for slum: ${slumId}`);
-    
     // Get the slum
     const slum = await Slum.findById(slumId);
     if (!slum) {
@@ -327,20 +292,14 @@ async function autoSyncHouseholdCounts(slumId, surveyorId = null) {
     // Count all household surveys for this slum (regardless of surveyor)
     const totalHouseholdCount = await HouseholdSurvey.countDocuments({ slum: slumId });
     
-    console.log(`[AUTO_SYNC] Actual household count: ${totalHouseholdCount}, Current slum totalHouseholds: ${slum.totalHouseholds}`);
-    
     // Update slum totalHouseholds if it doesn't match actual count
     if (slum.totalHouseholds !== totalHouseholdCount) {
-      const oldCount = slum.totalHouseholds;
       slum.totalHouseholds = totalHouseholdCount;
       await slum.save();
-      console.log(`[AUTO_SYNC] Updated slum totalHouseholds from ${oldCount} to ${totalHouseholdCount}`);
     }
     
     // Update ALL assignments for this slum (not just for specific surveyor)
     const assignments = await Assignment.find({ slum: slumId });
-    
-    console.log(`[AUTO_SYNC] Found ${assignments.length} assignments to update`);
     
     for (const assignment of assignments) {
       // Count all household surveys for this slum regardless of surveyor
@@ -361,8 +320,6 @@ async function autoSyncHouseholdCounts(slumId, surveyorId = null) {
       
       assignment.householdSurveyProgress = newProgress;
       await assignment.save();
-      
-      console.log(`[AUTO_SYNC] Updated assignment ${assignment._id} progress from ${prevProgress?.completed}/${prevProgress?.total} to ${newProgress.completed}/${newProgress.total}`);
     }
     
     return true;
@@ -379,8 +336,6 @@ async function autoSyncHouseholdCounts(slumId, surveyorId = null) {
  */
 async function updateStatusesFromHouseholdSurvey(householdSurveyId) {
   try {
-    console.log(`[STATUS_SYNC] Updating statuses from household survey ID: ${householdSurveyId}`);
-    
     // Get the household survey
     const householdSurvey = await HouseholdSurvey.findById(householdSurveyId).populate('slum');
     if (!householdSurvey) {
@@ -429,7 +384,6 @@ async function updateStatusesFromHouseholdSurvey(householdSurveyId) {
           slumSurvey.surveyStatus !== 'COMPLETED') {
         slumSurvey.surveyStatus = 'COMPLETED';
         await slumSurvey.save();
-        console.log(`[STATUS_SYNC] Slum survey marked as COMPLETED due to all household surveys submitted and slum survey SUBMITTED`);
         
         // Update assignment status as well
         await updateAssignmentStatusFromSlumSurvey(slumSurvey._id);
@@ -463,8 +417,6 @@ async function updateStatusesFromHouseholdSurvey(householdSurveyId) {
  */
 async function updateAssignmentMainStatus(assignmentId) {
   try {
-    console.log(`[STATUS_SYNC] Updating main assignment status for ID: ${assignmentId}`);
-    
     const assignment = await Assignment.findById(assignmentId)
       .populate('slum')
       .populate('surveyor');
@@ -473,10 +425,6 @@ async function updateAssignmentMainStatus(assignmentId) {
       console.error(`[STATUS_SYNC] Assignment not found: ${assignmentId}`);
       return false;
     }
-
-    console.log(`[STATUS_SYNC] Current assignment status: ${assignment.status}`);
-    console.log(`[STATUS_SYNC] Assignment slum: ${assignment.slum?.slumName}`);
-    console.log(`[STATUS_SYNC] Assignment surveyor: ${assignment.surveyor?.name}`);
 
     // Get related surveys
     const slumSurvey = await SlumSurvey.findOne({
@@ -492,10 +440,6 @@ async function updateAssignmentMainStatus(assignmentId) {
       hs.surveyStatus === 'SUBMITTED' || hs.surveyStatus === 'COMPLETED'
     ).length;
 
-    console.log(`[STATUS_SYNC] Found ${householdSurveys.length} household surveys, ${completedHouseholdCount} completed`);
-    console.log(`[STATUS_SYNC] Slum survey exists: ${!!slumSurvey}`);
-    console.log(`[STATUS_SYNC] Slum survey status: ${slumSurvey?.surveyStatus || 'N/A'}`);
-
     // Determine main assignment status based on the required logic
     let newMainStatus = 'PENDING'; // Default status
 
@@ -504,7 +448,6 @@ async function updateAssignmentMainStatus(assignmentId) {
     // the status in Assignment model needs to get updated to IN PROGRESS
     if (slumSurvey?.surveyStatus === 'IN PROGRESS' || completedHouseholdCount > 0) {
       newMainStatus = 'IN PROGRESS';
-      console.log(`[STATUS_SYNC] Condition 1: Slum survey IN PROGRESS or HH count > 0 - Status: IN PROGRESS`);
     }
     // Requirement 4: If surveyStatus in SlumSurvey model is Submitted and the household survey count 
     // matches the total household count, then only, mark the status in Assignment model as COMPLETED
@@ -514,19 +457,14 @@ async function updateAssignmentMainStatus(assignmentId) {
       completedHouseholdCount === totalHouseholds
     ) {
       newMainStatus = 'COMPLETED';
-      console.log(`[STATUS_SYNC] Condition 2: Slum survey SUBMITTED and all HH completed - Status: COMPLETED`);
     }
     // Otherwise remains PENDING
     else {
       newMainStatus = 'PENDING';
-      console.log(`[STATUS_SYNC] Condition 3: Default status - Status: PENDING`);
     }
-
-    console.log(`[STATUS_SYNC] Calculated new main status: ${newMainStatus}`);
 
     // Update assignment status if it changed
     if (assignment.status !== newMainStatus) {
-      console.log(`[STATUS_SYNC] Status will change from ${assignment.status} to ${newMainStatus}`);
       assignment.status = newMainStatus;
       if (newMainStatus === 'COMPLETED') {
         assignment.completedAt = new Date();
@@ -534,9 +472,6 @@ async function updateAssignmentMainStatus(assignmentId) {
         assignment.completedAt = null;
       }
       await assignment.save();
-      console.log(`[STATUS_SYNC] Assignment main status updated from ${assignment.status} to ${newMainStatus}`);
-    } else {
-      console.log(`[STATUS_SYNC] Assignment main status unchanged: ${newMainStatus} (current: ${assignment.status})`);
     }
 
     return true;
@@ -553,8 +488,6 @@ async function updateAssignmentMainStatus(assignmentId) {
  */
 async function initializeAssignmentStatus(assignmentId) {
   try {
-    console.log(`[STATUS_SYNC] Initializing status for assignment ID: ${assignmentId}`);
-    
     const assignment = await Assignment.findById(assignmentId)
       .populate('slum')
       .populate('surveyor');
@@ -572,7 +505,6 @@ async function initializeAssignmentStatus(assignmentId) {
       assignment.slumSurveyStatus = existingStatus.slumSurveyStatus;
       assignment.status = existingStatus.status;
       assignment.householdSurveyProgress = existingStatus.householdSurveyProgress;
-      console.log(`[STATUS_SYNC] Copied existing status from slum ${assignment.slum._id}`);
     } else {
       // Set initial default status
       assignment.slumSurveyStatus = 'NOT STARTED';
@@ -581,15 +513,9 @@ async function initializeAssignmentStatus(assignmentId) {
         completed: 0,
         total: assignment.slum?.totalHouseholds || 0
       };
-      console.log(`[STATUS_SYNC] Initialized with default status for new slum`);
     }
     
     await assignment.save();
-    console.log(`[STATUS_SYNC] Assignment status initialized:`, {
-      slumSurveyStatus: assignment.slumSurveyStatus,
-      status: assignment.status,
-      householdSurveyProgress: assignment.householdSurveyProgress
-    });
     
     return true;
   } catch (error) {
@@ -639,7 +565,8 @@ async function getCanonicalSlumStatus(slumId) {
     let overallStatus = 'PENDING';
     const allHouseholdsCompleted = totalCompleted > 0 && totalCompleted === (slumDoc?.totalHouseholds || 0);
     
-    if (allHouseholdsCompleted && (hasSubmitted || hasInProgress)) {
+    // COMPLETED only if slum survey is SUBMITTED/COMPLETED AND all households are done
+    if (allHouseholdsCompleted && hasSubmitted) {
       overallStatus = 'COMPLETED';
     } else if (hasInProgress || hasSubmitted || totalCompleted > 0) {
       overallStatus = 'IN PROGRESS';
@@ -698,8 +625,6 @@ async function syncAllAssignmentsForSlum(slumId, updateData) {
  */
 async function updateSlumPopulationFromHouseholdSurveys(slumId) {
   try {
-    console.log(`[STATUS_SYNC] Updating slum population from household surveys for slum ID: ${slumId}`);
-    
     // Get all household surveys for this slum
     const householdSurveys = await HouseholdSurvey.find({ slum: slumId });
     
@@ -711,13 +636,10 @@ async function updateSlumPopulationFromHouseholdSurveys(slumId) {
       }
     });
     
-    console.log(`[STATUS_SYNC] Calculated total population: ${totalPopulation} from ${householdSurveys.length} household surveys`);
-    
     // Find the slum survey for this slum
     let slumSurvey = await SlumSurvey.findOne({ slum: slumId });
     
     if (!slumSurvey) {
-      console.log(`[STATUS_SYNC] No slum survey found for slum: ${slumId}. Creating one if needed elsewhere.`);
       return true; // Don't fail if no slum survey exists yet
     }
     
@@ -734,8 +656,6 @@ async function updateSlumPopulationFromHouseholdSurveys(slumId) {
     // Save the updated slum survey
     await slumSurvey.save();
     
-    console.log(`[STATUS_SYNC] Updated slum population to ${totalPopulation} for slum survey: ${slumSurvey._id}`);
-    
     return true;
   } catch (error) {
     console.error(`[STATUS_SYNC] Error updating slum population from household surveys for slum ${slumId}:`, error);
@@ -750,8 +670,6 @@ async function updateSlumPopulationFromHouseholdSurveys(slumId) {
  */
 async function updateSlumBplPopulationFromHouseholdSurveys(slumId) {
   try {
-    console.log(`[STATUS_SYNC] Updating slum BPL population from household surveys for slum ID: ${slumId}`);
-    
     // Get all household surveys for this slum
     const householdSurveys = await HouseholdSurvey.find({ slum: slumId });
     
@@ -773,13 +691,10 @@ async function updateSlumBplPopulationFromHouseholdSurveys(slumId) {
       }
     });
     
-    console.log(`[STATUS_SYNC] Calculated BPL population: ${bplPopulation} from ${bplHouseholds} BPL households out of ${householdSurveys.length} total households`);
-    
     // Find the slum survey for this slum
     let slumSurvey = await SlumSurvey.findOne({ slum: slumId });
     
     if (!slumSurvey) {
-      console.log(`[STATUS_SYNC] No slum survey found for slum: ${slumId}. Creating one if needed elsewhere.`);
       return true; // Don't fail if no slum survey exists yet
     }
     
@@ -815,8 +730,6 @@ async function updateSlumBplPopulationFromHouseholdSurveys(slumId) {
     // Save the updated slum survey
     await slumSurvey.save();
     
-    console.log(`[STATUS_SYNC] Updated BPL population to ${bplPopulation} and BPL households to ${bplHouseholds} for slum survey: ${slumSurvey._id}`);
-    
     return true;
   } catch (error) {
     console.error(`[STATUS_SYNC] Error updating slum BPL population from household surveys for slum ${slumId}:`, error);
@@ -831,8 +744,6 @@ async function updateSlumBplPopulationFromHouseholdSurveys(slumId) {
  */
 async function updateSlumDemographicPopulationFromHouseholdSurveys(slumId) {
   try {
-    console.log(`[STATUS_SYNC] Updating slum demographic population from household surveys for slum ID: ${slumId}`);
-    
     // Get all household surveys for this slum
     const householdSurveys = await HouseholdSurvey.find({ slum: slumId });
     
@@ -951,13 +862,10 @@ async function updateSlumDemographicPopulationFromHouseholdSurveys(slumId) {
       }
     });
     
-    console.log(`[STATUS_SYNC] Calculated demographic population:`, demographicCounts);
-    
     // Find the slum survey for this slum
     let slumSurvey = await SlumSurvey.findOne({ slum: slumId });
     
     if (!slumSurvey) {
-      console.log(`[STATUS_SYNC] No slum survey found for slum: ${slumId}. Creating one if needed elsewhere.`);
       return true; // Don't fail if no slum survey exists yet
     }
     
@@ -1025,16 +933,6 @@ async function updateSlumDemographicPopulationFromHouseholdSurveys(slumId) {
     
     // Save the updated slum survey
     await slumSurvey.save();
-    
-    console.log(`[STATUS_SYNC] Updated demographic population for slum survey: ${slumSurvey._id}`);
-    console.log(`[STATUS_SYNC] Updated BPL demographic population:`, {
-      bplPopulation: slumSurvey.demographicProfile.bplPopulation,
-      numberOfBplHouseholds: slumSurvey.demographicProfile.numberOfBplHouseholds
-    });
-    console.log(`[STATUS_SYNC] Updated women-headed household demographic population:`, {
-      womenHeadedHouseholds: slumSurvey.demographicProfile.womenHeadedHouseholds,
-      numberOfWomenHeadedHouseholds: slumSurvey.demographicProfile.numberOfWomenHeadedHouseholds
-    });
     
     return true;
   } catch (error) {
