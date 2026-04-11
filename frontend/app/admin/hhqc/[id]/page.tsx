@@ -549,8 +549,10 @@ export default function HHQCEditPage() {
             <Button onClick={handleSave} disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}
             </Button>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <Input
               label="Handicapped (Physically)"
               type="number"
@@ -593,7 +595,6 @@ export default function HHQCEditPage() {
                 options={[{ value: "YES", label: "Yes" }, { value: "NO", label: "No" }]}
               />
             )}
-          </div>
         </div>
 
         <Card className="p-6">

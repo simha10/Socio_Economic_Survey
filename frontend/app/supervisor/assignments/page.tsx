@@ -170,21 +170,24 @@ export default function SupervisorAssignmentsPage() {
   const handleEditAssignmentModal = (assignment: Assignment) => {
     setSelectedAssignment(assignment);
     setIsFormOpen(true);
-  const confirmEditAssignment = () => {
-    if (assignmentToEdit) {
-      setEditingAssignment(assignmentToEdit);
-      setEditFormData({
-        status: assignmentToEdit.status as
-          | "PENDING"
-          | "IN PROGRESS"
-          | "COMPLETED",
-        surveyor: assignmentToEdit.surveyor?._id || "",
-        slum: assignmentToEdit.slum?._id || "", // Keep the slum constant
-      });
-      setShowEditConfirm(false);
-      setAssignmentToEdit(null);
-    }
   };
+
+  // TODO: Implement confirmEditAssignment with proper state variables
+  // const confirmEditAssignment = () => {
+  //   if (selectedAssignment) {
+  //     setEditingAssignment(selectedAssignment);
+  //     setEditFormData({
+  //       status: selectedAssignment.status as
+  //         | "PENDING"
+  //         | "IN PROGRESS"
+  //         | "COMPLETED",
+  //       surveyor: selectedAssignment.surveyor?._id || "",
+  //       slum: selectedAssignment.slum?._id || "",
+  //     });
+  //     setShowEditConfirm(false);
+  //     setAssignmentToEdit(null);
+  //   }
+  // };
 
   const handleFormClose = () => {
     setIsFormOpen(false);
@@ -203,7 +206,6 @@ export default function SupervisorAssignmentsPage() {
         );
         setTimeout(() => setSuccessMessage(""), 3000);
       }
-
     });
   };
 
@@ -280,220 +282,6 @@ export default function SupervisorAssignmentsPage() {
                 ×
               </button>
             </div>
-          )}
-
-          {/* Create Multiple Assignment Form */}
-          <Card>
-            <h2 className="text-lg font-bold text-primary mb-4">
-              Create Assignments
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InfiniteScrollSelect
-                label="Slum"
-                value={multiAssignment.slum}
-                onChange={(value) =>
-                  setMultiAssignment({
-                    ...multiAssignment,
-                    slum: value,
-                    surveyors: [],
-                  })
-                } // Reset surveyors when slum changes
-                options={availableSlums.map((s) => ({
-                  value: s._id,
-                  label: `${s.slumName} (${s.slumId})`,
-                }))}
-                placeholder="Select a slum..."
-              />
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Select Surveyors
-                </label>
-                <div className="relative">
-                  <div
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer min-h-10.5 flex items-center"
-                    onClick={() =>
-                      setShowSurveyorDropdown(!showSurveyorDropdown)
-                    }
-                  >
-                    {multiAssignment.surveyors.length > 0 ? (
-                      <span className="text-slate-300">
-                        {multiAssignment.surveyors.length} surveyor
-                        {multiAssignment.surveyors.length !== 1 ? "s" : ""}{" "}
-                        selected
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">
-                        Select surveyors...
-                      </span>
-                    )}
-                    <svg
-                      className={`ml-auto w-4 h-4 text-slate-400 transition-transform ${showSurveyorDropdown ? "rotate-180" : ""}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-
-                  {showSurveyorDropdown && (
-                    <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {getFilteredSurveyors().length > 0 ? (
-                        getFilteredSurveyors().map((surveyor) => (
-                          <div
-                            key={surveyor._id}
-                            className="flex items-center p-3 hover:bg-slate-700 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSurveyorSelection(surveyor._id);
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={multiAssignment.surveyors.includes(
-                                surveyor._id,
-                              )}
-                              onChange={() =>
-                                toggleSurveyorSelection(surveyor._id)
-                              }
-                              className="mr-3 h-4 w-4 text-cyan-600 rounded focus:ring-cyan-500"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <label className="text-slate-300 cursor-pointer grow">
-                              {surveyor.name}
-                            </label>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="p-3 text-slate-400 italic">
-                          All surveyors are already assigned to this slum
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="mt-4">
-              <Button
-                variant="primary"
-                onClick={handleCreateMultipleAssignments}
-                disabled={
-                  !multiAssignment.slum ||
-                  multiAssignment.surveyors.length === 0
-                }
-              >
-                Assign Selected Surveyor(s)
-              </Button>
-            </div>
-          </Card>
-
-          {/* Edit Assignment Form */}
-          {editingAssignment && (
-            <Card>
-              <h2 className="text-xl font-bold text-white mb-4">
-                Edit Assignment: {editingAssignment.surveyor?.name || "N/A"} -{" "}
-                {editingAssignment.slum?.slumName || "N/A"}
-              </h2>
-              <form onSubmit={handleUpdateAssignment} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Surveyor
-                    </label>
-                    <select
-                      value={editFormData.surveyor}
-                      onChange={(e) =>
-                        setEditFormData({
-                          ...editFormData,
-                          surveyor: e.target.value,
-                        })
-                      }
-                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      required
-                    >
-                      <option value="">Select a surveyor</option>
-                      {availableUsers.map((usr) => (
-                        <option key={usr._id} value={usr._id}>
-                          {usr.name} ({usr.username})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Slum (Constant)
-                    </label>
-                    <input
-                      type="text"
-                      value={`${editingAssignment?.slum?.slumName || "N/A"} (${editingAssignment?.slum?.slumId || "N/A"})`}
-                      readOnly
-                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div></div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Status
-                    </label>
-                    <select
-                      value={editFormData.status}
-                      onChange={(e) =>
-                        setEditFormData({
-                          ...editFormData,
-                          status: e.target.value as
-                            | "PENDING"
-                            | "IN PROGRESS"
-                            | "COMPLETED",
-                        })
-                      }
-                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    >
-                      <option value="PENDING">Pending</option>
-                      <option value="IN PROGRESS">In Progress</option>
-                      <option value="COMPLETED">Completed</option>
-                    </select>
-                  </div>
-                </div>
-
-                {message && (
-                  <div
-                    className={`p-4 rounded-lg text-sm ${
-                      message.includes("Error")
-                        ? "bg-red-900/30 text-red-300"
-                        : "bg-green-900/30 text-green-300"
-                    }`}
-                  >
-                    {message}
-                  </div>
-                )}
-
-                <div className="flex gap-4">
-                  <Button
-                    type="button"
-                    onClick={() => setShowUpdateConfirm(true)}
-                    disabled={submitting}
-                  >
-                    {submitting ? "Updating..." : "Update Assignment"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleCancelEdit}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </Card>
           )}
 
           {/* Assignments List */}
