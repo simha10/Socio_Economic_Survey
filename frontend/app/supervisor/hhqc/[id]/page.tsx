@@ -485,8 +485,7 @@ export default function HHQCEditPage() {
       );
 
       if (response.success) {
-        console.log("Clearing selected slum from localStorage after save");
-        localStorage.removeItem("hhqc-selected-slum");
+        // Do NOT clear hhqc-selected-slum here — we want the list page to restore the slum selection
         setShowSuccessModal(true);
       } else {
         if (response.error && (response.error as any).validationErrors) {

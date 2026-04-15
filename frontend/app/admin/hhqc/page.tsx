@@ -380,17 +380,8 @@ export default function HHQCPage() {
                             onClick={() => {
                               handleDeleteClick(row._id!);
                             }}
-                            disabled={row.surveyStatus !== "DRAFT"}
-                            className={`p-2 rounded-md ${
-                              row.surveyStatus === "DRAFT"
-                                ? "text-red-400 hover:bg-red-500/20 hover:text-red-300 cursor-pointer"
-                                : "text-gray-500 cursor-not-allowed opacity-50"
-                            }`}
-                            title={
-                              row.surveyStatus === "DRAFT"
-                                ? "Delete Record"
-                                : "Cannot delete Submitted surveys"
-                            }
+                            className="p-2 rounded-md text-red-400 hover:bg-red-500/20 hover:text-red-300 cursor-pointer"
+                            title="Delete Record"
                           >
                             <DeleteIcon size={16} />
                           </button>
@@ -412,7 +403,7 @@ export default function HHQCPage() {
         onConfirm={confirmDelete}
         loading={isDeleting}
         title="Delete Household Survey"
-        message="Are you sure you want to delete this household survey record? This action cannot be undone."
+        message="Are you sure you want to permanently delete this household survey record? This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
       />

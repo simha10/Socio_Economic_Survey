@@ -479,27 +479,38 @@ exports.deleteHouseholdSurvey = async (req, res) => {
   try {
     const { surveyId } = req.params;
     const userId = req.user.id || req.user._id;
+    const userRole = req.user.role;
 
     const survey = await HouseholdSurvey.findById(surveyId);
     if (!survey) {
       return sendError(res, 'Survey not found', 404);
     }
 
-    // Only allow deletion of DRAFT surveys
-    if (survey.surveyStatus !== 'DRAFT') {
-      return sendError(res, 'Can only delete DRAFT surveys', 400);
-    }
-
-    // Check authorization - handle case where surveyor might be undefined (e.g., imported records)
-    if (survey.surveyor && survey.surveyor.toString() !== userId.toString() && req.user.role === 'SURVEYOR') {
-      return sendError(res, 'Not authorized to delete this survey', 403);
+    // Authorization rules:
+    // - ADMIN: can delete any survey regardless of status
+    // - SUPERVISOR: can only delete DRAFT surveys
+    // - SURVEYOR: can only delete their own DRAFT surveys
+    if (userRole === 'ADMIN') {
+      // Admins can delete any survey — no status restriction
+    } else if (userRole === 'SUPERVISOR') {
+      // Supervisors can only delete DRAFT surveys
+      if (survey.surveyStatus !== 'DRAFT') {
+        return sendError(res, 'Supervisors can only delete DRAFT surveys', 400);
+      }
+    } else {
+      // SURVEYOR: can only delete their own DRAFT surveys
+      if (survey.surveyStatus !== 'DRAFT') {
+        return sendError(res, 'Can only delete DRAFT surveys', 400);
+      }
+      if (survey.surveyor && survey.surveyor.toString() !== userId.toString()) {
+        return sendError(res, 'Not authorized to delete this survey', 403);
+      }
     }
 
     // Save slum reference before deletion
     const slumId = survey.slum;
 
     await HouseholdSurvey.findByIdAndDelete(surveyId);
-
 
     // Update slum population calculation after deletion
     if (slumId) {
@@ -508,7 +519,7 @@ exports.deleteHouseholdSurvey = async (req, res) => {
       await updateSlumDemographicPopulationFromHouseholdSurveys(slumId);
       // Auto-sync household counts after deletion
       await autoSyncHouseholdCounts(slumId);
-      
+
       // Update statuses across all assignments for this slum
       const canonicalStatus = await getCanonicalSlumStatus(slumId);
       await syncAllAssignmentsForSlum(slumId, canonicalStatus);
