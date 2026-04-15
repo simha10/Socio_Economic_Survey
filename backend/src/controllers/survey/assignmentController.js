@@ -556,6 +556,121 @@ const updateAssignmentStatus = async (req, res) => {
   }
 };
 
+/**
+ * Manual status update by Supervisor/Admin
+ * Allows explicit status changes for assignments and slum surveys
+ */
+const updateAssignmentManualStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      assignmentStatus, // 'PENDING' | 'IN PROGRESS' | 'COMPLETED'
+      slumSurveyStatus, // 'NOT STARTED' | 'IN PROGRESS' | 'SUBMITTED'
+      completedAt, // Optional: custom completion date
+    } = req.body;
+
+    // Validate input
+    if (!assignmentStatus && !slumSurveyStatus) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one status field (assignmentStatus or slumSurveyStatus) must be provided.'
+      });
+    }
+
+    // Validate assignment status values
+    const validAssignmentStatuses = ['PENDING', 'IN PROGRESS', 'COMPLETED'];
+    if (assignmentStatus && !validAssignmentStatuses.includes(assignmentStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid assignment status. Must be one of: ${validAssignmentStatuses.join(', ')}`
+      });
+    }
+
+    // Validate slum survey status values
+    const validSlumSurveyStatuses = ['NOT STARTED', 'IN PROGRESS', 'SUBMITTED'];
+    if (slumSurveyStatus && !validSlumSurveyStatuses.includes(slumSurveyStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid slum survey status. Must be one of: ${validSlumSurveyStatuses.join(', ')}`
+      });
+    }
+
+    // Find assignment
+    const assignment = await Assignment.findById(id);
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Assignment not found.'
+      });
+    }
+
+    // Track what changed for sync
+    const syncData = {};
+
+    // Update assignment status if provided
+    if (assignmentStatus) {
+      assignment.status = assignmentStatus;
+      assignment.completedAt = assignmentStatus === 'COMPLETED' ? completedAt || new Date() : null;
+      syncData.status = assignmentStatus;
+    }
+
+    // Update slum survey status if provided
+    if (slumSurveyStatus) {
+      assignment.slumSurveyStatus = slumSurveyStatus;
+      syncData.slumSurveyStatus = slumSurveyStatus;
+
+      // Also update the actual SlumSurvey model to keep it in sync
+      const slumSurvey = await SlumSurvey.findOne({ slum: assignment.slum });
+
+      if (slumSurvey) {
+        // Map assignment slumSurveyStatus to slum survey surveyStatus
+        if (slumSurveyStatus === 'SUBMITTED') {
+          slumSurvey.surveyStatus = 'SUBMITTED';
+        } else if (slumSurveyStatus === 'IN PROGRESS') {
+          slumSurvey.surveyStatus = 'IN PROGRESS';
+        } else if (slumSurveyStatus === 'NOT STARTED') {
+          slumSurvey.surveyStatus = 'DRAFT';
+        }
+
+        await slumSurvey.save();
+      }
+    }
+
+    // Save assignment
+    await assignment.save();
+
+    // Sync status across all assignments for this slum
+    if (Object.keys(syncData).length > 0) {
+      await syncAllAssignmentsForSlum(assignment.slum, syncData);
+    }
+
+    // Populate and return updated assignment
+    const populatedAssignment = await Assignment.findById(id)
+      .populate('surveyor', 'name username role')
+      .populate({
+        path: 'slum',
+        select: 'slumName slumId village ward slumType totalHouseholds area',
+        populate: {
+          path: 'ward',
+          select: 'number name zone'
+        }
+      })
+      .populate('assignedBy', 'name username role');
+
+    res.json({
+      success: true,
+      message: 'Assignment status updated successfully.',
+      data: populatedAssignment
+    });
+  } catch (error) {
+    console.error('Manual status update error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error updating assignment status.'
+    });
+  }
+};
+
 module.exports = {
   assignSlumToSurveyor,
   getAllAssignments,
@@ -567,5 +682,6 @@ module.exports = {
   updateHouseholdProgress,
   updateAssignmentStatus,
   updateAssignment,
-  deleteAssignment
+  deleteAssignment,
+  updateAssignmentManualStatus
 };

@@ -8,6 +8,8 @@ import ModernTable from "@/components/ModernTable";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Button from "@/components/Button";
 import AssignmentForm from "@/components/AssignmentForm";
+import AssignmentStatusModal from "@/components/AssignmentStatusModal";
+import ConfirmEditOpenModal from "@/components/ConfirmEditOpenModal";
 import { useToast } from "@/components/Toast";
 import { Plus } from "lucide-react";
 
@@ -88,6 +90,11 @@ export default function AssignmentsPage() {
     null,
   );
   const [isDeletingAssignment, setIsDeletingAssignment] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showConfirmEditModal, setShowConfirmEditModal] = useState(false);
+  const [selectedAssignmentForStatus, setSelectedAssignmentForStatus] =
+    useState<Assignment | null>(null);
+  const [statusUpdateSuccess, setStatusUpdateSuccess] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -147,6 +154,32 @@ export default function AssignmentsPage() {
             : "Assignment created successfully",
         );
         setTimeout(() => setSuccessMessage(""), 3000);
+      }
+    });
+  };
+
+  const handleUpdateStatus = (assignment: Assignment) => {
+    setSelectedAssignmentForStatus(assignment);
+    setShowConfirmEditModal(true);
+  };
+
+  const confirmEditOpen = () => {
+    setShowConfirmEditModal(false);
+    setShowStatusModal(true);
+  };
+
+  const cancelEditOpen = () => {
+    setShowConfirmEditModal(false);
+    setSelectedAssignmentForStatus(null);
+  };
+
+  const handleStatusUpdateSuccess = () => {
+    // Refresh assignments list
+    apiService.getAllAssignments().then((res) => {
+      if (res.success) {
+        setAssignments((res.data as Assignment[]) || []);
+        setStatusUpdateSuccess("Status updated successfully");
+        setTimeout(() => setStatusUpdateSuccess(""), 3000);
       }
     });
   };
@@ -231,11 +264,11 @@ export default function AssignmentsPage() {
               Manage Assignments
             </h1>
             <Button
-                onClick={handleCreateAssignment}
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                Create Assignment
+              onClick={handleCreateAssignment}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Create Assignment
             </Button>
           </div>
 
@@ -243,6 +276,13 @@ export default function AssignmentsPage() {
           {successMessage && (
             <div className="bg-green-500/20 border border-green-500 text-green-400 px-4 py-3 rounded-lg">
               {successMessage}
+            </div>
+          )}
+
+          {/* Success Message for Status Update */}
+          {statusUpdateSuccess && (
+            <div className="bg-green-500/20 border border-green-500 text-green-400 px-4 py-3 rounded-lg">
+              {statusUpdateSuccess}
             </div>
           )}
 
@@ -369,9 +409,9 @@ export default function AssignmentsPage() {
                   accessorKey: (row) => (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleEditAssignmentModal(row)}
+                        onClick={() => handleUpdateStatus(row)}
                         className="text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
-                        title="Edit"
+                        title="Edit Status"
                       >
                         <svg
                           className="w-4 h-4"
@@ -421,6 +461,25 @@ export default function AssignmentsPage() {
         onClose={handleFormClose}
         onSuccess={handleFormSuccess}
         assignment={selectedAssignment}
+      />
+
+      {/* Confirm Edit Open Modal */}
+      <ConfirmEditOpenModal
+        isOpen={showConfirmEditModal}
+        onClose={cancelEditOpen}
+        onConfirm={confirmEditOpen}
+        assignment={selectedAssignmentForStatus}
+      />
+
+      {/* Assignment Status Update Modal */}
+      <AssignmentStatusModal
+        isOpen={showStatusModal}
+        onClose={() => {
+          setShowStatusModal(false);
+          setSelectedAssignmentForStatus(null);
+        }}
+        onSuccess={handleStatusUpdateSuccess}
+        assignment={selectedAssignmentForStatus}
       />
     </SupervisorAdminLayout>
   );

@@ -202,8 +202,7 @@ const getSlumById = async (req, res) => {
 // Update slum
 const updateSlum = async (req, res) => {
   try {
-    
-    const { name, location, stateCode, distCode, city, ward, slumType, landOwnership, totalHouseholds, village, area, ulbCode, ulbName } = req.body;
+    const { name, location, stateCode, distCode, city, ward, slumType, landOwnership, totalHouseholds, village, area, ulbCode, ulbName, surveyStatus } = req.body;
 
     const slum = await Slum.findById(req.params.id);
     if (!slum) {
@@ -232,6 +231,11 @@ const updateSlum = async (req, res) => {
       village: village || slum.village,
       area: area !== undefined ? area : slum.area
     };
+
+    // Admin can update surveyStatus
+    if (req.user.role === 'ADMIN' && surveyStatus !== undefined && surveyStatus !== null && surveyStatus !== '') {
+      updatedFields.surveyStatus = surveyStatus;
+    }
 
     // Handle ward field - if it's provided as a number/string, find the corresponding Ward document
     if (ward) {
@@ -262,8 +266,6 @@ const updateSlum = async (req, res) => {
 
     if (stateCode) updatedFields.stateCode = stateCode;
     if (distCode) updatedFields.distCode = distCode;
-    
-
 
     const updatedSlum = await Slum.findByIdAndUpdate(
       req.params.id,

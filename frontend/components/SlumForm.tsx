@@ -78,6 +78,7 @@ export default function SlumForm({
     totalHouseholds: 0,
     area: 0,
     location: "",
+    surveyStatus: "PENDING" as string,
   });
 
   const [loading, setLoading] = useState(false);
@@ -110,6 +111,7 @@ export default function SlumForm({
         totalHouseholds: slum.totalHouseholds || 0,
         area: slum.area || 0,
         location: slum.location || "",
+        surveyStatus: slum.surveyStatus || "PENDING",
       });
     } else {
       setFormData({
@@ -125,6 +127,7 @@ export default function SlumForm({
         landOwnership: "",
         totalHouseholds: 0,
         area: 0,
+        surveyStatus: "PENDING",
       });
     }
   }, [slum, isOpen]);
@@ -169,9 +172,45 @@ export default function SlumForm({
     try {
       let response;
       if (slum && slum._id) {
-        response = await apiService.updateSlum(slum._id, formData);
+        // Edit mode: Prepare update data
+        const updateData: Record<string, unknown> = {
+          name: formData.name,
+          slumId: formData.slumId,
+          stateCode: formData.stateCode,
+          distCode: formData.distCode,
+          cityTownCode: formData.cityTownCode,
+          ward: formData.ward,
+          slumType: formData.slumType,
+          village: formData.village,
+          landOwnership: formData.landOwnership,
+          totalHouseholds: formData.totalHouseholds,
+          area: formData.area,
+          location: formData.location,
+        };
+
+        // Only include surveyStatus in edit mode
+        if (isEditMode && formData.surveyStatus) {
+          updateData.surveyStatus = formData.surveyStatus;
+        }
+
+        response = await apiService.updateSlum(slum._id, updateData);
       } else {
-        response = await apiService.createSlum(formData);
+        // Create mode: Don't include surveyStatus (will default to PENDING)
+        const createData: Record<string, unknown> = {
+          name: formData.name,
+          slumId: formData.slumId,
+          stateCode: formData.stateCode,
+          distCode: formData.distCode,
+          cityTownCode: formData.cityTownCode,
+          ward: formData.ward,
+          slumType: formData.slumType,
+          village: formData.village,
+          landOwnership: formData.landOwnership,
+          totalHouseholds: formData.totalHouseholds,
+          area: formData.area,
+          location: formData.location,
+        };
+        response = await apiService.createSlum(createData);
       }
 
       if (response.success) {
@@ -190,13 +229,13 @@ export default function SlumForm({
           landOwnership: "",
           totalHouseholds: 0,
           area: 0,
+          surveyStatus: "PENDING",
         });
       } else {
         setError(response.error || "Failed to save slum");
       }
     } catch (err) {
       setError("Error saving slum");
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -404,7 +443,7 @@ export default function SlumForm({
               />
             </div>
 
-            <div className="max-w-md">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
                 label="Area (sq.m)"
                 name="area"
@@ -421,6 +460,33 @@ export default function SlumForm({
                     : ""
                 }
               />
+
+              {/* Survey Status Field - Only in Edit Mode */}
+              {isEditMode ? (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Slum Survey Status
+                  </label>
+                  <select
+                    name="surveyStatus"
+                    value={formData.surveyStatus}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-800/50 disabled:cursor-not-allowed disabled:opacity-75"
+                    disabled={isEditMode && !isAdmin}
+                  >
+                    <option value="PENDING">PENDING</option>
+                    <option value="IN PROGRESS">IN PROGRESS</option>
+                    <option value="COMPLETED">COMPLETED</option>
+                  </select>
+                  {!isAdmin && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Only admins can change the slum survey status
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div></div>
+              )}
             </div>
 
             {/* Hidden submit for Enter key support */}

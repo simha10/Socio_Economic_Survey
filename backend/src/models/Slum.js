@@ -68,8 +68,8 @@ const slumSchema = new mongoose.Schema({
   },
   surveyStatus: {
     type: String,
-    enum: ['DRAFT', 'IN PROGRESS', 'COMPLETED'],
-    default: 'DRAFT'
+    enum: ['DRAFT', 'IN PROGRESS', 'COMPLETED', 'PENDING'],
+    default: 'PENDING'
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
