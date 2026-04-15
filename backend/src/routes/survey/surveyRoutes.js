@@ -15,7 +15,8 @@ const {
   getAssignmentsForSurveyor,
   updateAssignmentStatus,
   updateAssignment,
-  deleteAssignment
+  deleteAssignment,
+  updateAssignmentManualStatus
 } = require('../../controllers/survey/assignmentController');
 const {
   createOrGetHouseholdSurvey,
@@ -119,6 +120,8 @@ router.get('/assignments/surveyor/:userId', auth, authorize('SUPERVISOR', 'ADMIN
 router.get('/assignments/:id', auth, getAssignmentById);
 // Update assignment status (legacy route for backward compatibility)
 router.put('/assignments/:id/status', auth, authorize('SUPERVISOR', 'ADMIN'), updateAssignmentStatus);
+// Manual status update by Supervisor/Admin (new explicit status management)
+router.put('/assignments/:id/manual-status', auth, authorize('SUPERVISOR', 'ADMIN'), updateAssignmentManualStatus);
 // Update assignment (full update)
 router.put('/assignments/:id', auth, authorize('SUPERVISOR', 'ADMIN'), updateAssignment);
 // Delete assignment

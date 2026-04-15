@@ -922,6 +922,35 @@ class ApiService {
     }
   }
 
+  /**
+   * Manual status update for assignment (Supervisor/Admin only)
+   */
+  public async updateAssignmentManualStatus(
+    assignmentId: string,
+    data: {
+      assignmentStatus?: string;
+      slumSurveyStatus?: string;
+      completedAt?: string;
+    }
+  ): Promise<ApiResponse> {
+    try {
+      const url = `${this.baseUrl}/surveys/assignments/${assignmentId}/manual-status`;
+      console.log('ApiService: Sending manual status update request', { assignmentId, url, data });
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: this.getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return await this.handleResponse(response);
+    } catch (error: unknown) {
+      return {
+        success: false,
+        user: undefined,
+        error: (error instanceof Error) ? error.message : 'Network error occurred',
+      };
+    }
+  }
+
   
   // Export endpoints
   public async exportSlumSurveys(): Promise<Blob> {

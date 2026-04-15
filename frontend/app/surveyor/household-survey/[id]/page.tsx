@@ -165,9 +165,9 @@ export default function HouseholdSurveyPage() {
   const { showToast } = useToast();
 
   // Get surveyId from query parameter, fallback to assignmentId
-  const surveyIdFromQuery = searchParams.get('surveyId');
+  const surveyIdFromQuery = searchParams.get("surveyId");
   const surveyIdToUse = surveyIdFromQuery || assignmentId;
-  
+
   // Detect if we're in new mode (creating a new survey) vs search mode (editing existing)
   const isNewMode = !surveyIdFromQuery;
 
@@ -180,16 +180,21 @@ export default function HouseholdSurveyPage() {
       name: string;
       _id: string;
       zone: string;
-    }
+    };
   } | null>(null);
   const [assignment, setAssignment] = useState<{
     _id: string;
-    slum: { _id: string; slumName: string; ward: { _id: string; number: string; name: string; zone: string } };
+    slum: {
+      _id: string;
+      slumName: string;
+      ward: { _id: string; number: string; name: string; zone: string };
+    };
     householdSurveyProgress?: { completed: number; total: number };
+    slumSurveyStatus?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["general", "household"]),
+    new Set(["general"]),
   );
 
   const [formData, setFormData] = useState<HouseholdSurveyForm>({
@@ -231,15 +236,16 @@ export default function HouseholdSurveyPage() {
 
   // Completion Modal State
   const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [householdProgress, setHouseholdProgress] = useState({ completed: 0, total: 0 });
-  
+  const [householdProgress, setHouseholdProgress] = useState({
+    completed: 0,
+    total: 0,
+  });
+
   // Caching state
   const [isCacheInitialized, setIsCacheInitialized] = useState(false);
   const cacheKeyRef = useRef<string>("");
   const isSubmittingRef = useRef(false);
   const hasUnsavedChangesRef = useRef(false);
-
-
 
   // Generate cache key based on survey ID
   const getCacheKey = useCallback((surveyId: string) => {
@@ -249,17 +255,17 @@ export default function HouseholdSurveyPage() {
   // Save form data to cache
   const saveToCache = useCallback((data: HouseholdSurveyForm) => {
     if (!cacheKeyRef.current || isSubmittingRef.current) return;
-    
+
     try {
       const cacheData = {
         formData: data,
         timestamp: Date.now(),
-        version: '1.0'
+        version: "1.0",
       };
       localStorage.setItem(cacheKeyRef.current, JSON.stringify(cacheData));
       hasUnsavedChangesRef.current = false;
     } catch (error) {
-      console.warn('Failed to save to cache:', error);
+      console.warn("Failed to save to cache:", error);
     }
   }, []);
 
@@ -271,8 +277,10 @@ export default function HouseholdSurveyPage() {
         const cacheData = JSON.parse(cached);
         // Validate cache version and timestamp (expire after 24 hours)
         const oneDay = 24 * 60 * 60 * 1000;
-        if (cacheData.version === '1.0' && 
-            Date.now() - cacheData.timestamp < oneDay) {
+        if (
+          cacheData.version === "1.0" &&
+          Date.now() - cacheData.timestamp < oneDay
+        ) {
           return cacheData.formData as HouseholdSurveyForm;
         } else {
           // Clear expired cache
@@ -280,7 +288,7 @@ export default function HouseholdSurveyPage() {
         }
       }
     } catch (error) {
-      console.warn('Failed to load from cache:', error);
+      console.warn("Failed to load from cache:", error);
       localStorage.removeItem(cacheKey);
     }
     return null;
@@ -291,53 +299,63 @@ export default function HouseholdSurveyPage() {
     try {
       localStorage.removeItem(cacheKey);
     } catch (error) {
-      console.warn('Failed to clear cache:', error);
+      console.warn("Failed to clear cache:", error);
     }
   }, []);
 
   // Auto-calculate totals when male/female fields change
   useEffect(() => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const updated = { ...prev };
       let hasChanges = false;
 
       // Family members total
-      const familyTotal = (updated.familyMembersMale || 0) + (updated.familyMembersFemale || 0);
+      const familyTotal =
+        (updated.familyMembersMale || 0) + (updated.familyMembersFemale || 0);
       if (updated.familyMembersTotal !== familyTotal) {
         updated.familyMembersTotal = familyTotal;
         hasChanges = true;
       }
 
       // Illiterate adults total
-      const illiterateTotal = (updated.illiterateAdultMale || 0) + (updated.illiterateAdultFemale || 0);
+      const illiterateTotal =
+        (updated.illiterateAdultMale || 0) +
+        (updated.illiterateAdultFemale || 0);
       if (updated.illiterateAdultTotal !== illiterateTotal) {
         updated.illiterateAdultTotal = illiterateTotal;
         hasChanges = true;
       }
 
       // Children not attending school total
-      const childrenTotal = (updated.childrenNotAttendingMale || 0) + (updated.childrenNotAttendingFemale || 0);
+      const childrenTotal =
+        (updated.childrenNotAttendingMale || 0) +
+        (updated.childrenNotAttendingFemale || 0);
       if (updated.childrenNotAttendingTotal !== childrenTotal) {
         updated.childrenNotAttendingTotal = childrenTotal;
         hasChanges = true;
       }
 
       // Handicapped total
-      const handicappedTotal = (updated.handicappedPhysically || 0) + (updated.handicappedMentally || 0);
+      const handicappedTotal =
+        (updated.handicappedPhysically || 0) +
+        (updated.handicappedMentally || 0);
       if (updated.handicappedTotal !== handicappedTotal) {
         updated.handicappedTotal = handicappedTotal;
         hasChanges = true;
       }
 
       // Earning adults total
-      const earningAdultTotal = (updated.earningAdultMale || 0) + (updated.earningAdultFemale || 0);
+      const earningAdultTotal =
+        (updated.earningAdultMale || 0) + (updated.earningAdultFemale || 0);
       if (updated.earningAdultTotal !== earningAdultTotal) {
         updated.earningAdultTotal = earningAdultTotal;
         hasChanges = true;
       }
 
       // Earning non-adults total
-      const earningNonAdultTotal = (updated.earningNonAdultMale || 0) + (updated.earningNonAdultFemale || 0);
+      const earningNonAdultTotal =
+        (updated.earningNonAdultMale || 0) +
+        (updated.earningNonAdultFemale || 0);
       if (updated.earningNonAdultTotal !== earningNonAdultTotal) {
         updated.earningNonAdultTotal = earningNonAdultTotal;
         hasChanges = true;
@@ -347,22 +365,30 @@ export default function HouseholdSurveyPage() {
       return hasChanges ? updated : prev;
     });
   }, [
-    formData.familyMembersMale, formData.familyMembersFemale,
-    formData.illiterateAdultMale, formData.illiterateAdultFemale,
-    formData.childrenNotAttendingMale, formData.childrenNotAttendingFemale,
-    formData.handicappedPhysically, formData.handicappedMentally,
-    formData.earningAdultMale, formData.earningAdultFemale,
-    formData.earningNonAdultMale, formData.earningNonAdultFemale
+    formData.familyMembersMale,
+    formData.familyMembersFemale,
+    formData.illiterateAdultMale,
+    formData.illiterateAdultFemale,
+    formData.childrenNotAttendingMale,
+    formData.childrenNotAttendingFemale,
+    formData.handicappedPhysically,
+    formData.handicappedMentally,
+    formData.earningAdultMale,
+    formData.earningAdultFemale,
+    formData.earningNonAdultMale,
+    formData.earningNonAdultFemale,
   ]);
 
   const fetchProgress = useCallback(async () => {
     try {
       const response = await apiService.getMyAssignments();
       if (response.success && response.data) {
-        const currentAssignment = (response.data as any[]).find((a: {
-          _id: string;
-          householdSurveyProgress?: { completed: number; total: number }
-        }) => a._id === assignmentId);
+        const currentAssignment = (response.data as any[]).find(
+          (a: {
+            _id: string;
+            householdSurveyProgress?: { completed: number; total: number };
+          }) => a._id === assignmentId,
+        );
         if (currentAssignment && currentAssignment.householdSurveyProgress) {
           setHouseholdProgress(currentAssignment.householdSurveyProgress);
         }
@@ -377,7 +403,10 @@ export default function HouseholdSurveyPage() {
       try {
         // Currently no households need to be loaded for the editing workflow
       } catch (error) {
-        console.error(`Error loading households for Slum with ID ${slumId}:`, error);
+        console.error(
+          `Error loading households for Slum with ID ${slumId}:`,
+          error,
+        );
         showToast("Failed to load households", "error");
       }
     },
@@ -395,42 +424,50 @@ export default function HouseholdSurveyPage() {
 
         // First, try to load from cache
         const cachedData = loadFromCache(cacheKey);
-        
+
         // Handle new mode (no surveyIdFromQuery) - prioritize cache over DB
         if (isNewMode) {
-          console.log('[HOUSEHOLD_SURVEY] New mode detected, checking cache first');
-          
+          console.log(
+            "[HOUSEHOLD_SURVEY] New mode detected, checking cache first",
+          );
+
           if (cachedData) {
             // Restore from cache in new mode
-            console.log('[HOUSEHOLD_SURVEY] Restoring from cache in new mode');
+            console.log("[HOUSEHOLD_SURVEY] Restoring from cache in new mode");
             setFormData(cachedData);
             setIsCacheInitialized(true);
             hasUnsavedChangesRef.current = false;
-            
+
             // Don't fetch DB data in new mode when cache exists - prevents overwriting user data
             setLoading(false);
             return;
           } else {
             // No cache exists, initialize with empty form but fetch slum info
-            console.log('[HOUSEHOLD_SURVEY] No cache found in new mode, initializing empty form');
-            
+            console.log(
+              "[HOUSEHOLD_SURVEY] No cache found in new mode, initializing empty form",
+            );
+
             // Load assignment details to get slum info
-            const assignmentResponse = await apiService.getAssignment(assignmentId);
+            const assignmentResponse =
+              await apiService.getAssignment(assignmentId);
             if (assignmentResponse.success && assignmentResponse.data) {
               setAssignment(assignmentResponse.data as any);
               const slumId = (assignmentResponse.data as any).slum._id;
-              
+
               // Fetch slum details
               const slumResponse = await apiService.getSlum(slumId);
               if (slumResponse.success) {
                 const slumData = slumResponse.data as any;
                 setSlum(slumData);
-                
+
                 // Auto-fill slum details
-                setFormData(prev => ({
+                setFormData((prev) => ({
                   ...prev,
                   slumName: slumData.slumName || prev.slumName || "",
-                  ward: typeof slumData.ward === 'object' ? `${slumData.ward.number} - ${slumData.ward.name}` : slumData.ward || prev.ward || "",
+                  ward:
+                    typeof slumData.ward === "object"
+                      ? `${slumData.ward.number} - ${slumData.ward.name}`
+                      : slumData.ward || prev.ward || "",
                 }));
               }
             }
@@ -440,21 +477,22 @@ export default function HouseholdSurveyPage() {
             return;
           }
         }
-        
+
         // Handle search mode (existing survey) - fetch DB data but prioritize cache if it exists
-        
+
         // Load specific household survey by ID from query params (search mode only)
-        const householdSurveyResponse = await apiService.getHouseholdSurvey(surveyIdToUse);
-        
+        const householdSurveyResponse =
+          await apiService.getHouseholdSurvey(surveyIdToUse);
+
         if (householdSurveyResponse.success && householdSurveyResponse.data) {
           // This is an existing household survey, populate the form with its data
           const surveyData = householdSurveyResponse.data as any;
-        
+
           // Set slum information
           if (surveyData.slum) {
             setSlum(surveyData.slum);
           }
-        
+
           // Set assignment info if available
           if (surveyData.surveyor) {
             setAssignment({
@@ -462,46 +500,54 @@ export default function HouseholdSurveyPage() {
               slum: surveyData.slum,
             });
           }
-        
+
           // Set form data with the existing survey data, but prioritize cache if it exists
-          setFormData(prev => {
+          setFormData((prev) => {
             let baseData;
-            
+
             // If cached data exists, use it as the primary data source
             if (cachedData) {
               baseData = {
                 ...prev,
                 ...surveyData, // Start with DB data as base
                 slumName: surveyData.slum?.slumName || prev.slumName || "",
-                ward: typeof surveyData.slum?.ward === 'object'
-                  ? `${surveyData.slum.ward.number} - ${surveyData.slum.ward.name}`
-                  : surveyData.slum?.ward || prev.ward || "",
+                ward:
+                  typeof surveyData.slum?.ward === "object"
+                    ? `${surveyData.slum.ward.number} - ${surveyData.slum.ward.name}`
+                    : surveyData.slum?.ward || prev.ward || "",
               };
-              
+
               // Then override with cached data to ensure user changes take priority
               Object.assign(baseData, cachedData);
-              console.log('[HOUSEHOLD_SURVEY] Using cached data as primary, merged with DB data');
+              console.log(
+                "[HOUSEHOLD_SURVEY] Using cached data as primary, merged with DB data",
+              );
             } else {
               // No cached data, use DB data as is
               baseData = {
                 ...prev,
                 ...surveyData,
                 slumName: surveyData.slum?.slumName || prev.slumName || "",
-                ward: typeof surveyData.slum?.ward === 'object'
-                  ? `${surveyData.slum.ward.number} - ${surveyData.slum.ward.name}`
-                  : surveyData.slum?.ward || prev.ward || "",
+                ward:
+                  typeof surveyData.slum?.ward === "object"
+                    ? `${surveyData.slum.ward.number} - ${surveyData.slum.ward.name}`
+                    : surveyData.slum?.ward || prev.ward || "",
               };
             }
-        
+
             // Ensure required fields mentioned in requirements are properly displayed
             // Construct houseDoorNo as {Parcel Id}-{Property Number} if not already set
-            if (!baseData.houseDoorNo && baseData.parcelId !== undefined && baseData.propertyNo !== undefined) {
+            if (
+              !baseData.houseDoorNo &&
+              baseData.parcelId !== undefined &&
+              baseData.propertyNo !== undefined
+            ) {
               baseData.houseDoorNo = `${baseData.parcelId}-${baseData.propertyNo}`;
             }
-        
+
             return baseData;
           });
-          
+
           // Mark cache as initialized in search mode too
           if (!isCacheInitialized) {
             setIsCacheInitialized(true);
@@ -509,13 +555,21 @@ export default function HouseholdSurveyPage() {
           }
         } else {
           // Check if the API call failed due to authorization error
-          if (householdSurveyResponse.error && (householdSurveyResponse.error.includes('403') || householdSurveyResponse.error.includes('authorized'))) {
-            showToast("Access denied. You don't have permission to view this survey.", "error");
+          if (
+            householdSurveyResponse.error &&
+            (householdSurveyResponse.error.includes("403") ||
+              householdSurveyResponse.error.includes("authorized"))
+          ) {
+            showToast(
+              "Access denied. You don't have permission to view this survey.",
+              "error",
+            );
             router.push("/surveyor/dashboard");
             return; // Exit early to prevent further execution
           }
           // No existing survey found, try to load assignment details to get slum info
-          const assignmentResponse = await apiService.getAssignment(assignmentId);
+          const assignmentResponse =
+            await apiService.getAssignment(assignmentId);
           if (assignmentResponse.success && assignmentResponse.data) {
             setAssignment(assignmentResponse.data as any);
             const slumId = (assignmentResponse.data as any).slum._id;
@@ -527,10 +581,13 @@ export default function HouseholdSurveyPage() {
               setSlum(slumData);
 
               // Auto-fill slum details
-              setFormData(prev => ({
+              setFormData((prev) => ({
                 ...prev,
                 slumName: slumData.slumName || prev.slumName || "",
-                ward: typeof slumData.ward === 'object' ? `${slumData.ward.number} - ${slumData.ward.name}` : slumData.ward || prev.ward || "",
+                ward:
+                  typeof slumData.ward === "object"
+                    ? `${slumData.ward.number} - ${slumData.ward.name}`
+                    : slumData.ward || prev.ward || "",
               }));
 
               // Load households for this slum
@@ -549,8 +606,14 @@ export default function HouseholdSurveyPage() {
         console.error(`Error loading data with ID ${assignmentId}:`, error);
 
         // Check if it's a 403 error (authorization) and handle gracefully
-        if (error instanceof Error && (error.message.includes('403') || error.message.includes('Forbidden'))) {
-          showToast("Access denied. You don't have permission to view this survey.", "error");
+        if (
+          error instanceof Error &&
+          (error.message.includes("403") || error.message.includes("Forbidden"))
+        ) {
+          showToast(
+            "Access denied. You don't have permission to view this survey.",
+            "error",
+          );
           // Redirect to dashboard
           router.push("/surveyor/dashboard");
         } else {
@@ -563,22 +626,35 @@ export default function HouseholdSurveyPage() {
     };
 
     loadData();
-  }, [assignmentId, surveyIdFromQuery, router, showToast, fetchProgress, loadHouseholdsForSlum, getCacheKey, loadFromCache, isCacheInitialized, surveyIdToUse, isNewMode]);
+  }, [
+    assignmentId,
+    surveyIdFromQuery,
+    router,
+    showToast,
+    fetchProgress,
+    loadHouseholdsForSlum,
+    getCacheKey,
+    loadFromCache,
+    isCacheInitialized,
+    surveyIdToUse,
+    isNewMode,
+  ]);
 
   // Save to cache whenever form data changes
   useEffect(() => {
-    if (cacheKeyRef.current) { // Save to cache once cache key is established
+    if (cacheKeyRef.current) {
+      // Save to cache once cache key is established
       // Debounce the save to avoid too frequent writes
       const timer = setTimeout(() => {
         saveToCache(formData);
         hasUnsavedChangesRef.current = false;
       }, 1000);
-      
+
       hasUnsavedChangesRef.current = true;
-      
+
       return () => clearTimeout(timer);
     }
-  }, [formData, saveToCache]); //cacheKeyRef.current, 
+  }, [formData, saveToCache]); //cacheKeyRef.current,
 
   const toggleSection = useCallback((sectionId: string) => {
     setExpandedSections((prev) => {
@@ -614,13 +690,13 @@ export default function HouseholdSurveyPage() {
       const currentArray = current || [];
 
       // Special handling for welfareBenefits field
-      if (field === 'welfareBenefits') {
-        if (value === 'NONE') {
+      if (field === "welfareBenefits") {
+        if (value === "NONE") {
           // If "None" is being checked, clear all other benefits
-          if (!currentArray.includes('NONE')) {
+          if (!currentArray.includes("NONE")) {
             return {
               ...prev,
-              [field]: ['NONE'],
+              [field]: ["NONE"],
             };
           } else {
             // If "None" is being unchecked, return empty array
@@ -631,13 +707,13 @@ export default function HouseholdSurveyPage() {
           }
         } else {
           // If any other benefit is being checked, remove "NONE" if present
-          if (currentArray.includes('NONE')) {
+          if (currentArray.includes("NONE")) {
             return {
               ...prev,
               [field]: [value],
             };
           }
-          
+
           // Normal toggle behavior for non-NONE benefits
           if (currentArray.includes(value)) {
             const newArray = currentArray.filter((v) => v !== value);
@@ -654,7 +730,7 @@ export default function HouseholdSurveyPage() {
           }
         }
       }
-      
+
       // Default behavior for other checkbox fields
       if (currentArray.includes(value)) {
         const newArray = currentArray.filter((v) => v !== value);
@@ -678,11 +754,14 @@ export default function HouseholdSurveyPage() {
 
     // General Information (except Additional Notes)
     // Either houseDoorNo or both parcelId and propertyNo must be provided
-    if (!formData.houseDoorNo?.trim() &&
-      (formData.parcelId === undefined || formData.propertyNo === undefined)) {
+    if (
+      !formData.houseDoorNo?.trim() &&
+      (formData.parcelId === undefined || formData.propertyNo === undefined)
+    ) {
       newErrors.push({
         field: "houseDoorNo",
-        message: "House/Flat/Door No. is required or both Parcel ID and Property No. are required",
+        message:
+          "House/Flat/Door No. is required or both Parcel ID and Property No. are required",
       });
     }
 
@@ -1110,24 +1189,28 @@ export default function HouseholdSurveyPage() {
 
   const handleSubmit = async () => {
     try {
-      console.log('[HOUSEHOLD_SURVEY] 🚀 handleSubmit called');
+      console.log("[HOUSEHOLD_SURVEY] 🚀 handleSubmit called");
 
       // Validate form
       const validationErrors = validateForm();
       setErrors(validationErrors);
 
       if (validationErrors.length > 0) {
-        console.log('[HOUSEHOLD_SURVEY] ❌ Form validation failed:', validationErrors);
+        console.log(
+          "[HOUSEHOLD_SURVEY] ❌ Form validation failed:",
+          validationErrors,
+        );
         showToast("Please fill all required fields", "error");
         scrollToFirstError();
         return;
       }
 
-      console.log('[HOUSEHOLD_SURVEY] ✅ Form validation passed, proceeding to submit');
+      console.log(
+        "[HOUSEHOLD_SURVEY] ✅ Form validation passed, proceeding to submit",
+      );
 
       // Directly call submit function instead of showing confirmation
       await handleConfirmSubmit();
-
     } catch (error) {
       console.error("[HOUSEHOLD_SURVEY] ❌ Error in handleSubmit:", error);
       showToast("Failed to prepare submission", "error");
@@ -1136,7 +1219,7 @@ export default function HouseholdSurveyPage() {
 
   const handleConfirmSubmit = async () => {
     try {
-      console.log('[HOUSEHOLD_SURVEY] 🚀 handleConfirmSubmit called');
+      console.log("[HOUSEHOLD_SURVEY] 🚀 handleConfirmSubmit called");
       setSubmitting(true);
       setShowSubmitConfirm(false);
       isSubmittingRef.current = true;
@@ -1144,7 +1227,7 @@ export default function HouseholdSurveyPage() {
       // Clear cache before submission since we're about to save to DB
       if (cacheKeyRef.current) {
         clearCache(cacheKeyRef.current);
-        console.log('[HOUSEHOLD_SURVEY] Cache cleared on submission');
+        console.log("[HOUSEHOLD_SURVEY] Cache cleared on submission");
       }
 
       // Clear previous errors
@@ -1152,36 +1235,49 @@ export default function HouseholdSurveyPage() {
 
       // Check if we're working with an existing survey (editing mode)
       // Get surveyId from query params
-      const surveyIdFromQuery = searchParams.get('surveyId');
+      const surveyIdFromQuery = searchParams.get("surveyId");
       let surveyIdToUse = surveyIdFromQuery || assignmentId;
-      console.log('[HOUSEHOLD_SURVEY] Survey ID to use:', surveyIdToUse);
+      console.log("[HOUSEHOLD_SURVEY] Survey ID to use:", surveyIdToUse);
       let isExistingSurvey = false;
 
       // Check if this is an existing survey
       try {
-        const existingSurveyResponse = await apiService.getHouseholdSurvey(surveyIdToUse);
-        isExistingSurvey = existingSurveyResponse.success && !!existingSurveyResponse.data;
+        const existingSurveyResponse =
+          await apiService.getHouseholdSurvey(surveyIdToUse);
+        isExistingSurvey =
+          existingSurveyResponse.success && !!existingSurveyResponse.data;
       } catch (error) {
-        console.error('Error checking existing survey:', error);
+        console.error("Error checking existing survey:", error);
         isExistingSurvey = false;
       }
 
       if (isExistingSurvey && surveyIdToUse) {
-        console.log('[HOUSEHOLD_SURVEY] 🎯 Submitting existing survey');
+        console.log("[HOUSEHOLD_SURVEY] 🎯 Submitting existing survey");
 
         // Submit the existing survey
         // Remove surveyStatus from formData as it should be controlled by backend
         const { surveyStatus, ...submitData } = formData;
-        console.log('[HOUSEHOLD_SURVEY] 🚀 Survey Status:', surveyStatus);
-        console.log('[HOUSEHOLD_SURVEY] Submitting existing survey with formData (excluding surveyStatus):', submitData);
+        console.log("[HOUSEHOLD_SURVEY] 🚀 Survey Status:", surveyStatus);
+        console.log(
+          "[HOUSEHOLD_SURVEY] Submitting existing survey with formData (excluding surveyStatus):",
+          submitData,
+        );
 
-        console.log('[HOUSEHOLD_SURVEY] 📡 Calling API service submitHouseholdSurvey...');
+        console.log(
+          "[HOUSEHOLD_SURVEY] 📡 Calling API service submitHouseholdSurvey...",
+        );
         const response = await apiService.submitHouseholdSurvey(
           surveyIdToUse,
-          submitData
+          submitData,
         );
-        console.log('[HOUSEHOLD_SURVEY] 📡 API service response received:', response);
-        console.log('[HOUSEHOLD_SURVEY] Existing survey submit response:', response);
+        console.log(
+          "[HOUSEHOLD_SURVEY] 📡 API service response received:",
+          response,
+        );
+        console.log(
+          "[HOUSEHOLD_SURVEY] Existing survey submit response:",
+          response,
+        );
 
         if (response.success) {
           showToast("Household survey submitted successfully", "success");
@@ -1193,9 +1289,9 @@ export default function HouseholdSurveyPage() {
           await fetchProgress(); // Fetch updated progress
           setShowCompletionModal(true);
         } else {
-          console.error('[HOUSEHOLD_SURVEY] ❌ Submission failed:', {
+          console.error("[HOUSEHOLD_SURVEY] ❌ Submission failed:", {
             message: response.error,
-            error: response.error
+            error: response.error,
           });
           showToast(response.error || "Failed to submit survey", "error");
           return;
@@ -1204,13 +1300,16 @@ export default function HouseholdSurveyPage() {
         // This is a new survey from an assignment, create it
         let surveyResponse;
 
-        if (formData.parcelId !== undefined && formData.propertyNo !== undefined) {
+        if (
+          formData.parcelId !== undefined &&
+          formData.propertyNo !== undefined
+        ) {
           // Use parcel-based workflow
           surveyResponse = await apiService.createOrGetHouseholdSurvey(
             assignment?.slum?._id || "",
             formData.houseDoorNo || "",
             formData.parcelId,
-            formData.propertyNo
+            formData.propertyNo,
           );
         } else {
           // Use traditional workflow
@@ -1229,32 +1328,48 @@ export default function HouseholdSurveyPage() {
         }
 
         surveyIdToUse = (surveyResponse.data as any)._id;
-        console.log('[HOUSEHOLD_SURVEY] 🎯 Submitting new survey with ID:', surveyIdToUse);
+        console.log(
+          "[HOUSEHOLD_SURVEY] 🎯 Submitting new survey with ID:",
+          surveyIdToUse,
+        );
 
         // Submit the new survey
         // Remove surveyStatus from formData as it should be controlled by backend
         const { surveyStatus, ...submitData } = formData;
-        console.log('[HOUSEHOLD_SURVEY] 🚀 Starting submission for survey ID:', surveyIdToUse);
-        console.log('[HOUSEHOLD_SURVEY] Form data keys being sent:', Object.keys(submitData));
-        console.log('[HOUSEHOLD_SURVEY] Excluded fields:', { surveyStatus: surveyStatus ? 'present' : 'absent' });
+        console.log(
+          "[HOUSEHOLD_SURVEY] 🚀 Starting submission for survey ID:",
+          surveyIdToUse,
+        );
+        console.log(
+          "[HOUSEHOLD_SURVEY] Form data keys being sent:",
+          Object.keys(submitData),
+        );
+        console.log("[HOUSEHOLD_SURVEY] Excluded fields:", {
+          surveyStatus: surveyStatus ? "present" : "absent",
+        });
 
-        console.log('[HOUSEHOLD_SURVEY] 📡 Calling API service submitHouseholdSurvey for new survey...');
+        console.log(
+          "[HOUSEHOLD_SURVEY] 📡 Calling API service submitHouseholdSurvey for new survey...",
+        );
         const response = await apiService.submitHouseholdSurvey(
           surveyIdToUse,
           submitData,
         );
-        console.log('[HOUSEHOLD_SURVEY] 📡 API service response received for new survey:', response);
+        console.log(
+          "[HOUSEHOLD_SURVEY] 📡 API service response received for new survey:",
+          response,
+        );
 
-        console.log('[HOUSEHOLD_SURVEY] 📡 API Response received:', {
+        console.log("[HOUSEHOLD_SURVEY] 📡 API Response received:", {
           success: response.success,
           message: response.error,
           hasData: !!response.data,
-          dataKeys: response.data ? Object.keys(response.data) : []
+          dataKeys: response.data ? Object.keys(response.data) : [],
         });
 
         if (response.success) {
-          console.log('[HOUSEHOLD_SURVEY] ✅ Submission successful!');
-          console.log('[HOUSEHOLD_SURVEY] Response data:', response.data);
+          console.log("[HOUSEHOLD_SURVEY] ✅ Submission successful!");
+          console.log("[HOUSEHOLD_SURVEY] Response data:", response.data);
           showToast("Household survey submitted successfully", "success");
 
           // Save house number for modal
@@ -1267,7 +1382,10 @@ export default function HouseholdSurveyPage() {
             parcelId: undefined,
             propertyNo: undefined,
             slumName: slum?.slumName || "",
-            ward: typeof slum?.ward === 'object' ? `${slum?.ward.number} - ${slum?.ward.name}` : slum?.ward || "",
+            ward:
+              typeof slum?.ward === "object"
+                ? `${slum?.ward.number} - ${slum?.ward.name}`
+                : slum?.ward || "",
             // Reset all other fields to empty/default values
             headName: "",
             fatherName: "",
@@ -1324,13 +1442,11 @@ export default function HouseholdSurveyPage() {
             monthlyIncome: undefined,
             monthlyExpenditure: undefined,
             debtOutstanding: undefined,
-            notes: ""
+            notes: "",
           });
 
           // Reset expanded sections
-          setExpandedSections(new Set(["general", "household"]));
-
-
+          setExpandedSections(new Set(["general"]));
 
           // Show completion modal instead of browser alert
           await fetchProgress(); // Fetch updated progress
@@ -1352,9 +1468,6 @@ export default function HouseholdSurveyPage() {
       <SurveyorLayout fullScreen>
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-
-
-
         </div>
       </SurveyorLayout>
     );
@@ -1394,8 +1507,6 @@ export default function HouseholdSurveyPage() {
             </p>
           </div>
         </div>
-
-
 
         {/* Accordion Sections */}
         <div className="space-y-4 my-6 ">
@@ -1445,8 +1556,6 @@ export default function HouseholdSurveyPage() {
                         readOnly
                         className="bg-slate-800/50 cursor-not-allowed opacity-75"
                       />
-
-
 
                       {/* Traditional house door number input */}
                       <Input
@@ -1625,7 +1734,9 @@ export default function HouseholdSurveyPage() {
                           className="bg-slate-800/50 cursor-not-allowed opacity-75"
                           error={getFieldError("familyMembersTotal")}
                         />
-                        <p className="text-xs text-gray-400 mt-1">Auto-calculated (Male + Female).</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Auto-calculated (Male + Female).
+                        </p>
                       </div>
                       <Input
                         label="12a. Number of Illiterate Adult Male Members (>14 yrs old)"
@@ -1681,7 +1792,9 @@ export default function HouseholdSurveyPage() {
                           className="bg-slate-800/50 cursor-not-allowed opacity-75"
                           error={getFieldError("illiterateAdultTotal")}
                         />
-                        <p className="text-xs text-gray-400 mt-1">Auto-calculated (Male + Female).</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Auto-calculated (Male + Female).
+                        </p>
                       </div>
                       <Input
                         label="13a. Number of Children Aged 6-14 Not Attending School (Male)"
@@ -1737,7 +1850,9 @@ export default function HouseholdSurveyPage() {
                           className="bg-slate-800/50 cursor-not-allowed opacity-75"
                           error={getFieldError("childrenNotAttendingTotal")}
                         />
-                        <p className="text-xs text-gray-400 mt-1">Auto-calculated (Male + Female).</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Auto-calculated (Male + Female).
+                        </p>
                       </div>
                       <Input
                         label="14a. Number of Handicapped Persons (Physically)"
@@ -1793,12 +1908,18 @@ export default function HouseholdSurveyPage() {
                           className="bg-slate-800/50 cursor-not-allowed opacity-75"
                           error={getFieldError("handicappedTotal")}
                         />
-                        <p className="text-xs text-gray-400 mt-1">Auto-calculated (Physically + Mentally).</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Auto-calculated (Physically + Mentally).
+                        </p>
                       </div>
                       {formData.femaleHeadStatus !== "" && (
                         <Select
                           label="15. If Major Earning Member is Female, Status"
-                          value={formData.femaleHeadStatus|| formData.femaleEarningStatus || ""}
+                          value={
+                            formData.femaleHeadStatus ||
+                            formData.femaleEarningStatus ||
+                            ""
+                          }
                           onChange={(e) =>
                             handleInputChange(
                               "femaleEarningStatus",
@@ -1849,7 +1970,8 @@ export default function HouseholdSurveyPage() {
                             { value: "NO", label: "No" },
                           ]}
                         />
-                      )}</>
+                      )}
+                    </>
                   )}
 
                   {section.id === "housing" && (
@@ -2422,7 +2544,8 @@ export default function HouseholdSurveyPage() {
                             ))}
                           </div>
                         </div>
-                      )}</>
+                      )}
+                    </>
                   )}
 
                   {section.id === "income" && (
@@ -2481,7 +2604,9 @@ export default function HouseholdSurveyPage() {
                           className="bg-slate-800/50 cursor-not-allowed opacity-75"
                           error={getFieldError("earningAdultTotal")}
                         />
-                        <p className="text-xs text-gray-400 mt-1">Auto-calculated (Male + Female).</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Auto-calculated (Male + Female).
+                        </p>
                       </div>
                       <Input
                         label="41a. Number of Earning Non-Adult Members (Male)"
@@ -2537,7 +2662,9 @@ export default function HouseholdSurveyPage() {
                           className="bg-slate-800/50 cursor-not-allowed opacity-75"
                           error={getFieldError("earningNonAdultTotal")}
                         />
-                        <p className="text-xs text-gray-400 mt-1">Auto-calculated (Male + Female).</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Auto-calculated (Male + Female).
+                        </p>
                       </div>
                       <Input
                         label="42. Average Monthly Income of Household (in Rs.)"
@@ -2637,7 +2764,9 @@ export default function HouseholdSurveyPage() {
             // Clear cache when navigating back
             if (cacheKeyRef.current) {
               clearCache(cacheKeyRef.current);
-              console.log('[HOUSEHOLD_SURVEY] Cache cleared on back navigation');
+              console.log(
+                "[HOUSEHOLD_SURVEY] Cache cleared on back navigation",
+              );
             }
             router.push(backDestination);
           }}
@@ -2650,13 +2779,26 @@ export default function HouseholdSurveyPage() {
             <div className="bg-slate-800 rounded-lg max-w-md w-full p-6 border border-slate-700">
               <div className="text-center">
                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-                  <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <svg
+                    className="h-6 w-6 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-white mb-2">Confirm Submission</h3>
+                <h3 className="text-lg font-medium text-white mb-2">
+                  Confirm Submission
+                </h3>
                 <p className="text-slate-300 mb-6">
-                  Are you sure you want to submit this household survey? Once submitted, you won&#39;t be able to edit it.
+                  Are you sure you want to submit this household survey? Once
+                  submitted, you won&#39;t be able to edit it.
                 </p>
                 <div className="flex gap-3 justify-center">
                   <Button
@@ -2686,7 +2828,9 @@ export default function HouseholdSurveyPage() {
         onSubmit={() => {
           setShowCompletionModal(false);
           // Redirect to HouseholdSurveySelector for continuing survey
-          router.push(`/surveyor/dashboard?openSelector=true&slumId=${slum?._id || ""}&assignmentId=${assignmentId}&mode=search`);
+          router.push(
+            `/surveyor/dashboard?openSelector=true&slumId=${slum?._id || ""}&assignmentId=${assignmentId}&mode=search`,
+          );
         }}
         houseDoorNo={lastSubmittedHouseNo}
         slumName={slum?.slumName || ""}
@@ -2694,6 +2838,7 @@ export default function HouseholdSurveyPage() {
         assignmentId={assignmentId}
         completedCount={householdProgress.completed}
         totalCount={householdProgress.total}
+        slumSurveyStatus={assignment?.slumSurveyStatus}
       />
     </SurveyorLayout>
   );
