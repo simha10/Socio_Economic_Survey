@@ -847,13 +847,10 @@ class ApiService {
 
   public async getAllAssignments(page = 1, limit = 100): Promise<ApiResponse> {
     try {
-      console.log('Fetching all assignments from:', `${this.baseUrl}/surveys/assignments?page=${page}&limit=${limit}`);
       const response = await fetch(`${this.baseUrl}/surveys/assignments?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: this.getHeaders(),
       });
-
-      console.log('getAllAssignments response status:', response.status);
       return await this.handleResponse(response);
     } catch (error: unknown) {
       console.error('getAllAssignments error:', error);
@@ -888,7 +885,6 @@ class ApiService {
   public async updateAssignment(assignmentId: string, assignmentData: { status?: string; surveyor?: string; slum?: string }): Promise<ApiResponse> {
     try {
       const url = `${this.baseUrl}/surveys/assignments/${assignmentId}`;
-      console.log('ApiService: Sending update assignment request', { assignmentId, url });
       const response = await fetch(url, {
         method: 'PUT',
         headers: this.getHeaders(),
@@ -907,7 +903,6 @@ class ApiService {
   public async deleteAssignment(assignmentId: string): Promise<ApiResponse> {
     try {
       const url = `${this.baseUrl}/surveys/assignments/${assignmentId}`;
-      console.log('ApiService: Sending delete assignment request', { assignmentId, url });
       const response = await fetch(url, {
         method: 'DELETE',
         headers: this.getHeaders(),
@@ -935,7 +930,6 @@ class ApiService {
   ): Promise<ApiResponse> {
     try {
       const url = `${this.baseUrl}/surveys/assignments/${assignmentId}/manual-status`;
-      console.log('ApiService: Sending manual status update request', { assignmentId, url, data });
       const response = await fetch(url, {
         method: 'PUT',
         headers: this.getHeaders(),
