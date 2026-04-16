@@ -147,13 +147,15 @@ exports.getHouseholdSurvey = async (req, res) => {
       return sendError(res, 'Survey not found', 404);
     }
 
+    const userRole = req.user.role ? String(req.user.role).toUpperCase().trim() : '';
+
     // Check authorization - allow:
     // 1. Admins to view all surveys
     // 2. Supervisors to view all surveys (HHQC)
     // 3. Surveyors to view their own surveys
     // 4. Surveyors to view unassigned imported surveys (surveyor: null)
     // 5. Surveyors to view surveys in their assigned slums (enhanced access)
-    if (req.user.role === 'SURVEYOR') {
+    if (userRole === 'SURVEYOR') {
       const surveyorId = survey.surveyor ? survey.surveyor.toString() : null;
       const currentUserId = req.user.id.toString();
 
@@ -192,6 +194,7 @@ exports.updateHouseholdSurvey = async (req, res) => {
     const { surveyId } = req.params;
     const updateData = req.body;
     const userId = req.user.id || req.user._id;
+    const userRole = req.user.role ? String(req.user.role).toUpperCase().trim() : '';
 
     // Find survey
     const survey = await HouseholdSurvey.findById(surveyId);
@@ -201,8 +204,8 @@ exports.updateHouseholdSurvey = async (req, res) => {
 
     // Check authorization - allow original surveyor, admins, and supervisors
     if (survey.surveyor && survey.surveyor.toString() !== userId.toString() &&
-      req.user.role !== 'ADMIN' &&
-      req.user.role !== 'SUPERVISOR') {
+      userRole !== 'ADMIN' &&
+      userRole !== 'SUPERVISOR') {
       return sendError(res, 'Not authorized to update this survey', 403);
     }
 
@@ -307,6 +310,7 @@ exports.submitHouseholdSurvey = async (req, res) => {
   try {
     const { surveyId } = req.params;
     const userId = req.user.id || req.user._id;
+    const userRole = req.user.role ? String(req.user.role).toUpperCase().trim() : '';
 
     const survey = await HouseholdSurvey.findById(surveyId);
     if (!survey) {
@@ -314,7 +318,7 @@ exports.submitHouseholdSurvey = async (req, res) => {
     }
 
     // Check authorization - allow if assigned to user, or if unassigned (imported), or admin
-    if (survey.surveyor && survey.surveyor.toString() !== userId.toString() && req.user.role !== 'ADMIN') {
+    if (survey.surveyor && survey.surveyor.toString() !== userId.toString() && userRole !== 'ADMIN') {
       return sendError(res, 'Not authorized to submit this survey', 403);
     }
 
@@ -479,7 +483,7 @@ exports.deleteHouseholdSurvey = async (req, res) => {
   try {
     const { surveyId } = req.params;
     const userId = req.user.id || req.user._id;
-    const userRole = req.user.role;
+    const userRole = req.user.role ? String(req.user.role).toUpperCase().trim() : '';
 
     const survey = await HouseholdSurvey.findById(surveyId);
     if (!survey) {
@@ -540,6 +544,7 @@ exports.updateSurveySection = async (req, res) => {
     const { surveyId } = req.params;
     const { section, data } = req.body;
     const userId = req.user.id || req.user._id;
+    const userRole = req.user.role ? String(req.user.role).toUpperCase().trim() : '';
 
     if (!section || !data) {
       return sendError(res, 'Section and data are required', 400);
@@ -553,7 +558,7 @@ exports.updateSurveySection = async (req, res) => {
 
 
     // Check authorization
-    if (survey.surveyor.toString() !== userId.toString() && req.user.role !== 'ADMIN') {
+    if (survey.surveyor.toString() !== userId.toString() && userRole !== 'ADMIN') {
       return sendError(res, 'Not authorized to update this survey', 403);
     }
 

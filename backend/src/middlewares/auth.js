@@ -55,7 +55,8 @@ const authorize = (...roles) => {
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    const userRole = req.user.role ? String(req.user.role).toUpperCase().trim() : '';
+    if (!roles.includes(userRole)) {
       return res.status(403).json({
         success: false,
         message: `Access denied. Requires one of the following roles: ${roles.join(', ')}.`
