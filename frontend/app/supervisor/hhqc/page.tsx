@@ -67,11 +67,13 @@ export default function HHQCPage() {
   const isFirstMount = useRef(true);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [slumsLoading, setSlumsLoading] = useState(true); // Track slums loading separately
   const [slums, setSlums] = useState<Slum[]>([]);
   const [selectedSlum, setSelectedSlum] = useState<string>("");
   const [householdSurveys, setHouseholdSurveys] = useState<HouseholdSurvey[]>(
     [],
   );
+  const [surveysLoading, setSurveysLoading] = useState(false); // Track surveys loading separately
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [deletingSurveyId, setDeletingSurveyId] = useState<string | null>(null);
@@ -102,6 +104,7 @@ export default function HHQCPage() {
     const fetchData = async () => {
       try {
         // Load slums
+        setSlumsLoading(true);
         const slumsResponse = await apiService.get("/admin/slums");
         // Sort slums alphabetically by name
         const sortedSlums = [...((slumsResponse.data as Slum[]) || [])].sort(
@@ -112,6 +115,7 @@ export default function HHQCPage() {
           },
         );
         setSlums(sortedSlums);
+        setSlumsLoading(false);
 
         // Load all assignments for supervisor to find the correct assignment later
         const assignmentsResponse = await apiService.getAllAssignments();
@@ -124,6 +128,7 @@ export default function HHQCPage() {
         console.error("Error fetching data:", err);
         setError("Failed to load data");
         setLoading(false);
+        setSlumsLoading(false);
       }
     };
 
@@ -166,11 +171,12 @@ export default function HHQCPage() {
     const fetchHouseholdSurveys = async () => {
       if (!selectedSlum) {
         setHouseholdSurveys([]);
+        setSurveysLoading(false);
         return;
       }
 
       try {
-        setLoading(true);
+        setSurveysLoading(true);
         const response =
           await apiService.getHouseholdSurveysBySlum(selectedSlum);
         setHouseholdSurveys(
@@ -178,11 +184,11 @@ export default function HHQCPage() {
             ? (response.data as HouseholdSurvey[])
             : [],
         );
-        setLoading(false);
+        setSurveysLoading(false);
       } catch (err) {
         console.error("Error fetching household surveys:", err);
         setError("Failed to load household surveys");
-        setLoading(false);
+        setSurveysLoading(false);
       }
     };
 
@@ -253,7 +259,8 @@ export default function HHQCPage() {
     setEditingSurvey(null);
   };
 
-  if (loading && !selectedSlum) {
+  // Show loading spinner only during initial page load
+  if (loading) {
     return (
       <SupervisorAdminLayout
         role="SUPERVISOR"
@@ -297,13 +304,24 @@ export default function HHQCPage() {
                 value: slum._id,
                 label: `${slum.slumName} (${slum.slumId})`,
               }))}
-              placeholder="Select a slum..."
+              placeholder={
+                slumsLoading ? "Loading slums..." : "Select a slum..."
+              }
+              disabled={slumsLoading}
+              loading={slumsLoading}
             />
           </div>
 
           {selectedSlum && (
             <div className="mt-8">
-              {householdSurveys.length === 0 ? (
+              {surveysLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <LoadingSpinner
+                    size="md"
+                    text="Loading household surveys..."
+                  />
+                </div>
+              ) : householdSurveys.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-slate-400 text-lg">
                     No records available. Survey may not have been started yet
