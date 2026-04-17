@@ -79,6 +79,9 @@ export default function Sidebar({ role, username }: SidebarProps) {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  // Determine if sidebar is collapsed (for hover logic)
+  const isSidebarCollapsed = !isSidebarOpen;
+
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
@@ -129,8 +132,14 @@ export default function Sidebar({ role, username }: SidebarProps) {
           "hidden md:flex flex-col relative h-screen transition-all duration-300 border-r border-slate-800 bg-slate-900 shrink-0",
           isSidebarOpen || isHovered ? "w-64" : "w-16",
         )}
-        onMouseEnter={() => !isSidebarOpen && setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseEnter={() => {
+          if (isSidebarCollapsed) {
+            setIsHovered(true);
+          }
+        }}
+        onMouseLeave={() => {
+          setIsHovered(false);
+        }}
       >
         {/* Toggle & Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">

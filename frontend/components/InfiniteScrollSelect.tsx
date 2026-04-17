@@ -11,6 +11,7 @@ interface InfiniteScrollSelectProps {
   placeholder?: string;
   disabled?: boolean;
   maxHeight?: string;
+  loading?: boolean; // Add loading prop
 }
 
 export default function InfiniteScrollSelect({
@@ -21,6 +22,7 @@ export default function InfiniteScrollSelect({
   placeholder = "Select an option",
   disabled = false,
   maxHeight = "200px",
+  loading = false, // Default to false
 }: InfiniteScrollSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,8 +31,8 @@ export default function InfiniteScrollSelect({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Filter options based on search term
-  const filteredOptions = options.filter(option =>
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredOptions = options.filter((option) =>
+    option.label.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Reset visible options when search changes
@@ -42,15 +44,21 @@ export default function InfiniteScrollSelect({
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     // Load more when scrolled to bottom (within 10px)
-    if (scrollHeight - scrollTop - clientHeight < 10 && visibleOptions < filteredOptions.length) {
-      setVisibleOptions(prev => Math.min(prev + 10, filteredOptions.length));
+    if (
+      scrollHeight - scrollTop - clientHeight < 10 &&
+      visibleOptions < filteredOptions.length
+    ) {
+      setVisibleOptions((prev) => Math.min(prev + 10, filteredOptions.length));
     }
   };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
         setSearchTerm("");
       }
@@ -67,7 +75,7 @@ export default function InfiniteScrollSelect({
     }
   }, [isOpen]);
 
-  const selectedOption = options.find(option => option.value === value);
+  const selectedOption = options.find((option) => option.value === value);
 
   return (
     <div className="space-y-2">
@@ -81,7 +89,7 @@ export default function InfiniteScrollSelect({
           disabled={disabled}
           className={cn(
             "w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-left text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed",
-            "flex items-center justify-between"
+            "flex items-center justify-between",
           )}
           onClick={() => !disabled && setIsOpen(!isOpen)}
         >
@@ -91,7 +99,7 @@ export default function InfiniteScrollSelect({
           <svg
             className={cn(
               "w-5 h-5 text-slate-400 transition-transform",
-              isOpen && "rotate-180"
+              isOpen && "rotate-180",
             )}
             fill="none"
             stroke="currentColor"
@@ -128,7 +136,12 @@ export default function InfiniteScrollSelect({
               style={{ maxHeight }}
               onScroll={handleScroll}
             >
-              {filteredOptions.length === 0 ? (
+              {loading ? (
+                <div className="px-4 py-3 text-slate-400 text-center flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-slate-400 border-t-cyan-500 rounded-full animate-spin"></div>
+                  <span>Loading options...</span>
+                </div>
+              ) : filteredOptions.length === 0 ? (
                 <div className="px-4 py-3 text-slate-400 text-center">
                   No options found
                 </div>
@@ -141,7 +154,7 @@ export default function InfiniteScrollSelect({
                       "w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors",
                       value === option.value
                         ? "bg-cyan-500/20 text-cyan-400"
-                        : "text-white"
+                        : "text-white",
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
